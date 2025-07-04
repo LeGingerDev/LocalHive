@@ -1,9 +1,10 @@
-import { StyleSheet, Image, TouchableOpacity } from "react-native";
-import React from "react";
-import { Slot, Stack, useRouter } from "expo-router";
+import { StyleSheet, Image, TouchableOpacity, Platform } from "react-native";
+import React, { useEffect } from "react";
+import { Slot, Stack, useRouter, usePathname } from "expo-router";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import { Colors } from "../constants/Colors";
 import { StatusBar } from "expo-status-bar";
+import * as NavigationBar from 'expo-navigation-bar';
 
 const HeaderLogo = () => {
   const router = useRouter();
@@ -11,8 +12,17 @@ const HeaderLogo = () => {
   return (
     <TouchableOpacity onPress={() => router.push("/")}>
       <Image
-        source={require("../assets/favicon.png")}
-        style={{ width: 24, height: 24, marginRight: 16 }}
+        source={require("../assets/local-hive-logo.png")}
+        style={{ 
+          width: 32, 
+          height: 32, 
+          marginRight: 16,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 2,
+        }}
+        resizeMode="contain"
       />
     </TouchableOpacity>
   );
@@ -20,10 +30,25 @@ const HeaderLogo = () => {
 
 const StackNavigator = () => {
   const { theme } = useTheme();
+  const pathname = usePathname();
+  
+  useEffect(() => {
+    // Configure navigation bar on Android
+    if (Platform.OS === 'android') {
+      // Make navigation bar transparent
+      NavigationBar.setBackgroundColorAsync('transparent');
+      // Hide navigation bar on landing page
+      if (pathname === '/landing') {
+        NavigationBar.setVisibilityAsync('hidden');
+      } else {
+        NavigationBar.setVisibilityAsync('visible');
+      }
+    }
+  }, [pathname]);
 
   return (
     <>
-      <StatusBar value="auto" />
+      <StatusBar style="light" translucent={true} />
       <Stack
         screenOptions={{
           headerStyle: {
@@ -43,10 +68,12 @@ const StackNavigator = () => {
           animationEnabled: true, // Ensures smooth animations
           presentation: "card",
         }}
+        initialRouteName="landing"
       >
+        <Stack.Screen name="landing" options={{ headerShown: false }} />
+        <Stack.Screen name="signin" options={{ title: "Sign In" }} />
+        <Stack.Screen name="email-signup" options={{ title: "Create Account" }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="about" options={{ title: "About Page" }} />
-        <Stack.Screen name="contact" options={{ title: "Contact Page" }} />
       </Stack>
     </>
   );

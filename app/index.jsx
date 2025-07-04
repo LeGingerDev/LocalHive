@@ -1,23 +1,23 @@
-import { StyleSheet, Text, Image } from "react-native"; // Remove View since you're using ThemedView
-import { Link } from "expo-router";
+import { StyleSheet, Text, Image } from "react-native";
+import { Link, useRouter } from "expo-router";
 import ThemedView from "../components/ThemedView";
-// Remove the duplicate import
+import { Colors } from "../constants/Colors";
 
 const index = () => {
+  const router = useRouter();
+  
   return (
     <ThemedView style={styles.container}>
       <Image
-        source={{ uri: "https://reactnative.dev/img/tiny_logo.png" }}
+        source={require("../assets/local-hive-logo.png")}
         style={styles.image}
+        resizeMode="contain"
       />
-      <Text style={styles.title}>This worked?</Text>
-      <Text style={styles.subtitle}>Yes it did!</Text>
+      <Text style={styles.title}>Welcome to Local Hive</Text>
+      <Text style={styles.subtitle}>Your local knowledge sharing platform</Text>
 
-      <Link href="/about" style={styles.linkButton}>
-        About Page
-      </Link>
-      <Link href="/contact" style={styles.linkButton}>
-        Contact Page
+      <Link href="/landing" style={styles.linkButton}>
+        Go to Landing Page
       </Link>
     </ThemedView>
   );
@@ -28,31 +28,36 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#333",
+    marginTop: 20,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 18,
     color: "#555",
     marginTop: 10,
+    textAlign: "center",
+    marginBottom: 30,
   },
   image: {
-    // lowercase convention
-    width: 100,
-    height: 100,
-    borderRadius: 20,
+    width: 120,
+    height: 120,
   },
   linkButton: {
-    // camelCase convention
-    padding: 10,
-    backgroundColor: "#007BFF",
-    borderRadius: 5,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: Colors.primary,
+    borderRadius: 25,
     color: "#fff",
     textAlign: "center",
     marginTop: 20,
+    fontSize: 16,
+    fontWeight: "500",
   },
 });
 
