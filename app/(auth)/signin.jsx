@@ -8,6 +8,7 @@ import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import Button from '../../components/Button';
 
 const SignIn = () => {
   const router = useRouter();
@@ -237,23 +238,21 @@ const SignIn = () => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.signInButton, { backgroundColor: Colors.primary }]}
+        <Button 
           onPress={handleSignIn}
+          loading={loading}
           disabled={loading}
+          style={styles.signInButton}
+          fullWidth
         >
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.signInButtonText}>Sign In</Text>
-          )}
-        </TouchableOpacity>
+          Sign In
+        </Button>
 
         <View style={styles.signUpContainer}>
           <Text style={styles.signUpText}>
             Don't have an account? 
           </Text>
-          <TouchableOpacity onPress={() => router.push("landing")}>
+          <TouchableOpacity onPress={() => router.push("email-signup")}>
             <Text style={styles.signUpLink}> Sign Up</Text>
           </TouchableOpacity>
         </View>
@@ -276,7 +275,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
+    flex: 1,
     paddingHorizontal: 24,
+    paddingTop: 40,
+    justifyContent: 'center',
   },
   title: {
     fontSize: 28,
@@ -350,30 +352,19 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     color: 'white',
     fontSize: 14,
-    textDecorationLine: 'underline',
   },
   resendVerification: {},
   resendVerificationText: {
     color: 'white',
     fontSize: 14,
-    textDecorationLine: 'underline',
   },
   signInButton: {
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  signInButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    marginHorizontal: 0,
   },
   signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 24,
   },
   signUpText: {
     color: 'white',

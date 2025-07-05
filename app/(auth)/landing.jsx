@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Platform, Statu
 import { Ionicons, MaterialIcons, FontAwesome, AntDesign } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
+import Button from '../../components/Button';
 
 const Landing = () => {
   const { isDarkMode } = useTheme();
@@ -117,25 +118,46 @@ const Landing = () => {
         {/* Sign In Options */}
         <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim.buttons }]}>
           {/* Google Button */}
-          <TouchableOpacity style={styles.googleButton}>
-            <AntDesign name="google" size={20} color="black" style={styles.buttonIcon} />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
+          <Button
+            variant="outline"
+            style={styles.googleButton}
+            textStyle={styles.googleButtonText}
+            onPress={() => {}}
+            fullWidth
+          >
+            <View style={styles.buttonContent}>
+              <AntDesign name="google" size={20} color="white" style={styles.buttonIcon} />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </View>
+          </Button>
           
           {/* Apple Button */}
-          <TouchableOpacity style={styles.appleButton}>
-            <AntDesign name="apple1" size={20} color="white" style={styles.buttonIcon} />
-            <Text style={styles.appleButtonText}>Continue with Apple</Text>
-          </TouchableOpacity>
+          <Button
+            variant="outline"
+            style={styles.appleButton}
+            textStyle={styles.appleButtonText}
+            onPress={() => {}}
+            fullWidth
+          >
+            <View style={styles.buttonContent}>
+              <AntDesign name="apple1" size={20} color="white" style={styles.buttonIcon} />
+              <Text style={styles.appleButtonText}>Continue with Apple</Text>
+            </View>
+          </Button>
           
           {/* Email Button */}
-          <TouchableOpacity 
+          <Button
+            variant="outline"
             style={styles.emailButton}
+            textStyle={styles.emailButtonText}
             onPress={() => router.push("email-signup")}
+            fullWidth
           >
-            <MaterialIcons name="email" size={20} color="white" style={styles.buttonIcon} />
-            <Text style={styles.emailButtonText}>Continue with Email</Text>
-          </TouchableOpacity>
+            <View style={styles.buttonContent}>
+              <MaterialIcons name="email" size={20} color="white" style={styles.buttonIcon} />
+              <Text style={styles.emailButtonText}>Continue with Email</Text>
+            </View>
+          </Button>
         </Animated.View>
         
         {/* Sign In Link */}
@@ -212,28 +234,26 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 20,
   },
-  googleButton: {
+  buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
-    borderRadius: 25,
-    paddingVertical: 12,
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  googleButton: {
     marginBottom: 16,
+    borderColor: 'white',
   },
   googleButtonText: {
-    color: '#333',
+    color: 'white',
     fontSize: 16,
     fontWeight: '500',
   },
   appleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'black',
-    borderRadius: 25,
-    paddingVertical: 12,
     marginBottom: 16,
+    borderColor: 'white',
   },
   appleButtonText: {
     color: 'white',
@@ -241,52 +261,42 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   emailButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 1,
     borderColor: 'white',
-    borderRadius: 25,
-    paddingVertical: 12,
   },
   emailButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '500',
   },
-  buttonIcon: {
-    marginRight: 8,
-  },
   signInContainer: {
     flexDirection: 'row',
-    marginVertical: 20,
+    marginTop: 20,
   },
   signInText: {
     color: 'white',
-    fontSize: 15,
+    fontSize: 16,
   },
   signInLink: {
     color: 'white',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
-    textDecorationLine: 'underline',
   },
   featuresContainer: {
+    marginTop: 'auto',
+    marginBottom: 40,
     width: '100%',
-    marginTop: 20,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   featureIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   featureText: {
     color: 'white',
-    fontSize: 15,
+    fontSize: 14,
   },
 });
 

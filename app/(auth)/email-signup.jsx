@@ -7,6 +7,7 @@ import CustomAlert from '../../components/CustomAlert';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { Colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import Button from '../../components/Button';
 
 const EmailSignUp = () => {
   const router = useRouter();
@@ -217,17 +218,15 @@ const EmailSignUp = () => {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.signUpButton, { backgroundColor: Colors.primary }]}
+        <Button 
           onPress={handleSignUp}
+          loading={loading}
           disabled={loading}
+          style={styles.signUpButton}
+          fullWidth
         >
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.signUpButtonText}>Create Account</Text>
-          )}
-        </TouchableOpacity>
+          Create Account
+        </Button>
 
         <View style={styles.termsContainer}>
           <Text style={styles.termsText}>
@@ -327,16 +326,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   signUpButton: {
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginTop: 10,
-  },
-  signUpButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    marginHorizontal: 0,
   },
   termsContainer: {
     marginTop: 24,

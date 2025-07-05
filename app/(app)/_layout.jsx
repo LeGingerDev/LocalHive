@@ -1,17 +1,22 @@
 import { StyleSheet, View } from "react-native";
 import React from "react";
-import { Tabs } from "expo-router";
+import { Tabs, usePathname } from "expo-router";
 import { useTheme } from "../../context/ThemeContext";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from "../../constants/Colors";
 import { useAuth } from "../../context/AuthContext";
 import { Redirect } from "expo-router";
+import BottomTabBar from "../../components/BottomTabBar";
 
 // Main app layout with bottom tabs
 export default function AppLayout() {
   const { theme, isDarkMode } = useTheme();
   const { user, loading } = useAuth();
+  const pathname = usePathname();
+  
+  // Debug current path
+  console.log("AppLayout pathname:", pathname);
   
   // If still loading, show nothing
   if (loading) {
@@ -31,14 +36,8 @@ export default function AppLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
-            borderTopColor: isDarkMode ? '#333' : '#e0e0e0',
-            height: 60,
-            paddingBottom: 8,
-            paddingTop: 8,
+            display: 'none', // Hide default tab bar since we're using our custom one
           },
-          tabBarActiveTintColor: Colors.primary,
-          tabBarInactiveTintColor: isDarkMode ? '#888' : '#999',
         }}
       >
         <Tabs.Screen
@@ -71,11 +70,12 @@ export default function AppLayout() {
           name="add"
           options={{
             title: "Add",
+            tabBarLabel: () => null,
             tabBarIcon: ({ color, size, focused }) => (
               <View style={styles.addButton}>
                 <Ionicons 
                   name={focused ? "add-circle" : "add-circle-outline"} 
-                  size={size + 12} 
+                  size={size + 18} 
                   color={Colors.primary} 
                 />
               </View>
@@ -109,6 +109,9 @@ export default function AppLayout() {
           }}
         />
       </Tabs>
+      
+      {/* Add our custom bottom tab bar */}
+      <BottomTabBar />
     </View>
   );
 }
@@ -119,5 +122,8 @@ const styles = StyleSheet.create({
   },
   addButton: {
     marginBottom: -4,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }); 

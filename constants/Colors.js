@@ -6,6 +6,7 @@ export const Colors = {
   secondary: "#F72585",
   secondaryLight: "#FF5CA8",
   secondaryDark: "#C01B67",
+  danger: "#E53935",
 
   // Light theme
   light: {

@@ -1,9 +1,9 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { useTheme } from '../context/ThemeContext';
+import TabSelector from './TabSelector';
 
 // Using memo to prevent unnecessary re-renders
 const BottomTabBar = memo(() => {
@@ -11,26 +11,32 @@ const BottomTabBar = memo(() => {
   const pathname = usePathname();
   const { theme, isDarkMode } = useTheme();
   
+  // Debug pathname
+  console.log('Current pathname in BottomTabBar:', pathname);
+  
   const tabs = [
     {
       name: 'Home',
       icon: 'home-outline',
       activeIcon: 'home',
-      path: '/',
+      path: '/(app)',
+      matchPaths: ['/(app)', '/(app)/index', '/'],
       index: 0,
     },
     {
       name: 'Search',
       icon: 'search-outline',
       activeIcon: 'search',
-      path: '/search',
+      path: '/(app)/search',
+      matchPaths: ['/(app)/search'],
       index: 1,
     },
     {
       name: 'Add',
       icon: 'add-circle-outline',
       activeIcon: 'add-circle',
-      path: '/add',
+      path: '/(app)/add',
+      matchPaths: ['/(app)/add'],
       isCenter: true,
       index: 2,
     },
@@ -38,36 +44,57 @@ const BottomTabBar = memo(() => {
       name: 'Groups',
       icon: 'people-outline',
       activeIcon: 'people',
-      path: '/groups',
+      path: '/(app)/groups',
+      matchPaths: ['/(app)/groups'],
       index: 3,
     },
     {
       name: 'Profile',
       icon: 'person-circle-outline',
       activeIcon: 'person-circle',
-      path: '/profile',
+      path: '/(app)/profile',
+      matchPaths: ['/(app)/profile'],
       index: 4,
     },
   ];
 
-  // Don't show the tab bar on splash or landing pages
-  if (pathname === '/splash' || pathname === '/landing' || 
-      pathname === '/signin' || pathname === '/email-signup') {
+  // Don't show the tab bar on splash or auth pages
+  if (pathname === '/splash' || 
+      pathname.startsWith('/(auth)')) {
     return null;
   }
 
   const handleTabPress = (tab) => {
     // Don't navigate if already on this tab
-    if (pathname === tab.path) return;
+    if (isTabActive(tab)) return;
     
     // Use replace instead of push to avoid stacking screens
     router.replace(tab.path);
   };
 
+  // Helper function to determine if a tab is active
+  const isTabActive = (tab) => {
+    // For exact path matching
+    if (tab.matchPaths.includes(pathname)) {
+      return true;
+    }
+    
+    // For partial path matching (e.g. when pathname is /search)
+    const simplePathname = pathname.replace('/(app)', '');
+    
+    // Check if any of the match paths ends with the simple pathname
+    for (const matchPath of tab.matchPaths) {
+      const simpleMatchPath = matchPath.replace('/(app)', '');
+      if (simplePathname === simpleMatchPath) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
   // Get the appropriate colors based on the theme
   const bgColor = isDarkMode ? '#1a1a1a' : '#ffffff';
-  const inactiveColor = isDarkMode ? '#888' : '#999';
-  const activeColor = Colors.primary;
   const borderColor = isDarkMode ? '#333' : '#e0e0e0';
 
   return (
@@ -76,50 +103,26 @@ const BottomTabBar = memo(() => {
       { 
         backgroundColor: bgColor,
         borderTopColor: borderColor,
-        paddingBottom: Platform.OS === 'ios' ? 20 : 10, // Add extra padding for iOS devices with home indicator
+        paddingBottom: Platform.OS === 'ios' ? 25 : 15, // Add extra padding for iOS devices with home indicator
       }
     ]}>
       {tabs.map((tab) => {
-        const isActive = pathname === tab.path;
-        const iconName = isActive ? tab.activeIcon : tab.icon;
+        // Use the helper function to determine if tab is active
+        const isActive = isTabActive(tab);
+        
+        // Debug active state
+        console.log(`Tab ${tab.name} isActive:`, isActive, 'path:', tab.path, 'pathname:', pathname);
         
         return (
-          <TouchableOpacity
+          <TabSelector
             key={tab.name}
-            style={[
-              styles.tabButton,
-              tab.isCenter && styles.centerButton,
-            ]}
+            name={tab.name}
+            icon={tab.icon}
+            activeIcon={tab.activeIcon}
+            isActive={isActive}
+            isCenter={tab.isCenter}
             onPress={() => handleTabPress(tab)}
-            activeOpacity={0.7}
-          >
-            {tab.isCenter ? (
-              <View style={[
-                styles.centerButtonInner, 
-                { backgroundColor: Colors.primary }
-              ]}>
-                <Ionicons 
-                  name={iconName} 
-                  size={28} 
-                  color="#fff" 
-                />
-              </View>
-            ) : (
-              <>
-                <Ionicons 
-                  name={iconName} 
-                  size={24} 
-                  color={isActive ? activeColor : inactiveColor} 
-                />
-                <Text style={[
-                  styles.tabText,
-                  { color: isActive ? activeColor : inactiveColor }
-                ]}>
-                  {tab.name}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+          />
         );
       })}
     </View>
@@ -129,7 +132,7 @@ const BottomTabBar = memo(() => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    height: Platform.OS === 'ios' ? 80 : 70, // Taller for iOS with home indicator
+    height: Platform.OS === 'ios' ? 90 : 80, // Taller for iOS with home indicator (increased by 10px)
     borderTopWidth: 1,
     paddingHorizontal: 10,
     elevation: 8,
@@ -144,28 +147,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     zIndex: 1000,
-  },
-  tabButton: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tabText: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  centerButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  centerButtonInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
+  }
 });
 
 export default BottomTabBar; 

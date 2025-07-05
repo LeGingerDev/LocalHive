@@ -36,8 +36,8 @@ export const ThemeProvider = ({ children }) => {
         setIsLoading(true);
         
         // Get stored preferences
-        const storedTheme = await AsyncStorage.getItem(THEME_PREFERENCE_KEY);
-        const storedUseSystemTheme = await AsyncStorage.getItem(USE_SYSTEM_THEME_KEY);
+        let storedTheme = await AsyncStorage.getItem(THEME_PREFERENCE_KEY);
+        let storedUseSystemTheme = await AsyncStorage.getItem(USE_SYSTEM_THEME_KEY);
         
         console.log('Loaded theme preferences from AsyncStorage:', { storedTheme, storedUseSystemTheme });
         
@@ -184,6 +184,47 @@ export const ThemeProvider = ({ children }) => {
       saveThemePreference(colorScheme, false);
     }
   };
+  
+  // Update theme from profile data
+  const updateThemeFromProfile = (profileData) => {
+    if (!profileData) return;
+    
+    try {
+      console.log('Updating theme from profile data:', profileData);
+      
+      const themePreference = profileData.theme_preference;
+      const useSystem = profileData.use_system_theme;
+      
+      if (useSystem !== null && useSystem !== undefined) {
+        setUseSystemTheme(useSystem);
+        
+        if (useSystem) {
+          // Use system theme
+          const newColorScheme = systemColorScheme || 'light';
+          setColorScheme(newColorScheme);
+          setIsDarkMode(newColorScheme === 'dark');
+          setTheme(Colors[newColorScheme] || Colors.light);
+        } else if (themePreference) {
+          // Use stored theme preference
+          setColorScheme(themePreference);
+          setIsDarkMode(themePreference === 'dark');
+          setTheme(Colors[themePreference] || Colors.light);
+        }
+      } else if (themePreference) {
+        // Just update the theme if use_system_theme is not available
+        setColorScheme(themePreference);
+        setIsDarkMode(themePreference === 'dark');
+        setTheme(Colors[themePreference] || Colors.light);
+        setUseSystemTheme(false);
+      }
+      
+      // Save to AsyncStorage
+      AsyncStorage.setItem(THEME_PREFERENCE_KEY, themePreference || (isDarkMode ? 'dark' : 'light'));
+      AsyncStorage.setItem(USE_SYSTEM_THEME_KEY, (useSystem !== null && useSystem !== undefined) ? useSystem.toString() : 'true');
+    } catch (error) {
+      console.error('Failed to update theme from profile:', error);
+    }
+  };
 
   return (
     <ThemeContext.Provider value={{ 
@@ -193,6 +234,7 @@ export const ThemeProvider = ({ children }) => {
       toggleTheme,
       useSystemTheme,
       toggleUseSystemTheme,
+      updateThemeFromProfile,
       isLoading
     }}>
       {children}
