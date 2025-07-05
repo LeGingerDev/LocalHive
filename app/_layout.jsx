@@ -1,6 +1,6 @@
 import { StyleSheet, Image, TouchableOpacity, Platform, View } from "react-native";
-import React, { useEffect, useRef } from "react";
-import { Slot, Stack, useRouter, usePathname } from "expo-router";
+import React, { useEffect } from "react";
+import { Slot, Stack, useRouter, usePathname, Redirect } from "expo-router";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import { AuthProvider } from "../context/AuthContext";
 import { Colors } from "../constants/Colors";
@@ -33,7 +33,6 @@ const HeaderLogo = () => {
 
 const StackNavigator = () => {
   const { theme, isDarkMode } = useTheme();
-  const router = useRouter();
   const pathname = usePathname();
   
   // Set the background color for the entire app
@@ -55,22 +54,22 @@ const StackNavigator = () => {
   
   useEffect(() => {
     // Configure navigation bar on Android
-    if (Platform.OS === 'android') {
+    if (Platform.OS === 'android' && !isSplashScreen) {
       try {
         // Set button style based on theme
-        NavigationBar.setButtonStyleAsync(isDarkMode ? 'light' : 'dark');
+        NavigationBar.setButtonStyleAsync(isDarkMode ? 'light' : 'dark').catch(() => {});
       } catch (error) {
         console.log('Navigation bar customization error:', error);
       }
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, isSplashScreen]);
 
   // Define gradient colors for splash and landing screens
   const gradientColors = isDarkMode
     ? ['#7928CA', '#221C35', '#003366'] // Dark theme gradient - purple to deep blue
     : ['#9900FF', '#5E17EB', '#0066FF']; // Light theme gradient - vibrant purple to blue
 
-  // For splash screen, use a simplified layout
+  // For splash screen, use a simplified layout with no additional wrappers
   if (isSplashScreen) {
     return (
       <View style={styles.container}>
@@ -129,18 +128,19 @@ const StackNavigator = () => {
             animation: "fade",
             animationDuration: 150,
           }}
-          initialRouteName="splash"
         >
           <Stack.Screen 
             name="splash" 
             options={{ 
               headerShown: false,
+              animation: 'none',
             }} 
           />
           <Stack.Screen 
             name="landing" 
             options={{ 
               headerShown: false,
+              animation: 'fade',
             }} 
           />
           <Stack.Screen name="signin" options={{ title: "", animation: "slide_from_right" }} />
@@ -160,7 +160,7 @@ const RootLayout = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <StackNavigator />
+        <Slot />
       </AuthProvider>
     </ThemeProvider>
   );

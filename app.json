@@ -8,11 +8,11 @@
     "icon": "./assets/local-hive-logo.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "backgroundColor": "#FFFFFF",
+    "backgroundColor": "#7928CA",
     "splash": {
       "image": "./assets/local-hive-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#7928CA"
     },
     "ios": {
       "supportsTablet": true
@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/local-hive-logo.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#7928CA"
       },
       "edgeToEdgeEnabled": true,
       "softwareNavBarColor": "transparent",

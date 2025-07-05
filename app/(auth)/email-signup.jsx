@@ -1,122 +1,118 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
-import CustomAlert from '../components/CustomAlert';
-import { useCustomAlert } from '../hooks/useCustomAlert';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import { Colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import { createProfile } from '../lib/supabaseDb';
-import { supabase } from '../lib/supabase';
 
-const EmailSignup = () => {
+const EmailSignUp = () => {
   const router = useRouter();
   const { theme } = useTheme();
-  const { signUp, signIn } = useAuth();
+  const { signUp } = useAuth();
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
   
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const validateInputs = () => {
-    if (!fullName.trim()) {
-      setError('Please enter your full name');
-      return false;
-    }
-    if (!email.trim()) {
-      setError('Please enter your email');
-      return false;
-    }
-    if (!password || password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return false;
-    }
-    return true;
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
+  };
+  
+  const validatePassword = (password) => {
+    // At least 8 characters, 1 uppercase, 1 lowercase, 1 number
+    const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    return re.test(password);
   };
 
   const handleSignUp = async () => {
-    if (!validateInputs()) return;
-
+    // Reset error
+    setError(null);
+    
+    // Validate inputs
+    if (!fullName || !email || !password || !confirmPassword) {
+      setError('All fields are required');
+      return;
+    }
+    
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    if (!validatePassword(password)) {
+      setError('Password must be at least 8 characters and include uppercase, lowercase, and numbers');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
     try {
       setLoading(true);
-      setError(null);
       
-      // Sign up with Supabase - with autoconfirm enabled
-      const { data, error: signUpError } = await signUp({ 
-        email, 
+      const { data, error } = await signUp({
+        email,
         password,
         options: {
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: 'exp://localhost:19000'
-        }
+        },
       });
-
-      if (signUpError) throw signUpError;
-
-      if (data?.user) {
-        try {
-          // Create profile immediately
-          await createProfile(data.user.id, {
-            full_name: fullName,
-            email: email,
-          });
-          
-          // Sign in immediately after signup
-          const { error: signInError } = await signIn({ 
-            email, 
-            password 
-          }, true); // Always remember the user
-          
-          if (signInError) throw signInError;
-          
-          // Success! Show welcome message and redirect to main page
-          showAlert(
-            'Welcome to Local Hive!',
-            'Your account has been created successfully.',
-            [{ text: 'Get Started', onPress: () => router.replace('/') }]
-          );
-        } catch (error) {
-          console.error('Error during auto-signin:', error);
-          // If auto-signin fails, redirect to signin page
-          showAlert(
-            'Account Created',
-            'Your account has been created, but we couldn\'t sign you in automatically. Please sign in manually.',
-            [{ text: 'OK', onPress: () => router.push('/signin') }]
-          );
-        }
-      }
+      
+      if (error) throw error;
+      
+      // Show success message
+      showAlert(
+        'Account Created',
+        'Your account has been created successfully! Please check your email for verification.',
+        [
+          { 
+            text: 'OK', 
+            onPress: () => {
+              // Navigate to sign in page
+              router.push('signin');
+            }
+          }
+        ]
+      );
+      
     } catch (error) {
-      setError(error.message || 'Failed to create account');
       console.error('Sign up error:', error);
+      setError(error.message || 'Failed to create account');
     } finally {
       setLoading(false);
     }
   };
-  
+
   return (
-    <View style={styles.container}>
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={styles.content}>
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.subtitle}>
-          Join Local Hive and start sharing knowledge
+          Join Local Hive and connect with your community
         </Text>
 
         {error && (
           <Text style={styles.errorText}>{error}</Text>
         )}
 
-        {/* Name Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Full Name</Text>
           <TextInput 
@@ -132,10 +128,10 @@ const EmailSignup = () => {
             placeholderTextColor="rgba(255, 255, 255, 0.6)"
             value={fullName}
             onChangeText={setFullName}
+            autoCapitalize="words"
           />
         </View>
 
-        {/* Email Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Email</Text>
           <TextInput 
@@ -149,14 +145,13 @@ const EmailSignup = () => {
             ]}
             placeholder="Enter your email"
             placeholderTextColor="rgba(255, 255, 255, 0.6)"
-            keyboardType="email-address"
-            autoCapitalize="none"
             value={email}
             onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
           />
         </View>
 
-        {/* Password Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Password</Text>
           <View style={styles.passwordContainer}>
@@ -172,7 +167,6 @@ const EmailSignup = () => {
               placeholder="Create a password"
               placeholderTextColor="rgba(255, 255, 255, 0.6)"
               secureTextEntry={!showPassword}
-              autoCapitalize="none"
               value={password}
               onChangeText={setPassword}
             />
@@ -188,25 +182,41 @@ const EmailSignup = () => {
             </TouchableOpacity>
           </View>
           <Text style={styles.passwordHint}>
-            Password must be at least 8 characters
+            Password must be at least 8 characters with uppercase, lowercase, and numbers
           </Text>
         </View>
 
-        {/* Terms and Conditions */}
-        <View style={styles.termsContainer}>
-          <Text style={styles.termsText}>
-            By signing up, you agree to our{' '}
-            <Text style={styles.termsLink}>
-              Terms of Service
-            </Text>{' '}
-            and{' '}
-            <Text style={styles.termsLink}>
-              Privacy Policy
-            </Text>
-          </Text>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Confirm Password</Text>
+          <View style={styles.passwordContainer}>
+            <TextInput 
+              style={[
+                styles.passwordInput, 
+                { 
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: 'white',
+                  borderColor: 'rgba(255, 255, 255, 0.3)'
+                }
+              ]}
+              placeholder="Confirm your password"
+              placeholderTextColor="rgba(255, 255, 255, 0.6)"
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+            <TouchableOpacity 
+              style={styles.eyeIcon}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <Ionicons 
+                name={showConfirmPassword ? "eye-off" : "eye"} 
+                size={22} 
+                color="rgba(255, 255, 255, 0.6)" 
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Sign Up Button */}
         <TouchableOpacity 
           style={[styles.signUpButton, { backgroundColor: Colors.primary }]}
           onPress={handleSignUp}
@@ -219,16 +229,23 @@ const EmailSignup = () => {
           )}
         </TouchableOpacity>
 
-        {/* Sign In Link */}
+        <View style={styles.termsContainer}>
+          <Text style={styles.termsText}>
+            By creating an account, you agree to our{' '}
+            <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
+            <Text style={styles.termsLink}>Privacy Policy</Text>
+          </Text>
+        </View>
+
         <View style={styles.signInContainer}>
           <Text style={styles.signInText}>
-            Already have an account?
+            Already have an account? 
           </Text>
-          <TouchableOpacity onPress={() => router.push("/signin")}>
+          <TouchableOpacity onPress={() => router.push("signin")}>
             <Text style={styles.signInLink}> Sign In</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
       
       <CustomAlert
         visible={alertConfig.visible}
@@ -237,7 +254,7 @@ const EmailSignup = () => {
         buttons={alertConfig.buttons}
         onDismiss={hideAlert}
       />
-    </View>
+    </ScrollView>
   );
 };
 
@@ -245,107 +262,110 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
+  contentContainer: {
+    flexGrow: 1,
+    paddingBottom: 40,
   },
-  scrollContent: {
-    padding: 24,
-    paddingTop: 40,
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 8,
     color: 'white',
+    marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    marginBottom: 24,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'white',
+    marginBottom: 32,
+    textAlign: 'center',
+    opacity: 0.8,
   },
   errorText: {
-    color: '#FF6B6B',
+    color: '#ff6b6b',
     marginBottom: 16,
-    fontSize: 14,
+    textAlign: 'center',
   },
   inputContainer: {
     marginBottom: 20,
   },
   label: {
+    color: 'white',
     marginBottom: 8,
     fontSize: 14,
-    fontWeight: '500',
-    color: 'white',
   },
   input: {
     height: 50,
+    borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
-    borderWidth: 1,
   },
   passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    position: 'relative',
   },
   passwordInput: {
-    flex: 1,
     height: 50,
+    borderWidth: 1,
+    borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
-    borderWidth: 0,
+    paddingRight: 50,
   },
   eyeIcon: {
-    padding: 10,
+    position: 'absolute',
+    right: 16,
+    top: 13,
   },
   passwordHint: {
-    fontSize: 12,
-    marginTop: 6,
     color: 'rgba(255, 255, 255, 0.6)',
-  },
-  termsContainer: {
-    marginBottom: 24,
-  },
-  termsText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  termsLink: {
-    color: Colors.primaryLight,
-    fontWeight: '500',
+    fontSize: 12,
+    marginTop: 8,
   },
   signUpButton: {
     height: 50,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginTop: 10,
   },
   signUpButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },
+  termsContainer: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  termsText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  termsLink: {
+    color: 'white',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+  },
   signInContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
+    marginTop: 24,
   },
   signInText: {
-    fontSize: 14,
     color: 'white',
+    fontSize: 14,
   },
   signInLink: {
+    color: 'white',
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.primaryLight,
+    fontWeight: 'bold',
   },
 });
 
-export default EmailSignup; 
+export default EmailSignUp; 

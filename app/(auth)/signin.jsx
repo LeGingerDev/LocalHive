@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ActivityIndicator, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
-import CustomAlert from '../components/CustomAlert';
-import { useCustomAlert } from '../hooks/useCustomAlert';
-import { Colors } from '../constants/Colors';
-import { supabase } from '../lib/supabase';
+import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import { Colors } from '../../constants/Colors';
+import { supabase } from '../../lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
 const SignIn = () => {
@@ -60,11 +60,18 @@ const SignIn = () => {
         showAlert(
           'Session Notice',
           'You\'ve chosen not to be remembered. You\'ll need to sign in again when you restart the app.',
-          [{ text: 'OK', onPress: () => router.replace('/') }]
+          [{ text: 'OK', onPress: () => {
+            console.log('Navigating to home after remember me notice');
+            router.replace('/(app)');
+          }}]
         );
       } else {
-        // Navigate to home screen on successful sign in
-        router.replace('/');
+        // Navigate directly to home screen on successful sign in
+        console.log('Sign in successful, navigating to home');
+        // Use a small delay to ensure auth state is updated
+        setTimeout(() => {
+          router.replace('/(app)');
+        }, 100);
       }
     } catch (error) {
       setError(error.message || 'Failed to sign in');
@@ -246,7 +253,7 @@ const SignIn = () => {
           <Text style={styles.signUpText}>
             Don't have an account? 
           </Text>
-          <TouchableOpacity onPress={() => router.push("/landing")}>
+          <TouchableOpacity onPress={() => router.push("landing")}>
             <Text style={styles.signUpLink}> Sign Up</Text>
           </TouchableOpacity>
         </View>
@@ -266,61 +273,60 @@ const SignIn = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
   },
   content: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
+    paddingHorizontal: 24,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 8,
     color: 'white',
+    marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
+    color: 'white',
     marginBottom: 32,
-    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    opacity: 0.8,
   },
   errorText: {
-    color: '#FF6B6B',
+    color: '#ff6b6b',
     marginBottom: 16,
-    fontSize: 14,
+    textAlign: 'center',
   },
   inputContainer: {
     marginBottom: 20,
   },
   label: {
+    color: 'white',
     marginBottom: 8,
     fontSize: 14,
-    fontWeight: '500',
-    color: 'white',
   },
   input: {
     height: 50,
+    borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
-    borderWidth: 1,
   },
   passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    position: 'relative',
   },
   passwordInput: {
-    flex: 1,
     height: 50,
+    borderWidth: 1,
+    borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
-    borderWidth: 0,
+    paddingRight: 50,
   },
   eyeIcon: {
-    padding: 10,
+    position: 'absolute',
+    right: 16,
+    top: 13,
   },
   rememberMeContainer: {
     flexDirection: 'row',
@@ -328,39 +334,36 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   rememberMeText: {
+    color: 'white',
     marginLeft: 8,
     fontSize: 14,
-    color: 'white',
   },
   infoButton: {
     marginLeft: 6,
-    padding: 2,
   },
   actionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 24,
   },
-  forgotPassword: {
-    padding: 4,
-  },
+  forgotPassword: {},
   forgotPasswordText: {
+    color: 'white',
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    textDecorationLine: 'underline',
   },
-  resendVerification: {
-    padding: 4,
-  },
+  resendVerification: {},
   resendVerificationText: {
+    color: 'white',
     fontSize: 14,
-    color: Colors.primaryLight,
+    textDecorationLine: 'underline',
   },
   signInButton: {
     height: 50,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   signInButtonText: {
     color: 'white',
@@ -370,16 +373,16 @@ const styles = StyleSheet.create({
   signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
+    marginTop: 16,
   },
   signUpText: {
-    fontSize: 14,
     color: 'white',
+    fontSize: 14,
   },
   signUpLink: {
+    color: 'white',
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.primaryLight,
+    fontWeight: 'bold',
   },
 });
 

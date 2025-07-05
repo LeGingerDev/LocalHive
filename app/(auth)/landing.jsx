@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Platform, StatusBar as RNStatusBar, Image, Animated } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome, AntDesign } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const Landing = () => {
   const { isDarkMode } = useTheme();
@@ -95,7 +95,7 @@ const Landing = () => {
             ]}
           >
             <Image 
-              source={require('../assets/local-hive-logo.png')} 
+              source={require('../../assets/local-hive-logo.png')} 
               style={styles.logo}
               resizeMode="contain"
             />
@@ -131,7 +131,7 @@ const Landing = () => {
           {/* Email Button */}
           <TouchableOpacity 
             style={styles.emailButton}
-            onPress={() => router.push("/email-signup")}
+            onPress={() => router.push("email-signup")}
           >
             <MaterialIcons name="email" size={20} color="white" style={styles.buttonIcon} />
             <Text style={styles.emailButtonText}>Continue with Email</Text>
@@ -141,7 +141,7 @@ const Landing = () => {
         {/* Sign In Link */}
         <Animated.View style={[styles.signInContainer, { opacity: fadeAnim.signIn }]}>
           <Text style={styles.signInText}>Already have an account? </Text>
-          <Link href="/signin" style={styles.signInLink}>Sign In</Link>
+          <Link href="signin" style={styles.signInLink}>Sign In</Link>
         </Animated.View>
         
         {/* Features List */}
@@ -260,26 +260,26 @@ const styles = StyleSheet.create({
   },
   signInContainer: {
     flexDirection: 'row',
-    marginTop: 20,
-    marginBottom: 40,
+    marginVertical: 20,
   },
   signInText: {
     color: 'white',
-    opacity: 0.9,
+    fontSize: 15,
   },
   signInLink: {
     color: 'white',
+    fontSize: 15,
     fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
   featuresContainer: {
     width: '100%',
-    marginTop: 'auto',
-    marginBottom: 40,
+    marginTop: 20,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   featureIcon: {
     marginRight: 10,

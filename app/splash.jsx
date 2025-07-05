@@ -1,22 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, Image, ActivityIndicator, Text, Animated } from 'react-native';
 import { useRouter, SplashScreen } from 'expo-router';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/Colors';
 import GradientBackground from '../components/GradientBackground';
-
-// Hide the native splash screen when this component is mounted
-SplashScreen.hideAsync().catch(() => {
-  // It's okay if this fails
-});
+import { StatusBar } from 'expo-status-bar';
 
 const SplashScreenComponent = () => {
   const router = useRouter();
-  const { user, loading, rememberMe } = useAuth();
-  const { theme, isDarkMode } = useTheme();
+  const { isDarkMode } = useTheme();
+  const { user, loading } = useAuth();
   const [isReady, setIsReady] = useState(false);
-  const [nextRoute, setNextRoute] = useState('');
+  const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
 
   // Animation values
   const fadeAnim = {
@@ -25,56 +21,78 @@ const SplashScreenComponent = () => {
     text: useRef(new Animated.Value(0)).current,
   };
 
-  // Start fade-in animations when component mounts
-  useEffect(() => {
-    Animated.stagger(200, [
-      Animated.timing(fadeAnim.logo, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim.activity, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim.text, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+  // Scale animation for logo
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
-  // Determine the next route based on auth state
+  // Hide the native splash screen when this component is mounted and ready
   useEffect(() => {
-    if (!loading) {
-      const route = user ? '/' : '/landing';
-      setNextRoute(route);
-    }
-  }, [loading, user]);
-
-  // Handle timing and animation
-  useEffect(() => {
-    let timeoutId;
-    
-    if (!loading) {
-      // Wait a minimum time to show the splash screen
-      timeoutId = setTimeout(() => {
-        setIsReady(true);
-      }, 2000); // Show splash for at least 2 seconds
-    }
-    
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+    const hideSplash = async () => {
+      try {
+        // Hide the native splash screen
+        await SplashScreen.hideAsync();
+        console.log('Native splash screen hidden');
+        setNativeSplashHidden(true);
+      } catch (e) {
+        // It's okay if this fails
+        console.log('Error hiding native splash:', e);
+        setNativeSplashHidden(true); // Continue anyway
       }
     };
-  }, [loading]);
+    
+    // Small delay to ensure component is mounted before hiding splash
+    setTimeout(hideSplash, 100);
+  }, []);
+
+  // Start fade-in animations when native splash is hidden
+  useEffect(() => {
+    if (nativeSplashHidden) {
+      console.log('Starting splash animations');
+      
+      Animated.stagger(200, [
+        // Logo animation with scale and fade
+        Animated.parallel([
+          Animated.timing(fadeAnim.logo, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.spring(scaleAnim, {
+            toValue: 1,
+            friction: 6,
+            tension: 40,
+            useNativeDriver: true,
+          }),
+        ]),
+        
+        // Activity indicator fade in
+        Animated.timing(fadeAnim.activity, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        
+        // Text fade in
+        Animated.timing(fadeAnim.text, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Wait a minimum time to show the splash screen
+      const timeoutId = setTimeout(() => {
+        setIsReady(true);
+      }, 3000); // Show splash for at least 3 seconds
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [nativeSplashHidden]);
 
   // Handle animation and navigation
   useEffect(() => {
-    if (isReady && nextRoute) {
+    if (isReady && nativeSplashHidden && !loading) {
+      console.log('Splash screen ready, starting exit animations');
+      
       // Start fade-out animations
       Animated.parallel([
         Animated.timing(fadeAnim.logo, {
@@ -93,11 +111,24 @@ const SplashScreenComponent = () => {
           useNativeDriver: true,
         }),
       ]).start(() => {
-        // Navigate after animation completes
-        router.replace(nextRoute);
+        console.log('Navigating after splash screen');
+        // Navigate to main app if authenticated, landing if not
+        try {
+          if (user) {
+            console.log('User is authenticated, navigating to main app');
+            router.replace('/(app)');
+          } else {
+            console.log('User is not authenticated, navigating to landing');
+            router.replace('/(auth)/landing');
+          }
+        } catch (error) {
+          console.error('Navigation error:', error);
+          // Fallback to landing page
+          router.replace('/(auth)/landing');
+        }
       });
     }
-  }, [isReady, nextRoute]);
+  }, [isReady, nativeSplashHidden, user, loading, router]);
 
   // Define gradient colors
   const gradientColors = isDarkMode
@@ -106,6 +137,7 @@ const SplashScreenComponent = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="light" />
       <GradientBackground
         colors={gradientColors}
         start={{ x: 0, y: 0 }}
@@ -114,7 +146,15 @@ const SplashScreenComponent = () => {
       />
       
       <View style={styles.content}>
-        <Animated.View style={{ opacity: fadeAnim.logo, transform: [{ scale: fadeAnim.logo }] }}>
+        <Animated.View 
+          style={[
+            styles.logoContainer, 
+            { 
+              opacity: fadeAnim.logo,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
           <Image
             source={require('../assets/local-hive-logo.png')}
             style={styles.logo}
@@ -141,6 +181,7 @@ const SplashScreenComponent = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#7928CA', // Match the native splash background color
   },
   absoluteFill: {
     position: 'absolute',
@@ -152,6 +193,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoContainer: {
     alignItems: 'center',
   },
   logo: {
