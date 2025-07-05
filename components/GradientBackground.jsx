@@ -25,6 +25,8 @@ const GradientBackground = ({
       style={[styles.gradient, style]}
       start={start}
       end={end}
+      shouldRasterizeIOS={true}
+      renderToHardwareTextureAndroid={true}
     >
       {children}
     </LinearGradient>
@@ -34,6 +36,11 @@ const GradientBackground = ({
 const styles = StyleSheet.create({
   gradient: {
     flex: 1,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
 });
 

@@ -1,0 +1,40 @@
+import { useEffect } from 'react';
+import { LogBox, AppState, Platform } from 'react-native';
+import { SplashScreen } from 'expo-router';
+
+// Prevent the splash screen from auto-hiding before we're ready
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // If this fails, it's okay to proceed
+});
+
+// Ignore specific warnings that are not relevant
+LogBox.ignoreLogs([
+  'Warning: Failed prop type',
+  'Non-serializable values were found in the navigation state',
+  'ViewPropTypes will be removed from React Native',
+  'Sending `onAnimatedValueUpdate` with no listeners registered',
+  '`setBackgroundColorAsync` is not supported with edge-to-edge enabled',
+  '`setBehaviorAsync` is not supported with edge-to-edge enabled',
+]);
+
+export default function App({ children }) {
+  useEffect(() => {
+    // We don't hide the splash screen here anymore
+    // We'll let the splash.jsx component handle it
+    
+    // App state change listener to improve stability
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        // App came to the foreground
+        // You can add additional logic here if needed
+      }
+    });
+    
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+  
+  // Return the children without any additional wrappers
+  return children;
+} 

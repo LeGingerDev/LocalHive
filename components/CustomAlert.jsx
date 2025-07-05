@@ -12,7 +12,7 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/Colors';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const CustomAlert = ({ 
   visible, 

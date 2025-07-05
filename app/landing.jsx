@@ -3,10 +3,9 @@ import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Platform, Statu
 import { Ionicons, MaterialIcons, FontAwesome, AntDesign } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import GradientBackground from '../components/GradientBackground';
 
 const Landing = () => {
-  const { theme, isDarkMode } = useTheme();
+  const { isDarkMode } = useTheme();
   const router = useRouter();
   
   // Animation values
@@ -80,19 +79,11 @@ const Landing = () => {
   // Calculate top padding to account for status bar height
   const statusBarHeight = Platform.OS === 'android' ? RNStatusBar.currentHeight || 0 : 0;
   
-  // Define gradient colors based on theme
-  const gradientColors = isDarkMode
-    ? ['#7928CA', '#221C35', '#003366'] // Dark theme gradient - purple to deep blue
-    : ['#9900FF', '#5E17EB', '#0066FF']; // Light theme gradient - vibrant purple to blue
-  
   return (
-    <GradientBackground
-      colors={gradientColors}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
-      <SafeAreaView style={[styles.safeArea, { paddingTop: statusBarHeight }]}>
-        <View style={styles.content}>
+    <SafeAreaView style={[styles.safeArea, { paddingTop: statusBarHeight }]}>
+      <View style={styles.content}>
+        {/* Header Section */}
+        <View style={styles.headerSection}>
           {/* App Logo */}
           <Animated.View 
             style={[
@@ -118,57 +109,60 @@ const Landing = () => {
           <Animated.Text style={[styles.subtitle, { opacity: fadeAnim.subtitle }]}>
             Build shared local knowledge with your group
           </Animated.Text>
-          
-          {/* Sign In Options */}
-          <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim.buttons }]}>
-            {/* Google Button */}
-            <TouchableOpacity style={styles.googleButton}>
-              <AntDesign name="google" size={20} color="black" style={styles.buttonIcon} />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
-            </TouchableOpacity>
-            
-            {/* Apple Button */}
-            <TouchableOpacity style={styles.appleButton}>
-              <AntDesign name="apple1" size={20} color="white" style={styles.buttonIcon} />
-              <Text style={styles.appleButtonText}>Continue with Apple</Text>
-            </TouchableOpacity>
-            
-            {/* Email Button */}
-            <TouchableOpacity 
-              style={styles.emailButton}
-              onPress={() => router.push("/email-signup")}
-            >
-              <MaterialIcons name="email" size={20} color="white" style={styles.buttonIcon} />
-              <Text style={styles.emailButtonText}>Continue with Email</Text>
-            </TouchableOpacity>
-          </Animated.View>
-          
-          {/* Sign In Link */}
-          <Animated.View style={[styles.signInContainer, { opacity: fadeAnim.signIn }]}>
-            <Text style={styles.signInText}>Already have an account? </Text>
-            <Link href="/signin" style={styles.signInLink}>Sign In</Link>
-          </Animated.View>
-          
-          {/* Features List */}
-          <Animated.View style={[styles.featuresContainer, { opacity: fadeAnim.features }]}>
-            <View style={styles.featureItem}>
-              <AntDesign name="search1" size={18} color="white" style={styles.featureIcon} />
-              <Text style={styles.featureText}>AI-powered smart search</Text>
-            </View>
-            
-            <View style={styles.featureItem}>
-              <FontAwesome name="group" size={18} color="white" style={styles.featureIcon} />
-              <Text style={styles.featureText}>Share knowledge with your group</Text>
-            </View>
-            
-            <View style={styles.featureItem}>
-              <Ionicons name="location" size={18} color="white" style={styles.featureIcon} />
-              <Text style={styles.featureText}>Discover local gems together</Text>
-            </View>
-          </Animated.View>
         </View>
-      </SafeAreaView>
-    </GradientBackground>
+        
+        {/* Spacer to push buttons down */}
+        <View style={styles.spacer} />
+        
+        {/* Sign In Options */}
+        <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim.buttons }]}>
+          {/* Google Button */}
+          <TouchableOpacity style={styles.googleButton}>
+            <AntDesign name="google" size={20} color="black" style={styles.buttonIcon} />
+            <Text style={styles.googleButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
+          
+          {/* Apple Button */}
+          <TouchableOpacity style={styles.appleButton}>
+            <AntDesign name="apple1" size={20} color="white" style={styles.buttonIcon} />
+            <Text style={styles.appleButtonText}>Continue with Apple</Text>
+          </TouchableOpacity>
+          
+          {/* Email Button */}
+          <TouchableOpacity 
+            style={styles.emailButton}
+            onPress={() => router.push("/email-signup")}
+          >
+            <MaterialIcons name="email" size={20} color="white" style={styles.buttonIcon} />
+            <Text style={styles.emailButtonText}>Continue with Email</Text>
+          </TouchableOpacity>
+        </Animated.View>
+        
+        {/* Sign In Link */}
+        <Animated.View style={[styles.signInContainer, { opacity: fadeAnim.signIn }]}>
+          <Text style={styles.signInText}>Already have an account? </Text>
+          <Link href="/signin" style={styles.signInLink}>Sign In</Link>
+        </Animated.View>
+        
+        {/* Features List */}
+        <Animated.View style={[styles.featuresContainer, { opacity: fadeAnim.features }]}>
+          <View style={styles.featureItem}>
+            <AntDesign name="search1" size={18} color="white" style={styles.featureIcon} />
+            <Text style={styles.featureText}>AI-powered smart search</Text>
+          </View>
+          
+          <View style={styles.featureItem}>
+            <FontAwesome name="group" size={18} color="white" style={styles.featureIcon} />
+            <Text style={styles.featureText}>Share knowledge with your group</Text>
+          </View>
+          
+          <View style={styles.featureItem}>
+            <Ionicons name="location" size={18} color="white" style={styles.featureIcon} />
+            <Text style={styles.featureText}>Discover local gems together</Text>
+          </View>
+        </Animated.View>
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -181,6 +175,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 60,
     paddingHorizontal: 20,
+  },
+  headerSection: {
+    alignItems: 'center',
   },
   logoContainer: {
     marginBottom: 20,
@@ -206,8 +203,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'white',
     textAlign: 'center',
-    marginBottom: 40,
     opacity: 0.9,
+  },
+  spacer: {
+    flex: 0.5, // This pushes the buttons down further toward the bottom
   },
   buttonContainer: {
     width: '100%',

@@ -10,11 +10,12 @@ import ThemeToggle from '../components/ThemeToggle';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { Colors } from '../constants/Colors';
 import { getUserProfile, updateUserProfile, createProfile } from '../lib/supabaseDb';
+import { supabase } from '../lib/supabase';
 
 const Profile = () => {
   const router = useRouter();
-  const { theme } = useTheme();
-  const { user, ensureProfile } = useAuth();
+  const { theme, isDarkMode, useSystemTheme } = useTheme();
+  const { user, ensureProfile, signOut } = useAuth();
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
   
   const [profile, setProfile] = useState(null);
@@ -23,6 +24,9 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState(null);
+
+  // Debug logging
+  console.log('Profile rendering with theme:', { isDarkMode, useSystemTheme });
 
   useEffect(() => {
     if (user) {
@@ -54,6 +58,7 @@ const Profile = () => {
         }
       }
       
+      console.log('Fetched profile data:', profileData);
       setProfile(profileData || null);
       setFullName(profileData?.full_name || user?.user_metadata?.full_name || '');
       setBio(profileData?.bio || '');
@@ -97,6 +102,49 @@ const Profile = () => {
       setError('Failed to update profile');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  // Test function to directly update theme preference
+  const testThemeUpdate = async () => {
+    try {
+      setUpdating(true);
+      setError(null);
+      
+      console.log('Testing direct theme update to Supabase...');
+      
+      // Direct update using Supabase client
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          theme_preference: isDarkMode ? 'dark' : 'light',
+          use_system_theme: useSystemTheme
+        })
+        .eq('id', user.id)
+        .select();
+      
+      if (error) {
+        console.error('Direct Supabase update error:', error);
+        setError('Failed to update theme preference: ' + error.message);
+      } else {
+        console.log('Direct update successful:', data);
+        showAlert('Success', 'Theme preference updated directly');
+      }
+    } catch (error) {
+      console.error('Error in direct theme update:', error);
+      setError('Failed to update theme preference');
+    } finally {
+      setUpdating(false);
+    }
+  };
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.replace('/landing');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      setError('Failed to sign out');
     }
   };
 
@@ -171,7 +219,23 @@ const Profile = () => {
               <Text style={[styles.sectionTitle, { color: theme.text }]}>App Settings</Text>
               
               <View style={[styles.settingItem, { borderColor: theme.border }]}>
-                <ThemeToggle />
+                <Text style={[styles.settingLabel, { color: theme.textSecondary }]}>
+                  Appearance {isDarkMode ? '(Dark)' : '(Light)'} 
+                  {useSystemTheme ? ' - System' : ' - Manual'}
+                </Text>
+                <ThemeToggle 
+                  showLabel={false} 
+                  showSystemOption={true} 
+                  style={styles.themeToggle} 
+                />
+                
+                <TouchableOpacity
+                  style={[styles.testButton, { backgroundColor: Colors.secondary }]}
+                  onPress={testThemeUpdate}
+                  disabled={updating}
+                >
+                  <Text style={styles.testButtonText}>Test Theme Update</Text>
+                </TouchableOpacity>
               </View>
             </View>
             
@@ -188,10 +252,10 @@ const Profile = () => {
             </TouchableOpacity>
             
             <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
+              style={[styles.signOutButton, { backgroundColor: Colors.secondary }]}
+              onPress={handleSignOut}
             >
-              <Text style={[styles.backButtonText, { color: theme.textSecondary }]}>Back</Text>
+              <Text style={styles.signOutButtonText}>Sign Out</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -211,76 +275,97 @@ const Profile = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingBottom: 90, // Add extra padding for the tab bar
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    padding: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 24,
+    marginBottom: 20,
+    textAlign: 'center',
   },
   errorText: {
     color: '#ff3b30',
-    marginBottom: 16,
+    marginBottom: 20,
     textAlign: 'center',
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    fontSize: 16,
     marginBottom: 8,
-    fontWeight: '500',
   },
   input: {
     height: 50,
-    borderRadius: 8,
     borderWidth: 1,
-    paddingHorizontal: 16,
+    borderRadius: 8,
+    paddingHorizontal: 12,
     fontSize: 16,
   },
   bioInput: {
-    height: 120,
-    borderRadius: 8,
+    height: 100,
     borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingTop: 12,
     fontSize: 16,
   },
   settingsSection: {
     marginTop: 20,
-    marginBottom: 10,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     marginBottom: 12,
   },
   settingItem: {
-    borderBottomWidth: 1,
     paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  settingLabel: {
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  themeToggle: {
+    alignSelf: 'flex-start',
   },
   updateButton: {
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 10,
   },
   updateButtonText: {
-    color: 'white',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
-  backButton: {
-    marginTop: 24,
-    alignSelf: 'center',
+  signOutButton: {
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
   },
-  backButtonText: {
+  signOutButtonText: {
+    color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  testButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  testButtonText: {
+    color: '#fff',
+    fontSize: 14,
   },
 });
 

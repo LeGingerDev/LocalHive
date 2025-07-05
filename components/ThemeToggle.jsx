@@ -4,14 +4,27 @@ import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 
-const ThemeToggle = ({ style, showLabel = true, iconSize = 20 }) => {
-  const { isDarkMode, toggleTheme, theme } = useTheme();
+const ThemeToggle = ({ style, showLabel = true, iconSize = 20, showSystemOption = false }) => {
+  const { isDarkMode, toggleTheme, theme, useSystemTheme, toggleUseSystemTheme } = useTheme();
+
+  // Debug logging
+  console.log('ThemeToggle rendering with:', { isDarkMode, useSystemTheme });
+
+  const handleThemeToggle = () => {
+    console.log('Theme toggle pressed');
+    toggleTheme();
+  };
+
+  const handleSystemToggle = () => {
+    console.log('System toggle pressed');
+    toggleUseSystemTheme();
+  };
 
   return (
     <View style={[styles.container, style]}>
       {showLabel && (
         <Text style={[styles.label, { color: theme.textSecondary }]}>
-          {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+          {useSystemTheme ? 'System Theme' : (isDarkMode ? 'Dark Mode' : 'Light Mode')}
         </Text>
       )}
       
@@ -25,11 +38,12 @@ const ThemeToggle = ({ style, showLabel = true, iconSize = 20 }) => {
         
         <Switch
           value={isDarkMode}
-          onValueChange={toggleTheme}
+          onValueChange={handleThemeToggle}
           trackColor={{ false: '#e9e9ea', true: Colors.primaryLight }}
           thumbColor={isDarkMode ? Colors.primary : '#f4f3f4'}
           ios_backgroundColor="#e9e9ea"
           style={styles.switch}
+          testID="theme-toggle-switch"
         />
         
         <Ionicons 
@@ -39,26 +53,51 @@ const ThemeToggle = ({ style, showLabel = true, iconSize = 20 }) => {
           style={styles.icon}
         />
       </View>
+      
+      {showSystemOption && (
+        <View style={styles.systemOptionContainer}>
+          <Text style={[styles.systemOptionText, { color: theme.textSecondary }]}>
+            Use device settings
+          </Text>
+          <Switch
+            value={useSystemTheme}
+            onValueChange={handleSystemToggle}
+            trackColor={{ false: '#e9e9ea', true: Colors.primaryLight }}
+            thumbColor={useSystemTheme ? Colors.primary : '#f4f3f4'}
+            ios_backgroundColor="#e9e9ea"
+            style={styles.switch}
+            testID="system-theme-toggle-switch"
+          />
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingVertical: 8,
     paddingHorizontal: 4,
   },
   label: {
     fontSize: 16,
     fontWeight: '500',
-    marginRight: 12,
+    marginBottom: 8,
   },
   toggleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  systemOptionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  systemOptionText: {
+    fontSize: 14,
   },
   icon: {
     marginHorizontal: 8,
