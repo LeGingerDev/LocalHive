@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Platform, StatusBar as RNStatusBar, Image } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Platform, StatusBar as RNStatusBar, Image, Animated } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome, AntDesign } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
@@ -8,6 +8,74 @@ import GradientBackground from '../components/GradientBackground';
 const Landing = () => {
   const { theme, isDarkMode } = useTheme();
   const router = useRouter();
+  
+  // Animation values
+  const fadeAnim = {
+    logo: useRef(new Animated.Value(0)).current,
+    title: useRef(new Animated.Value(0)).current,
+    subtitle: useRef(new Animated.Value(0)).current,
+    buttons: useRef(new Animated.Value(0)).current,
+    signIn: useRef(new Animated.Value(0)).current,
+    features: useRef(new Animated.Value(0)).current,
+  };
+  
+  // Scale animation for logo
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  
+  useEffect(() => {
+    // Create a staggered animation sequence
+    Animated.stagger(150, [
+      // Logo animation with scale and fade
+      Animated.parallel([
+        Animated.timing(fadeAnim.logo, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 6,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+      
+      // Title fade in
+      Animated.timing(fadeAnim.title, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      
+      // Subtitle fade in
+      Animated.timing(fadeAnim.subtitle, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      
+      // Buttons fade in
+      Animated.timing(fadeAnim.buttons, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+      
+      // Sign in link fade in
+      Animated.timing(fadeAnim.signIn, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      
+      // Features fade in
+      Animated.timing(fadeAnim.features, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
   
   // Calculate top padding to account for status bar height
   const statusBarHeight = Platform.OS === 'android' ? RNStatusBar.currentHeight || 0 : 0;
@@ -26,18 +94,33 @@ const Landing = () => {
       <SafeAreaView style={[styles.safeArea, { paddingTop: statusBarHeight }]}>
         <View style={styles.content}>
           {/* App Logo */}
-          <Image 
-            source={require('../assets/local-hive-logo.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Animated.View 
+            style={[
+              styles.logoContainer, 
+              { 
+                opacity: fadeAnim.logo,
+                transform: [{ scale: scaleAnim }]
+              }
+            ]}
+          >
+            <Image 
+              source={require('../assets/local-hive-logo.png')} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </Animated.View>
           
           {/* App Title and Subtitle */}
-          <Text style={styles.title}>Local Hive</Text>
-          <Text style={styles.subtitle}>Build shared local knowledge with your group</Text>
+          <Animated.Text style={[styles.title, { opacity: fadeAnim.title }]}>
+            Local Hive
+          </Animated.Text>
+          
+          <Animated.Text style={[styles.subtitle, { opacity: fadeAnim.subtitle }]}>
+            Build shared local knowledge with your group
+          </Animated.Text>
           
           {/* Sign In Options */}
-          <View style={styles.buttonContainer}>
+          <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim.buttons }]}>
             {/* Google Button */}
             <TouchableOpacity style={styles.googleButton}>
               <AntDesign name="google" size={20} color="black" style={styles.buttonIcon} />
@@ -58,16 +141,16 @@ const Landing = () => {
               <MaterialIcons name="email" size={20} color="white" style={styles.buttonIcon} />
               <Text style={styles.emailButtonText}>Continue with Email</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
           
           {/* Sign In Link */}
-          <View style={styles.signInContainer}>
+          <Animated.View style={[styles.signInContainer, { opacity: fadeAnim.signIn }]}>
             <Text style={styles.signInText}>Already have an account? </Text>
             <Link href="/signin" style={styles.signInLink}>Sign In</Link>
-          </View>
+          </Animated.View>
           
           {/* Features List */}
-          <View style={styles.featuresContainer}>
+          <Animated.View style={[styles.featuresContainer, { opacity: fadeAnim.features }]}>
             <View style={styles.featureItem}>
               <AntDesign name="search1" size={18} color="white" style={styles.featureIcon} />
               <Text style={styles.featureText}>AI-powered smart search</Text>
@@ -82,7 +165,7 @@ const Landing = () => {
               <Ionicons name="location" size={18} color="white" style={styles.featureIcon} />
               <Text style={styles.featureText}>Discover local gems together</Text>
             </View>
-          </View>
+          </Animated.View>
         </View>
       </SafeAreaView>
     </GradientBackground>
@@ -99,10 +182,12 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 20,
   },
+  logoContainer: {
+    marginBottom: 20,
+  },
   logo: {
     width: 130,
     height: 130,
-    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
