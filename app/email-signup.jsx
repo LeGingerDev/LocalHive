@@ -1,15 +1,105 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import ThemedView from '../components/ThemedView';
+import CustomAlert from '../components/CustomAlert';
+import { useCustomAlert } from '../hooks/useCustomAlert';
 import { Colors } from '../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import { createProfile } from '../lib/supabaseDb';
+import { supabase } from '../lib/supabase';
 
 const EmailSignup = () => {
   const router = useRouter();
   const { theme } = useTheme();
+  const { signUp, signIn } = useAuth();
+  const { alertConfig, showAlert, hideAlert } = useCustomAlert();
+  
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const validateInputs = () => {
+    if (!fullName.trim()) {
+      setError('Please enter your full name');
+      return false;
+    }
+    if (!email.trim()) {
+      setError('Please enter your email');
+      return false;
+    }
+    if (!password || password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSignUp = async () => {
+    if (!validateInputs()) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Sign up with Supabase - with autoconfirm enabled
+      const { data, error: signUpError } = await signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+          emailRedirectTo: 'exp://localhost:19000'
+        }
+      });
+
+      if (signUpError) throw signUpError;
+
+      if (data?.user) {
+        try {
+          // Create profile immediately
+          await createProfile(data.user.id, {
+            full_name: fullName,
+            email: email,
+          });
+          
+          // Sign in immediately after signup
+          const { error: signInError } = await signIn({ 
+            email, 
+            password 
+          }, true); // Always remember the user
+          
+          if (signInError) throw signInError;
+          
+          // Success! Show welcome message and redirect to main page
+          showAlert(
+            'Welcome to Local Hive!',
+            'Your account has been created successfully.',
+            [{ text: 'Get Started', onPress: () => router.replace('/') }]
+          );
+        } catch (error) {
+          console.error('Error during auto-signin:', error);
+          // If auto-signin fails, redirect to signin page
+          showAlert(
+            'Account Created',
+            'Your account has been created, but we couldn\'t sign you in automatically. Please sign in manually.',
+            [{ text: 'OK', onPress: () => router.push('/signin') }]
+          );
+        }
+      }
+    } catch (error) {
+      setError(error.message || 'Failed to create account');
+      console.error('Sign up error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   return (
     <ThemedView style={styles.container}>
@@ -22,6 +112,10 @@ const EmailSignup = () => {
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
           Join Local Hive and start sharing knowledge
         </Text>
+
+        {error && (
+          <Text style={styles.errorText}>{error}</Text>
+        )}
 
         {/* Name Input */}
         <View style={styles.inputContainer}>
@@ -37,6 +131,8 @@ const EmailSignup = () => {
             ]}
             placeholder="Enter your full name"
             placeholderTextColor={theme.textTertiary}
+            value={fullName}
+            onChangeText={setFullName}
           />
         </View>
 
@@ -56,6 +152,8 @@ const EmailSignup = () => {
             placeholderTextColor={theme.textTertiary}
             keyboardType="email-address"
             autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
           />
         </View>
 
@@ -76,6 +174,8 @@ const EmailSignup = () => {
               placeholderTextColor={theme.textTertiary}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
+              value={password}
+              onChangeText={setPassword}
             />
             <TouchableOpacity 
               style={styles.eyeIcon}
@@ -110,8 +210,14 @@ const EmailSignup = () => {
         {/* Sign Up Button */}
         <TouchableOpacity 
           style={[styles.signUpButton, { backgroundColor: Colors.primary }]}
+          onPress={handleSignUp}
+          disabled={loading}
         >
-          <Text style={styles.signUpButtonText}>Create Account</Text>
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.signUpButtonText}>Create Account</Text>
+          )}
         </TouchableOpacity>
 
         {/* Sign In Link */}
@@ -124,6 +230,14 @@ const EmailSignup = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onDismiss={hideAlert}
+      />
     </ThemedView>
   );
 };
@@ -148,6 +262,11 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     marginBottom: 32,
+  },
+  errorText: {
+    color: '#ff3b30',
+    marginBottom: 16,
+    textAlign: 'center',
   },
   inputContainer: {
     marginBottom: 20,

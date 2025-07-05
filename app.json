@@ -8,10 +8,11 @@
     "icon": "./assets/local-hive-logo.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "backgroundColor": "#FFFFFF",
     "splash": {
       "image": "./assets/local-hive-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#6a5acd"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true
@@ -19,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/local-hive-logo.png",
-        "backgroundColor": "#6a5acd"
+        "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
       "softwareNavBarColor": "transparent",
@@ -29,6 +30,15 @@
     "web": {
       "favicon": "./assets/local-hive-logo.png"
     },
-    "plugins": ["expo-router"]
+    "plugins": ["expo-router"],
+    "assetBundlePatterns": ["**/*"],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "local-hive"
+      }
+    }
   }
 }

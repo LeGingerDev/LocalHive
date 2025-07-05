@@ -1,21 +1,27 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Platform, StatusBar as RNStatusBar, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons, FontAwesome, AntDesign } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import GradientBackground from '../components/GradientBackground';
 
 const Landing = () => {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const router = useRouter();
   
   // Calculate top padding to account for status bar height
   const statusBarHeight = Platform.OS === 'android' ? RNStatusBar.currentHeight || 0 : 0;
   
+  // Define gradient colors based on theme
+  const gradientColors = isDarkMode
+    ? ['#7928CA', '#221C35', '#003366'] // Dark theme gradient - purple to deep blue
+    : ['#9900FF', '#5E17EB', '#0066FF']; // Light theme gradient - vibrant purple to blue
+  
   return (
-    <LinearGradient
-      colors={['#6a5acd', '#836FFF']}
-      style={styles.gradient}
+    <GradientBackground
+      colors={gradientColors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
     >
       <SafeAreaView style={[styles.safeArea, { paddingTop: statusBarHeight }]}>
         <View style={styles.content}>
@@ -79,16 +85,11 @@ const Landing = () => {
           </View>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </GradientBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
   safeArea: {
     flex: 1,
   },
