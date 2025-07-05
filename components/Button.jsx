@@ -26,7 +26,7 @@ const Button = ({
   style,
   ...props
 }) => {
-  const { isDarkMode } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   
   // Define base colors
   const getColors = () => {
@@ -37,9 +37,9 @@ const Button = ({
         border: Colors.primary,
       },
       secondary: {
-        background: isDarkMode ? '#333' : '#e0e0e0',
-        text: isDarkMode ? '#fff' : '#333',
-        border: isDarkMode ? '#444' : '#ccc',
+        background: theme.surfaceColor,
+        text: theme.text,
+        border: theme.border,
       },
       outline: {
         background: 'transparent',
@@ -52,18 +52,18 @@ const Button = ({
         border: 'transparent',
       },
       danger: {
-        background: Colors.danger || '#dc3545',
+        background: theme.error || Colors.danger || '#dc3545',
         text: '#fff',
-        border: Colors.danger || '#dc3545',
+        border: theme.error || Colors.danger || '#dc3545',
       },
     };
     
     // If disabled, adjust colors
     if (disabled) {
       const disabledColors = {
-        background: isDarkMode ? '#333' : '#e0e0e0',
-        text: isDarkMode ? '#555' : '#999',
-        border: isDarkMode ? '#444' : '#ccc',
+        background: theme.inputBackground,
+        text: theme.textTertiary,
+        border: theme.border,
       };
       
       // For text and outline variants when disabled

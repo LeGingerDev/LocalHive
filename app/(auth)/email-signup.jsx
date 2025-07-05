@@ -78,7 +78,7 @@ const EmailSignUp = () => {
       // Show success message
       showAlert(
         'Account Created',
-        'Your account has been created successfully! Please check your email for verification.',
+        'Your account has been created successfully!',
         [
           { 
             text: 'OK', 
@@ -103,6 +103,7 @@ const EmailSignUp = () => {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
       <View style={styles.content}>
         <Text style={styles.title}>Create Account</Text>
@@ -114,135 +115,137 @@ const EmailSignUp = () => {
           <Text style={styles.errorText}>{error}</Text>
         )}
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Full Name</Text>
-          <TextInput 
-            style={[
-              styles.input, 
-              { 
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                color: 'white',
-                borderColor: 'rgba(255, 255, 255, 0.3)'
-              }
-            ]}
-            placeholder="Enter your full name"
-            placeholderTextColor="rgba(255, 255, 255, 0.6)"
-            value={fullName}
-            onChangeText={setFullName}
-            autoCapitalize="words"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput 
-            style={[
-              styles.input, 
-              { 
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                color: 'white',
-                borderColor: 'rgba(255, 255, 255, 0.3)'
-              }
-            ]}
-            placeholder="Enter your email"
-            placeholderTextColor="rgba(255, 255, 255, 0.6)"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordContainer}>
+        <View style={styles.formContainer}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Full Name</Text>
             <TextInput 
               style={[
-                styles.passwordInput, 
+                styles.input, 
                 { 
                   backgroundColor: 'rgba(255, 255, 255, 0.15)',
                   color: 'white',
                   borderColor: 'rgba(255, 255, 255, 0.3)'
                 }
               ]}
-              placeholder="Create a password"
+              placeholder="Enter your full name"
               placeholderTextColor="rgba(255, 255, 255, 0.6)"
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={setPassword}
+              value={fullName}
+              onChangeText={setFullName}
+              autoCapitalize="words"
             />
-            <TouchableOpacity 
-              style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Ionicons 
-                name={showPassword ? "eye-off" : "eye"} 
-                size={22} 
-                color="rgba(255, 255, 255, 0.6)" 
-              />
-            </TouchableOpacity>
           </View>
-          <Text style={styles.passwordHint}>
-            Password must be at least 8 characters with uppercase, lowercase, and numbers
-          </Text>
-        </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Confirm Password</Text>
-          <View style={styles.passwordContainer}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Email</Text>
             <TextInput 
               style={[
-                styles.passwordInput, 
+                styles.input, 
                 { 
                   backgroundColor: 'rgba(255, 255, 255, 0.15)',
                   color: 'white',
                   borderColor: 'rgba(255, 255, 255, 0.3)'
                 }
               ]}
-              placeholder="Confirm your password"
+              placeholder="Enter your email"
               placeholderTextColor="rgba(255, 255, 255, 0.6)"
-              secureTextEntry={!showConfirmPassword}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
-            <TouchableOpacity 
-              style={styles.eyeIcon}
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              <Ionicons 
-                name={showConfirmPassword ? "eye-off" : "eye"} 
-                size={22} 
-                color="rgba(255, 255, 255, 0.6)" 
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput 
+                style={[
+                  styles.passwordInput, 
+                  { 
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    color: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.3)'
+                  }
+                ]}
+                placeholder="Create a password"
+                placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
               />
+              <TouchableOpacity 
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons 
+                  name={showPassword ? "eye-off" : "eye"} 
+                  size={22} 
+                  color="rgba(255, 255, 255, 0.6)" 
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.passwordHint}>
+              Password must be at least 8 characters with uppercase, lowercase, and numbers
+            </Text>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Confirm Password</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput 
+                style={[
+                  styles.passwordInput, 
+                  { 
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    color: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.3)'
+                  }
+                ]}
+                placeholder="Confirm your password"
+                placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                secureTextEntry={!showConfirmPassword}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
+              <TouchableOpacity 
+                style={styles.eyeIcon}
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                <Ionicons 
+                  name={showConfirmPassword ? "eye-off" : "eye"} 
+                  size={22} 
+                  color="rgba(255, 255, 255, 0.6)" 
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <Button 
+            onPress={handleSignUp}
+            loading={loading}
+            disabled={loading}
+            style={styles.signUpButton}
+            fullWidth
+          >
+            Create Account
+          </Button>
+
+          <View style={styles.termsContainer}>
+            <Text style={styles.termsText}>
+              By creating an account, you agree to our{' '}
+              <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
+              <Text style={styles.termsLink}>Privacy Policy</Text>
+            </Text>
+          </View>
+
+          <View style={styles.signInContainer}>
+            <Text style={styles.signInText}>
+              Already have an account? 
+            </Text>
+            <TouchableOpacity onPress={() => router.push("signin")}>
+              <Text style={styles.signInLink}> Sign In</Text>
             </TouchableOpacity>
           </View>
-        </View>
-
-        <Button 
-          onPress={handleSignUp}
-          loading={loading}
-          disabled={loading}
-          style={styles.signUpButton}
-          fullWidth
-        >
-          Create Account
-        </Button>
-
-        <View style={styles.termsContainer}>
-          <Text style={styles.termsText}>
-            By creating an account, you agree to our{' '}
-            <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
-            <Text style={styles.termsLink}>Privacy Policy</Text>
-          </Text>
-        </View>
-
-        <View style={styles.signInContainer}>
-          <Text style={styles.signInText}>
-            Already have an account? 
-          </Text>
-          <TouchableOpacity onPress={() => router.push("signin")}>
-            <Text style={styles.signInLink}> Sign In</Text>
-          </TouchableOpacity>
         </View>
       </View>
       
@@ -263,12 +266,16 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flexGrow: 1,
-    paddingBottom: 40,
+    paddingBottom: 20,
+    justifyContent: 'flex-start',
+    paddingTop: 40,
   },
   content: {
-    flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  formContainer: {
+    marginTop: 10,
   },
   title: {
     fontSize: 28,
@@ -280,7 +287,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: 'white',
-    marginBottom: 32,
+    marginBottom: 20,
     textAlign: 'center',
     opacity: 0.8,
   },

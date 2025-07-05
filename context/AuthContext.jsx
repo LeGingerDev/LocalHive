@@ -14,19 +14,28 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Load remember me preference from storage
+  // Initialize remember me preference
   useEffect(() => {
-    const loadRememberMePreference = async () => {
+    const initializeRememberMe = async () => {
       try {
+        // Check if the remember me preference is already set
         const value = await AsyncStorage.getItem(REMEMBER_ME_KEY);
-        // Default to true if not set
-        setRememberMe(value !== 'false');
+        
+        if (value === null) {
+          // If not set, initialize it to true (default)
+          await AsyncStorage.setItem(REMEMBER_ME_KEY, 'true');
+          console.log('Remember me preference initialized to true');
+        } else {
+          // Use the existing preference
+          setRememberMe(value !== 'false');
+          console.log('Remember me preference loaded:', value !== 'false');
+        }
       } catch (e) {
-        console.error('Failed to load remember me preference:', e);
+        console.error('Failed to initialize remember me preference:', e);
       }
     };
 
-    loadRememberMePreference();
+    initializeRememberMe();
   }, []);
 
   // Check if profile exists and create if it doesn't
@@ -65,10 +74,26 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check for active session on mount
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      // First load the remember me preference
+      let shouldRemember = true; // Default to true
+      try {
+        const value = await AsyncStorage.getItem(REMEMBER_ME_KEY);
+        // Only if explicitly set to false, don't remember
+        shouldRemember = value !== 'false';
+        console.log('Remember me preference loaded:', shouldRemember);
+      } catch (e) {
+        console.error('Failed to load remember me preference:', e);
+      }
       
-      // If we have a session and remember me is enabled, use it
-      if (session) {
+      // Make sure the rememberMe state is in sync with storage
+      setRememberMe(shouldRemember);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session check:', session ? 'Session found' : 'No session');
+      
+      // If we have a session and remember me is not explicitly disabled, use it
+      if (session && shouldRemember) {
+        console.log('Using stored session');
         setSession(session);
         setUser(session?.user || null);
         
@@ -76,8 +101,16 @@ export const AuthProvider = ({ children }) => {
         if (session?.user) {
           await ensureProfile(session.user);
         }
+      } else if (session && !shouldRemember) {
+        // If remember me is disabled and we have a session, sign out to clear it
+        console.log('Remember me disabled - clearing session');
+        setSession(null);
+        setUser(null);
+        // Sign out without triggering the full sign out flow
+        await supabase.auth.signOut();
       } else {
-        // No session or remember me is disabled
+        // No session
+        console.log('No session found or session expired');
         setSession(null);
         setUser(null);
       }
@@ -115,22 +148,42 @@ export const AuthProvider = ({ children }) => {
   // Custom sign-in function that ensures profile exists
   const handleSignIn = async (credentials, remember = true) => {
     try {
+      console.log('Sign in with remember me:', remember);
+      
       // Save the remember me preference
       await AsyncStorage.setItem(REMEMBER_ME_KEY, remember.toString());
       setRememberMe(remember);
+      
+      // If remember me is disabled, first clear any existing sessions
+      if (!remember) {
+        console.log('Remember me disabled - clearing existing sessions');
+        // Clear any existing auth data
+        const keys = await AsyncStorage.getAllKeys();
+        const authKeys = keys.filter(key => key.startsWith('supabase.auth'));
+        if (authKeys.length > 0) {
+          await AsyncStorage.multiRemove(authKeys);
+          console.log('Cleared existing auth data:', authKeys.length, 'items');
+        }
+      }
       
       // Set session persistence based on remember me preference
       const sessionOptions = {
         persistSession: remember
       };
       
+      console.log('Signing in with options:', sessionOptions);
       const response = await supabase.auth.signInWithPassword({
         ...credentials,
         options: sessionOptions
       });
       
-      if (response.data?.user && !response.error) {
-        await ensureProfile(response.data.user);
+      if (response.error) {
+        console.error('Sign in error:', response.error);
+      } else {
+        console.log('Sign in successful');
+        if (response.data?.user) {
+          await ensureProfile(response.data.user);
+        }
       }
       
       return response;
@@ -152,8 +205,13 @@ export const AuthProvider = ({ children }) => {
       // If remember me is disabled, make sure to clear any stored data
       if (!shouldRemember) {
         try {
-          // Clear any additional storage if needed
-          console.log('Remember me disabled - clearing all session data');
+          // Clear any Supabase auth-related data from AsyncStorage
+          const keys = await AsyncStorage.getAllKeys();
+          const authKeys = keys.filter(key => key.startsWith('supabase.auth'));
+          if (authKeys.length > 0) {
+            await AsyncStorage.multiRemove(authKeys);
+          }
+          console.log('Remember me disabled - cleared all session data');
         } catch (clearError) {
           console.error('Error clearing session data:', clearError);
         }
@@ -171,18 +229,22 @@ export const AuthProvider = ({ children }) => {
     session,
     loading,
     rememberMe,
-    signUp: (data) => supabase.auth.signUp({
-      ...data,
-      options: {
-        ...data.options,
-        emailRedirectTo: 'exp://localhost:19000',
-        // Disable email confirmation by merging with any existing options
-        data: {
-          ...data.options?.data,
-          email_confirmed: true, // This is just a marker, doesn't actually confirm the email
-        }
-      }
-    }),
+    signUp: (data) => {
+      // By default, use the current rememberMe value for new signups
+      const persistSession = rememberMe;
+      console.log('Sign up with remember me:', persistSession);
+      
+      // Ensure the options object exists
+      const options = {
+        ...(data.options || {}),
+        persistSession
+      };
+      
+      return supabase.auth.signUp({
+        ...data,
+        options
+      });
+    },
     signIn: handleSignIn,
     signOut: handleSignOut,
     resetPassword: (email) => supabase.auth.resetPasswordForEmail(email),

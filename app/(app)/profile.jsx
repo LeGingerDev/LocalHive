@@ -9,6 +9,12 @@ import { Colors } from '../../constants/Colors';
 import CustomAlert from '../../components/CustomAlert';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import Button from '../../components/Button';
+import ProfileStats from '../../components/ProfileStats';
+import PersonalCode from '../../components/PersonalCode';
+import ProfileBanner from '../../components/ProfileBanner';
+import ProfileBio from '../../components/ProfileBio';
+import ProSubscriptionCard from '../../components/ProSubscriptionCard';
+import SettingsSection from '../../components/SettingsSection';
 import { supabase } from '../../lib/supabase';
 
 const ProfileScreen = () => {
@@ -18,7 +24,6 @@ const ProfileScreen = () => {
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [isThemeSaving, setIsThemeSaving] = useState(false);
   
   // Profile data state
@@ -28,12 +33,11 @@ const ProfileScreen = () => {
     joinDate: 'January 2023',
     location: 'San Francisco, CA',
     bio: 'Passionate about community building and local knowledge sharing.',
-    interests: ['Technology', 'Community', 'Local Events', 'Sustainability'],
-    groups: [
-      { id: 1, name: 'Tech Enthusiasts', members: 128 },
-      { id: 2, name: 'Neighborhood Watch', members: 56 },
-      { id: 3, name: 'Local Foodies', members: 94 },
-    ],
+    stats: {
+      itemsAdded: 23,
+      searches: 47
+    },
+    personalCode: 'HIVE-SJ47'
   });
   
   // Editable bio state
@@ -159,15 +163,6 @@ const ProfileScreen = () => {
         throw error;
       }
       
-      // Update local profile state
-      setProfile(prevProfile => ({
-        ...prevProfile,
-        bio: editableBio,
-      }));
-      
-      // Exit edit mode
-      setIsEditing(false);
-      
       showAlert(
         'Success',
         'Profile saved successfully!',
@@ -185,14 +180,7 @@ const ProfileScreen = () => {
     }
   };
   
-  const handleEditGroup = (groupId) => {
-    // Placeholder for future implementation
-    showAlert(
-      'Edit Group',
-      `This will allow you to edit group ${groupId} in a future update.`,
-      [{ text: 'OK' }]
-    );
-  };
+
   
   // Handle dark mode toggle with direct save to profile
   const handleToggleTheme = async () => {
@@ -259,11 +247,13 @@ const ProfileScreen = () => {
     }
   };
   
-  const textColor = isDarkMode ? '#e0e0e0' : '#333';
-  const subTextColor = isDarkMode ? '#aaa' : '#666';
-  const cardBg = isDarkMode ? '#2a2a2a' : '#fff';
-  const borderColor = isDarkMode ? '#444' : '#e0e0e0';
-  const inputBgColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+  const handleUpgradeToPro = () => {
+    showAlert(
+      'Upgrade to Pro',
+      'This feature will be available soon. Stay tuned!',
+      [{ text: 'OK' }]
+    );
+  };
   
   if (loading) {
     return (
@@ -276,153 +266,58 @@ const ProfileScreen = () => {
   return (
     <ThemedView style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-        {/* Header with profile info */}
-        <View style={styles.header}>
-          <View style={styles.profileImageContainer}>
-            <Text style={styles.profileInitial}>{profile.name.charAt(0).toUpperCase()}</Text>
-          </View>
-          
-          <View style={styles.profileInfo}>
-            <Text style={[styles.profileName, { color: textColor }]}>{profile.name}</Text>
-            <Text style={[styles.profileEmail, { color: subTextColor }]}>{profile.email}</Text>
-            <Text style={[styles.profileJoinDate, { color: subTextColor }]}>Joined {profile.joinDate}</Text>
-          </View>
-        </View>
+        {/* Profile Banner */}
+        <ProfileBanner 
+          user={{
+            name: profile.name,
+            email: profile.email
+          }}
+        />
+        
+        {/* User Activity Stats */}
+        <ProfileStats 
+          stats={{
+            groups: 0,
+            itemsAdded: profile.stats.itemsAdded,
+            searches: profile.stats.searches,
+          }}
+        />
+        
+        {/* Personal Code */}
+        <PersonalCode code={profile.personalCode} />
+        
+        {/* Pro Subscription Card */}
+        <ProSubscriptionCard 
+          daysLeft={5}
+          onUpgrade={handleUpgradeToPro}
+        />
         
         {/* Bio section */}
-        <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="person-outline" size={20} color={textColor} />
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Bio</Text>
-            
-            {/* Edit button for bio */}
-            <TouchableOpacity 
-              style={styles.editButton} 
-              onPress={() => setIsEditing(!isEditing)}
-            >
-              <Ionicons 
-                name={isEditing ? "close-outline" : "create-outline"} 
-                size={20} 
-                color={Colors.primary} 
-              />
-              <Text style={styles.editButtonText}>
-                {isEditing ? "Cancel" : "Edit"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          
-          {isEditing ? (
-            <TextInput
-              style={[
-                styles.bioInput,
-                { 
-                  color: textColor,
-                  backgroundColor: inputBgColor,
-                  borderColor: borderColor
-                }
-              ]}
-              value={editableBio}
-              onChangeText={setEditableBio}
-              multiline
-              numberOfLines={4}
-              placeholder="Tell us about yourself..."
-              placeholderTextColor={subTextColor}
-            />
-          ) : (
-            <Text style={[styles.bioText, { color: subTextColor }]}>{profile.bio}</Text>
-          )}
-        </View>
+        <ProfileBio 
+          bio={profile.bio}
+          onBioChange={(newBio) => {
+            setEditableBio(newBio);
+            setProfile(prev => ({ ...prev, bio: newBio }));
+          }}
+          onSave={handleSaveProfile}
+          isSaving={isSaving}
+        />
         
-        {/* Interests section */}
-        <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="heart-outline" size={20} color={textColor} />
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Interests</Text>
-          </View>
-          <View style={styles.interestsContainer}>
-            {profile.interests.map((interest, index) => (
-              <View key={index} style={styles.interestTag}>
-                <Text style={styles.interestText}>{interest}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-        
-        {/* Groups section */}
-        <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="people-outline" size={20} color={textColor} />
-            <Text style={[styles.sectionTitle, { color: textColor }]}>My Groups</Text>
-          </View>
-          {profile.groups.map((group) => (
-            <View key={group.id} style={[styles.groupItem, { borderBottomColor: borderColor }]}>
-              <View style={styles.groupInfo}>
-                <Text style={[styles.groupName, { color: textColor }]}>{group.name}</Text>
-                <Text style={[styles.groupMembers, { color: subTextColor }]}>{group.members} members</Text>
-              </View>
-              <Button 
-                variant="text" 
-                size="small" 
-                onPress={() => handleEditGroup(group.id)}
-              >
-                Edit
-              </Button>
-            </View>
-          ))}
-        </View>
+
         
         {/* Settings section */}
-        <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="settings-outline" size={20} color={textColor} />
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Settings</Text>
-          </View>
-          
-          {/* Dark Mode Toggle */}
-          <View style={styles.settingItem}>
-            <View style={styles.settingLabelContainer}>
-              <Ionicons name={isDarkMode ? "moon" : "sunny"} size={20} color={textColor} style={styles.settingIcon} />
-              <Text style={[styles.settingLabel, { color: textColor }]}>Dark Mode</Text>
-            </View>
-            {isThemeSaving ? (
-              <ActivityIndicator size="small" color={Colors.primary} />
-            ) : (
-              <Switch
-                value={isDarkMode}
-                onValueChange={handleToggleTheme}
-                trackColor={{ false: '#767577', true: Colors.primary }}
-                thumbColor="#f4f3f4"
-                disabled={isThemeSaving}
-              />
-            )}
-          </View>
-          
-          {/* System Theme Toggle */}
-          <View style={styles.settingItem}>
-            <View style={styles.settingLabelContainer}>
-              <MaterialIcons name="phone-android" size={20} color={textColor} style={styles.settingIcon} />
-              <Text style={[styles.settingLabel, { color: textColor }]}>Use System Theme</Text>
-            </View>
-            {isThemeSaving ? (
-              <ActivityIndicator size="small" color={Colors.primary} />
-            ) : (
-              <Switch
-                value={useSystemTheme}
-                onValueChange={handleToggleSystemTheme}
-                trackColor={{ false: '#767577', true: Colors.primary }}
-                thumbColor="#f4f3f4"
-                disabled={isThemeSaving}
-              />
-            )}
-          </View>
-        </View>
+        <SettingsSection 
+          onToggleTheme={handleToggleTheme}
+          onToggleSystemTheme={handleToggleSystemTheme}
+          isSaving={isThemeSaving}
+        />
         
         {/* Save Profile Button */}
         <View style={styles.buttonContainer}>
           <Button 
             onPress={handleSaveProfile} 
             loading={isSaving}
-            disabled={!isEditing && !isSaving}
+            disabled={isSaving}
             fullWidth
           >
             Save Profile
@@ -466,41 +361,6 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingBottom: 40,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 30,
-  },
-  profileImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  profileInitial: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  profileEmail: {
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  profileJoinDate: {
-    fontSize: 12,
-  },
   section: {
     marginHorizontal: 16,
     marginBottom: 16,
@@ -543,41 +403,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     minHeight: 100,
   },
-  interestsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  interestTag: {
-    backgroundColor: Colors.primary,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  interestText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  groupItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  groupInfo: {
-    flex: 1,
-  },
-  groupName: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  groupMembers: {
-    fontSize: 12,
-  },
+
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',

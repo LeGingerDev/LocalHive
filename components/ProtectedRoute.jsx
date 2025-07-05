@@ -2,10 +2,12 @@ import React, { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/Colors';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const { theme } = useTheme();
   const router = useRouter();
 
   useEffect(() => {
@@ -17,7 +19,12 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        backgroundColor: theme.backgroundColor 
+      }}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );

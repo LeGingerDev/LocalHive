@@ -80,10 +80,12 @@ const CustomAlert = ({
               style={[
                 styles.modalView,
                 {
-                  backgroundColor: theme.backgroundColor,
+                  backgroundColor: theme.cardColor,
                   opacity: fadeAnim,
                   transform: [{ scale: scaleAnim }],
                   shadowColor: isDarkMode ? '#000' : '#000',
+                  borderColor: theme.border,
+                  borderWidth: 1,
                 },
               ]}
             >
@@ -91,31 +93,43 @@ const CustomAlert = ({
               <Text style={[styles.modalText, { color: theme.textSecondary }]}>{message}</Text>
               
               <View style={buttons.length > 1 ? styles.buttonRowContainer : styles.buttonContainer}>
-                {buttons.map((button, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.button,
-                      button.style === 'cancel' && styles.cancelButton,
-                      button.style === 'destructive' && styles.destructiveButton,
-                      button.style === 'default' && { backgroundColor: Colors.primary },
-                      buttons.length > 1 && { flex: 1, marginHorizontal: 5 },
-                      { backgroundColor: button.backgroundColor || Colors.primary }
-                    ]}
-                    onPress={() => handleButtonPress(button)}
-                  >
-                    <Text
+                {buttons.map((button, index) => {
+                  // Default button styling
+                  let buttonStyle = { backgroundColor: Colors.primary };
+                  let textStyle = { color: '#fff' };
+                  
+                  // Apply specific styles based on button type
+                  if (button.style === 'cancel') {
+                    buttonStyle = { backgroundColor: theme.inputBackground };
+                    textStyle = { color: theme.text };
+                  } else if (button.style === 'destructive') {
+                    buttonStyle = { backgroundColor: theme.error || Colors.danger };
+                  }
+                  
+                  // Override with custom colors if provided
+                  if (button.backgroundColor) {
+                    buttonStyle.backgroundColor = button.backgroundColor;
+                  }
+                  if (button.textColor) {
+                    textStyle.color = button.textColor;
+                  }
+                  
+                  return (
+                    <TouchableOpacity
+                      key={index}
                       style={[
-                        styles.buttonText,
-                        button.style === 'cancel' && styles.cancelButtonText,
-                        button.style === 'destructive' && styles.destructiveButtonText,
-                        { color: button.textColor || '#fff' }
+                        styles.button,
+                        buttonStyle,
+                        buttons.length > 1 && { flex: 1, marginHorizontal: 5 },
                       ]}
+                      onPress={() => handleButtonPress(button)}
                     >
-                      {button.text}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text style={[styles.buttonText, textStyle]}>
+                        {button.text}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </Animated.View>
           </TouchableWithoutFeedback>
@@ -180,24 +194,15 @@ const styles = StyleSheet.create({
     padding: 12,
     elevation: 2,
     marginVertical: 5,
-  },
-  cancelButton: {
-    backgroundColor: '#E0E0E0',
-  },
-  destructiveButton: {
-    backgroundColor: '#FF3B30',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
   },
   buttonText: {
-    color: 'white',
     fontWeight: '600',
     textAlign: 'center',
     fontSize: 16,
-  },
-  cancelButtonText: {
-    color: '#333',
-  },
-  destructiveButtonText: {
-    color: 'white',
   },
 });
 

@@ -93,16 +93,12 @@ const BottomTabBar = memo(() => {
     return false;
   };
 
-  // Get the appropriate colors based on the theme
-  const bgColor = isDarkMode ? '#1a1a1a' : '#ffffff';
-  const borderColor = isDarkMode ? '#333' : '#e0e0e0';
-
   return (
     <View style={[
       styles.container, 
       { 
-        backgroundColor: bgColor,
-        borderTopColor: borderColor,
+        backgroundColor: theme.cardColor,
+        borderTopColor: theme.border,
         paddingBottom: Platform.OS === 'ios' ? 25 : 15, // Add extra padding for iOS devices with home indicator
       }
     ]}>

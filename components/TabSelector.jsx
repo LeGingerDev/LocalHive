@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { useTheme } from '../context/ThemeContext';
@@ -12,11 +12,13 @@ const TabSelector = ({
   onPress, 
   isCenter = false 
 }) => {
-  const { isDarkMode } = useTheme();
+  const { theme, isDarkMode } = useTheme();
+  // Animation value for the hover effect
+  const hoverAnimation = useRef(new Animated.Value(0)).current;
   
   // Determine colors based on active state and theme
   const activeColor = Colors.primary;
-  const inactiveColor = isDarkMode ? '#777' : '#999';
+  const inactiveColor = theme.textTertiary;
   
   // Explicitly set colors based on active state
   const iconColor = isActive ? activeColor : inactiveColor;
@@ -28,6 +30,37 @@ const TabSelector = ({
   // Debug output to verify active state
   console.log(`TabSelector: ${name} isActive=${isActive}, iconColor=${iconColor}, using icon=${iconToUse}`);
   
+  // Set up the hover animation for the center button
+  useEffect(() => {
+    if (isCenter && isActive) {
+      // Create a continuous animation sequence
+      Animated.loop(
+        Animated.sequence([
+          // Animate up
+          Animated.timing(hoverAnimation, {
+            toValue: -6, // Increased from -3 to -6 for more movement
+            duration: 800, // Faster animation (was 1000)
+            useNativeDriver: true,
+          }),
+          // Animate down
+          Animated.timing(hoverAnimation, {
+            toValue: 0, // Return to original position
+            duration: 800, // Faster animation (was 1000)
+            useNativeDriver: true,
+          })
+        ])
+      ).start();
+    } else {
+      // Reset animation when not active or not center
+      hoverAnimation.setValue(0);
+    }
+    
+    // Clean up animation when component unmounts
+    return () => {
+      hoverAnimation.setValue(0);
+    };
+  }, [isCenter, isActive, hoverAnimation]);
+  
   // Render special center button (Add button)
   if (isCenter) {
     return (
@@ -37,16 +70,21 @@ const TabSelector = ({
         activeOpacity={0.7}
       >
         <View style={styles.centerButtonContainer}>
-          <View style={[
+          <Animated.View style={[
             styles.centerButtonInner,
-            { backgroundColor: isActive ? Colors.primaryLight : Colors.primary }
+            { 
+              backgroundColor: isActive ? Colors.primaryLight : Colors.primary,
+              transform: [
+                { translateY: hoverAnimation } // Apply the hover animation
+              ]
+            }
           ]}>
             <Ionicons 
               name={iconToUse} 
               size={36} 
               color="#fff" 
             />
-          </View>
+          </Animated.View>
         </View>
       </TouchableOpacity>
     );
@@ -57,7 +95,7 @@ const TabSelector = ({
     <TouchableOpacity
       style={[
         styles.tabButton,
-        isActive && styles.activeTabButton
+        isActive && [styles.activeTabButton, { backgroundColor: isDarkMode ? 'rgba(67, 97, 238, 0.15)' : 'rgba(67, 97, 238, 0.12)' }]
       ]}
       onPress={onPress}
       activeOpacity={0.7}
@@ -68,7 +106,7 @@ const TabSelector = ({
       {/* Icon with background highlight when active */}
       <View style={[
         styles.iconContainer,
-        isActive && styles.activeIconContainer
+        isActive && [styles.activeIconContainer, { backgroundColor: isDarkMode ? 'rgba(67, 97, 238, 0.25)' : 'rgba(67, 97, 238, 0.2)' }]
       ]}>
         <Ionicons 
           name={iconToUse} 
@@ -99,7 +137,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   activeTabButton: {
-    backgroundColor: 'rgba(67, 97, 238, 0.12)',
+    // Background color is now set dynamically in the component
   },
   activeIndicator: {
     position: 'absolute',
@@ -116,7 +154,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   activeIconContainer: {
-    backgroundColor: 'rgba(67, 97, 238, 0.2)',
+    // Background color is now set dynamically in the component
   },
   tabText: {
     fontSize: 12,
