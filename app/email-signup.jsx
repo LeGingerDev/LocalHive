@@ -3,7 +3,6 @@ import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Activi
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import ThemedView from '../components/ThemedView';
 import CustomAlert from '../components/CustomAlert';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { Colors } from '../constants/Colors';
@@ -102,14 +101,14 @@ const EmailSignup = () => {
   };
   
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.title, { color: theme.text }]}>Create Account</Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>
           Join Local Hive and start sharing knowledge
         </Text>
 
@@ -119,18 +118,18 @@ const EmailSignup = () => {
 
         {/* Name Input */}
         <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Full Name</Text>
+          <Text style={styles.label}>Full Name</Text>
           <TextInput 
             style={[
               styles.input, 
               { 
-                backgroundColor: theme.inputBackground,
-                color: theme.text,
-                borderColor: theme.border
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: 'white',
+                borderColor: 'rgba(255, 255, 255, 0.3)'
               }
             ]}
             placeholder="Enter your full name"
-            placeholderTextColor={theme.textTertiary}
+            placeholderTextColor="rgba(255, 255, 255, 0.6)"
             value={fullName}
             onChangeText={setFullName}
           />
@@ -138,18 +137,18 @@ const EmailSignup = () => {
 
         {/* Email Input */}
         <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
+          <Text style={styles.label}>Email</Text>
           <TextInput 
             style={[
               styles.input, 
               { 
-                backgroundColor: theme.inputBackground,
-                color: theme.text,
-                borderColor: theme.border
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: 'white',
+                borderColor: 'rgba(255, 255, 255, 0.3)'
               }
             ]}
             placeholder="Enter your email"
-            placeholderTextColor={theme.textTertiary}
+            placeholderTextColor="rgba(255, 255, 255, 0.6)"
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -159,19 +158,19 @@ const EmailSignup = () => {
 
         {/* Password Input */}
         <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Password</Text>
+          <Text style={styles.label}>Password</Text>
           <View style={styles.passwordContainer}>
             <TextInput 
               style={[
                 styles.passwordInput, 
                 { 
-                  backgroundColor: theme.inputBackground,
-                  color: theme.text,
-                  borderColor: theme.border
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: 'white',
+                  borderColor: 'rgba(255, 255, 255, 0.3)'
                 }
               ]}
               placeholder="Create a password"
-              placeholderTextColor={theme.textTertiary}
+              placeholderTextColor="rgba(255, 255, 255, 0.6)"
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               value={password}
@@ -184,24 +183,24 @@ const EmailSignup = () => {
               <Ionicons 
                 name={showPassword ? "eye-off" : "eye"} 
                 size={22} 
-                color={theme.textTertiary} 
+                color="rgba(255, 255, 255, 0.6)" 
               />
             </TouchableOpacity>
           </View>
-          <Text style={[styles.passwordHint, { color: theme.textTertiary }]}>
+          <Text style={styles.passwordHint}>
             Password must be at least 8 characters
           </Text>
         </View>
 
         {/* Terms and Conditions */}
         <View style={styles.termsContainer}>
-          <Text style={[styles.termsText, { color: theme.textSecondary }]}>
+          <Text style={styles.termsText}>
             By signing up, you agree to our{' '}
-            <Text style={[styles.termsLink, { color: Colors.primary }]}>
+            <Text style={styles.termsLink}>
               Terms of Service
             </Text>{' '}
             and{' '}
-            <Text style={[styles.termsLink, { color: Colors.primary }]}>
+            <Text style={styles.termsLink}>
               Privacy Policy
             </Text>
           </Text>
@@ -222,11 +221,11 @@ const EmailSignup = () => {
 
         {/* Sign In Link */}
         <View style={styles.signInContainer}>
-          <Text style={[styles.signInText, { color: theme.textSecondary }]}>
+          <Text style={styles.signInText}>
             Already have an account?
           </Text>
           <TouchableOpacity onPress={() => router.push("/signin")}>
-            <Text style={[styles.signInLink, { color: Colors.primary }]}> Sign In</Text>
+            <Text style={styles.signInLink}> Sign In</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -238,7 +237,7 @@ const EmailSignup = () => {
         buttons={alertConfig.buttons}
         onDismiss={hideAlert}
       />
-    </ThemedView>
+    </View>
   );
 };
 
@@ -250,59 +249,63 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 40,
+    padding: 24,
+    paddingTop: 40,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: 'white',
   },
   subtitle: {
     fontSize: 16,
-    marginBottom: 32,
+    marginBottom: 24,
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   errorText: {
-    color: '#ff3b30',
+    color: '#FF6B6B',
     marginBottom: 16,
-    textAlign: 'center',
+    fontSize: 14,
   },
   inputContainer: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 14,
     marginBottom: 8,
+    fontSize: 14,
     fontWeight: '500',
+    color: 'white',
   },
   input: {
     height: 50,
     borderRadius: 8,
-    borderWidth: 1,
     paddingHorizontal: 16,
     fontSize: 16,
+    borderWidth: 1,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    position: 'relative',
-  },
-  passwordInput: {
-    height: 50,
     borderRadius: 8,
     borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  passwordInput: {
+    flex: 1,
+    height: 50,
     paddingHorizontal: 16,
     fontSize: 16,
-    flex: 1,
+    borderWidth: 0,
   },
   eyeIcon: {
-    position: 'absolute',
-    right: 16,
+    padding: 10,
   },
   passwordHint: {
     fontSize: 12,
     marginTop: 6,
+    color: 'rgba(255, 255, 255, 0.6)',
   },
   termsContainer: {
     marginBottom: 24,
@@ -310,8 +313,10 @@ const styles = StyleSheet.create({
   termsText: {
     fontSize: 14,
     lineHeight: 20,
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   termsLink: {
+    color: Colors.primaryLight,
     fontWeight: '500',
   },
   signUpButton: {
@@ -319,7 +324,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   signUpButtonText: {
     color: 'white',
@@ -329,14 +334,17 @@ const styles = StyleSheet.create({
   signInContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    alignItems: 'center',
+    marginBottom: 20,
   },
   signInText: {
     fontSize: 14,
+    color: 'white',
   },
   signInLink: {
     fontSize: 14,
     fontWeight: '600',
+    color: Colors.primaryLight,
   },
 });
 

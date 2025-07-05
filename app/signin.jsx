@@ -3,7 +3,6 @@ import { StyleSheet, Text, View, TouchableOpacity, TextInput, ActivityIndicator,
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import ThemedView from '../components/ThemedView';
 import CustomAlert from '../components/CustomAlert';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { Colors } from '../constants/Colors';
@@ -128,10 +127,10 @@ const SignIn = () => {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={[styles.title, { color: theme.text }]}>Sign In</Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+        <Text style={styles.title}>Sign In</Text>
+        <Text style={styles.subtitle}>
           Welcome back to Local Hive
         </Text>
 
@@ -140,18 +139,18 @@ const SignIn = () => {
         )}
 
         <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
+          <Text style={styles.label}>Email</Text>
           <TextInput 
             style={[
               styles.input, 
               { 
-                backgroundColor: theme.inputBackground,
-                color: theme.text,
-                borderColor: theme.border
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: 'white',
+                borderColor: 'rgba(255, 255, 255, 0.3)'
               }
             ]}
             placeholder="Enter your email"
-            placeholderTextColor={theme.textTertiary}
+            placeholderTextColor="rgba(255, 255, 255, 0.6)"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -160,19 +159,19 @@ const SignIn = () => {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Password</Text>
+          <Text style={styles.label}>Password</Text>
           <View style={styles.passwordContainer}>
             <TextInput 
               style={[
                 styles.passwordInput, 
                 { 
-                  backgroundColor: theme.inputBackground,
-                  color: theme.text,
-                  borderColor: theme.border
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: 'white',
+                  borderColor: 'rgba(255, 255, 255, 0.3)'
                 }
               ]}
               placeholder="Enter your password"
-              placeholderTextColor={theme.textTertiary}
+              placeholderTextColor="rgba(255, 255, 255, 0.6)"
               secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
@@ -184,7 +183,7 @@ const SignIn = () => {
               <Ionicons 
                 name={showPassword ? "eye-off" : "eye"} 
                 size={22} 
-                color={theme.textTertiary} 
+                color="rgba(255, 255, 255, 0.6)" 
               />
             </TouchableOpacity>
           </View>
@@ -194,11 +193,11 @@ const SignIn = () => {
           <Switch
             value={rememberMe}
             onValueChange={setRememberMe}
-            trackColor={{ false: theme.border, true: Colors.primary }}
+            trackColor={{ false: 'rgba(255, 255, 255, 0.3)', true: Colors.primary }}
             thumbColor={rememberMe ? Colors.primaryLight : '#f4f3f4'}
           />
           <Text 
-            style={[styles.rememberMeText, { color: theme.textSecondary }]}
+            style={styles.rememberMeText}
             onPress={() => setRememberMe(!rememberMe)}
           >
             Remember me
@@ -207,25 +206,25 @@ const SignIn = () => {
             onPress={handleShowRememberMeInfo}
             style={styles.infoButton}
           >
-            <Ionicons name="information-circle-outline" size={18} color={theme.textSecondary} />
+            <Ionicons name="information-circle-outline" size={18} color="rgba(255, 255, 255, 0.8)" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.actionsContainer}>
           <TouchableOpacity 
-            style={[styles.forgotPassword]}
+            style={styles.forgotPassword}
             onPress={handleForgotPassword}
           >
-            <Text style={[styles.forgotPasswordText, { color: theme.textSecondary }]}>
+            <Text style={styles.forgotPasswordText}>
               Forgot Password?
             </Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.resendVerification]}
+            style={styles.resendVerification}
             onPress={handleResendVerification}
           >
-            <Text style={[styles.resendVerificationText, { color: Colors.primary }]}>
+            <Text style={styles.resendVerificationText}>
               Resend Verification
             </Text>
           </TouchableOpacity>
@@ -244,11 +243,11 @@ const SignIn = () => {
         </TouchableOpacity>
 
         <View style={styles.signUpContainer}>
-          <Text style={[styles.signUpText, { color: theme.textSecondary }]}>
+          <Text style={styles.signUpText}>
             Don't have an account? 
           </Text>
           <TouchableOpacity onPress={() => router.push("/landing")}>
-            <Text style={[styles.signUpLink, { color: Colors.primary }]}> Sign Up</Text>
+            <Text style={styles.signUpLink}> Sign Up</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -260,7 +259,7 @@ const SignIn = () => {
         buttons={alertConfig.buttons}
         onDismiss={hideAlert}
       />
-    </ThemedView>
+    </View>
   );
 };
 
@@ -270,36 +269,72 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
+    padding: 24,
+    justifyContent: 'center',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: 'white',
   },
   subtitle: {
     fontSize: 16,
     marginBottom: 32,
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   errorText: {
-    color: '#ff3b30',
+    color: '#FF6B6B',
     marginBottom: 16,
-    textAlign: 'center',
+    fontSize: 14,
   },
   inputContainer: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 14,
     marginBottom: 8,
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'white',
   },
   input: {
     height: 50,
     borderRadius: 8,
-    borderWidth: 1,
     paddingHorizontal: 16,
     fontSize: 16,
+    borderWidth: 1,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  passwordInput: {
+    flex: 1,
+    height: 50,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    borderWidth: 0,
+  },
+  eyeIcon: {
+    padding: 10,
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  rememberMeText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: 'white',
+  },
+  infoButton: {
+    marginLeft: 6,
+    padding: 2,
   },
   actionsContainer: {
     flexDirection: 'row',
@@ -307,24 +342,25 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotPassword: {
-    // alignSelf: 'flex-end',
+    padding: 4,
   },
   forgotPasswordText: {
     fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   resendVerification: {
-    // alignSelf: 'flex-end',
+    padding: 4,
   },
   resendVerificationText: {
     fontSize: 14,
-    fontWeight: '500',
+    color: Colors.primaryLight,
   },
   signInButton: {
     height: 50,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   signInButtonText: {
     color: 'white',
@@ -334,43 +370,16 @@ const styles = StyleSheet.create({
   signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    alignItems: 'center',
   },
   signUpText: {
     fontSize: 14,
+    color: 'white',
   },
   signUpLink: {
     fontSize: 14,
     fontWeight: '600',
-  },
-  rememberMeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  rememberMeText: {
-    marginLeft: 8,
-    fontSize: 14,
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  passwordInput: {
-    height: 50,
-    borderRadius: 8,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    flex: 1,
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 16,
-  },
-  infoButton: {
-    marginLeft: 8,
+    color: Colors.primaryLight,
   },
 });
 
