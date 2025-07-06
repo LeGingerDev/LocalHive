@@ -1,13 +1,12 @@
 {
   "expo": {
-    "scheme": "ReactLearning",
+    "scheme": "localhive",
     "name": "Local Hive",
     "slug": "LocalHive",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/local-hive-logo.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "backgroundColor": "#7928CA",
     "splash": {
       "image": "./assets/local-hive-logo.png",
@@ -26,7 +25,11 @@
       "softwareNavBarColor": "transparent",
       "navigationBarColor": "transparent",
       "windowSoftInputMode": "adjustResize",
-      "package": "com.legingerdev.LocalHive"
+      "package": "com.legingerdev.LocalHive",
+      "userInterfaceStyle": "automatic",
+      "androidNavigationBar": {
+        "visible": "immersive"
+      }
     },
     "web": {
       "favicon": "./assets/local-hive-logo.png"

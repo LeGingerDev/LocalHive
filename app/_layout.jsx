@@ -8,6 +8,7 @@ import { StatusBar } from "expo-status-bar";
 import * as NavigationBar from 'expo-navigation-bar';
 import GradientBackground from "../components/GradientBackground";
 import BottomTabBar from "../components/BottomTabBar";
+import ImmersiveMode from "../components/ImmersiveMode";
 
 const HeaderLogo = () => {
   const router = useRouter();
@@ -54,15 +55,24 @@ const StackNavigator = () => {
   
   useEffect(() => {
     // Configure navigation bar on Android
-    if (Platform.OS === 'android' && !isSplashScreen) {
+    if (Platform.OS === 'android') {
       try {
         // Set button style based on theme
         NavigationBar.setButtonStyleAsync(isDarkMode ? 'light' : 'dark').catch(() => {});
+        
+        // Hide the navigation bar
+        NavigationBar.setVisibilityAsync('hidden').catch(() => {});
+        
+        // Make it transparent
+        NavigationBar.setBackgroundColorAsync('transparent').catch(() => {});
+        
+        // Set behavior to show on swipe
+        NavigationBar.setBehaviorAsync('inset-swipe').catch(() => {});
       } catch (error) {
         console.log('Navigation bar customization error:', error);
       }
     }
-  }, [isDarkMode, isSplashScreen]);
+  }, [isDarkMode]);
 
   // Define gradient colors for splash and landing screens
   const gradientColors = isDarkMode
@@ -160,7 +170,9 @@ const RootLayout = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Slot />
+        <ImmersiveMode>
+          <Slot />
+        </ImmersiveMode>
       </AuthProvider>
     </ThemeProvider>
   );
