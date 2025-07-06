@@ -3,6 +3,7 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity, Pressable } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { useTheme } from '../context/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const SubscriptionModal = ({ visible, onClose, onStartTrial }) => {
   const { theme, isDarkMode } = useTheme();
@@ -19,15 +20,20 @@ const SubscriptionModal = ({ visible, onClose, onStartTrial }) => {
         
         <View style={[styles.modalContainer, { backgroundColor: theme.cardColor }]}>
           {/* Header */}
-          <View style={styles.header}>
+          <LinearGradient
+            colors={[Colors.premiumLight, Colors.premiumDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.header}
+          >
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="arrow-back" size={24} color={Colors.primary} />
+              <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: '#fff' }]}>Local Hive Pro</Text>
             <View style={styles.iconContainer}>
               <Ionicons name="flash" size={24} color="#fff" />
             </View>
-          </View>
+          </LinearGradient>
           
           {/* Main content */}
           <View style={styles.content}>
@@ -38,7 +44,7 @@ const SubscriptionModal = ({ visible, onClose, onStartTrial }) => {
             
             {/* Price */}
             <View style={styles.priceContainer}>
-              <Text style={styles.price}>$4.99<Text style={styles.pricePeriod}>/month</Text></Text>
+              <Text style={[styles.price, { color: Colors.premium }]}>$4.99<Text style={[styles.pricePeriod, { color: Colors.premium }]}>/month</Text></Text>
               <Text style={[styles.cancelText, { color: theme.textTertiary }]}>Cancel anytime</Text>
             </View>
             
@@ -79,9 +85,19 @@ const SubscriptionModal = ({ visible, onClose, onStartTrial }) => {
           
           {/* Action button */}
           <View style={styles.actionContainer}>
-            <TouchableOpacity style={styles.actionButton} onPress={onStartTrial}>
-              <Text style={styles.actionButtonText}>Start 7-Day Free Trial</Text>
-            </TouchableOpacity>
+            <LinearGradient
+              colors={[Colors.premiumLight, Colors.premiumDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.actionButton}
+            >
+              <TouchableOpacity 
+                style={styles.actionButtonTouchable}
+                onPress={onStartTrial}
+              >
+                <Text style={styles.actionButtonText}>Start 7-Day Free Trial</Text>
+              </TouchableOpacity>
+            </LinearGradient>
             <Text style={[styles.termsText, { color: theme.textTertiary }]}>
               Free for 7 days, then $4.99/month. Cancel anytime.
             </Text>
@@ -97,8 +113,8 @@ const FeatureItem = ({ icon, title, description }) => {
   
   return (
     <View style={styles.featureItem}>
-      <View style={[styles.featureIconContainer, { backgroundColor: 'rgba(103, 114, 229, 0.15)' }]}>
-        <Ionicons name={icon} size={16} color={Colors.primary} />
+      <View style={[styles.featureIconContainer, { backgroundColor: theme.premiumBackground }]}>
+        <Ionicons name={icon} size={16} color={Colors.premium} />
       </View>
       <View style={styles.featureTextContainer}>
         <Text style={[styles.featureTitle, { color: theme.text }]}>{title}</Text>
@@ -138,7 +154,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: Colors.primary,
   },
   closeButton: {
     padding: 4,
@@ -179,7 +194,6 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: Colors.primary,
   },
   pricePeriod: {
     fontSize: 16,
@@ -224,10 +238,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionButton: {
-    backgroundColor: Colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 30,
+    width: '100%',
+  },
+  actionButtonTouchable: {
     width: '100%',
     alignItems: 'center',
   },

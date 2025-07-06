@@ -7,6 +7,13 @@ export const Colors = {
   secondaryLight: "#FF5CA8",
   secondaryDark: "#C01B67",
   danger: "#E53935",
+  
+  // Premium colors - vibrant and eye-catching
+  premium: "#FF9500",
+  premiumLight: "#FFAC33",
+  premiumDark: "#E67700",
+  premiumGradientStart: "#FF9500",
+  premiumGradientEnd: "#FF5F00",
 
   // Light theme
   light: {
@@ -14,6 +21,11 @@ export const Colors = {
     backgroundColor: "#FFFFFF",
     surfaceColor: "#F7F9FC",
     cardColor: "#FFFFFF",
+    
+    // Premium elements
+    premiumBackground: "rgba(255, 149, 0, 0.08)",
+    premiumBorder: "rgba(255, 149, 0, 0.3)",
+    premiumText: "#E67700",
 
     // Text
     text: "#1A1A2E",
@@ -43,6 +55,11 @@ export const Colors = {
     backgroundColor: "#121826",
     surfaceColor: "#1A2236",
     cardColor: "#1E293B",
+    
+    // Premium elements
+    premiumBackground: "rgba(255, 149, 0, 0.15)",
+    premiumBorder: "rgba(255, 149, 0, 0.4)",
+    premiumText: "#FFAC33",
 
     // Text
     text: "#F8FAFC",

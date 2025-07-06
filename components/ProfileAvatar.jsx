@@ -14,10 +14,17 @@ const ProfileAvatar = ({ size = 100, editable = true, avatarUrl, onAvatarChange 
   const { theme, isDarkMode } = useTheme();
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState(null);
+  const [cacheBuster, setCacheBuster] = useState(Date.now());
 
   useEffect(() => {
-    if (avatarUrl) setImageUrl(avatarUrl);
-  }, [avatarUrl]);
+    if (avatarUrl) {
+      // Add cache busting parameter to the URL
+      const url = avatarUrl.includes('?') 
+        ? `${avatarUrl}&cache=${cacheBuster}` 
+        : `${avatarUrl}?cache=${cacheBuster}`;
+      setImageUrl(url);
+    }
+  }, [avatarUrl, cacheBuster]);
 
   const pickImage = async () => {
     try {
@@ -52,12 +59,13 @@ const ProfileAvatar = ({ size = 100, editable = true, avatarUrl, onAvatarChange 
       setUploading(true);
       console.log('Starting image upload process...');
 
-      // Generate a unique file name
-      const timestamp = new Date().getTime();
+      // Get file extension
       const fileExt = uri.split('.').pop();
-      const fileName = `${user.id}-${timestamp}.${fileExt}`;
       
-      console.log('Generated filename:', fileName);
+      // Create a consistent path structure: profiles/{user_id}/avatar.{extension}
+      const filePath = `profiles/${user.id}/avatar.${fileExt}`;
+      
+      console.log('Using file path:', filePath);
       
       // Get file info
       const fileInfo = await FileSystem.getInfoAsync(uri);
@@ -85,15 +93,15 @@ const ProfileAvatar = ({ size = 100, editable = true, avatarUrl, onAvatarChange 
         // Create a Blob-like object for Supabase
         fileData = {
           uri,
-          name: fileName,
+          name: `avatar.${fileExt}`,
           type: contentType,
         };
       }
       
-      // Upload the file using our helper
+      // Upload the file using our helper - will replace existing file at the same path
       const result = await uploadFile(
         'profile-avatars',
-        fileName,
+        filePath,
         fileData,
         { contentType }
       );
@@ -119,7 +127,17 @@ const ProfileAvatar = ({ size = 100, editable = true, avatarUrl, onAvatarChange 
       }
 
       console.log('Profile updated successfully!');
-      setImageUrl(publicUrl);
+      
+      // Update cache buster to force image refresh
+      setCacheBuster(Date.now());
+      
+      // Add cache busting parameter to the URL
+      const cachedUrl = publicUrl.includes('?') 
+        ? `${publicUrl}&cache=${Date.now()}` 
+        : `${publicUrl}?cache=${Date.now()}`;
+      
+      setImageUrl(cachedUrl);
+      
       if (onAvatarChange) onAvatarChange(publicUrl);
 
     } catch (error) {
@@ -140,6 +158,8 @@ const ProfileAvatar = ({ size = 100, editable = true, avatarUrl, onAvatarChange 
             { width: size, height: size, borderRadius: size / 2 }
           ]}
           resizeMode="cover"
+          // Disable caching
+          cachePolicy="reload"
         />
       ) : (
         <View

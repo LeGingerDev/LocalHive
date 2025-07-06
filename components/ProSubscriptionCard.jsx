@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { useTheme } from '../context/ThemeContext';
 import SubscriptionModal from '../modals/SubscriptionModal';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const ProSubscriptionCard = ({ daysLeft = 5, onUpgrade }) => {
   const { theme, isDarkMode } = useTheme();
@@ -30,13 +31,13 @@ const ProSubscriptionCard = ({ daysLeft = 5, onUpgrade }) => {
       <View style={[
         styles.container, 
         { 
-          backgroundColor: isDarkMode ? 'rgba(103, 114, 229, 0.15)' : 'rgba(240, 242, 255, 0.9)',
-          borderColor: theme.border,
+          backgroundColor: theme.premiumBackground,
+          borderColor: theme.premiumBorder,
         }
       ]}>
         <View style={styles.contentContainer}>
           <View style={styles.textContainer}>
-            <Text style={[styles.title, { color: theme.text }]}>Local Hive Pro</Text>
+            <Text style={[styles.title, { color: theme.premiumText }]}>Local Hive Pro</Text>
             <Text style={[styles.description, { color: theme.textSecondary }]}>
               AI-powered search & premium features
             </Text>
@@ -46,19 +47,29 @@ const ProSubscriptionCard = ({ daysLeft = 5, onUpgrade }) => {
           </View>
           
           <View style={styles.iconContainer}>
-            <View style={styles.iconBackground}>
+            <LinearGradient
+              colors={[Colors.premiumLight, Colors.premiumDark]}
+              style={styles.iconBackground}
+            >
               <Ionicons name="flash" size={28} color="#fff" />
-            </View>
+            </LinearGradient>
           </View>
         </View>
         
-        <TouchableOpacity 
+        <LinearGradient
+          colors={[Colors.premiumLight, Colors.premiumDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
           style={styles.upgradeButton}
-          onPress={handleOpenModal}
-          activeOpacity={0.8}
         >
-          <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.upgradeButtonTouchable}
+            onPress={handleOpenModal}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
+          </TouchableOpacity>
+        </LinearGradient>
       </View>
       
       <SubscriptionModal 
@@ -106,17 +117,17 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 12,
-    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   upgradeButton: {
-    backgroundColor: '#7c4dff',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
     borderRadius: 30,
     alignSelf: 'flex-end',
     marginTop: 12,
+  },
+  upgradeButtonTouchable: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
   },
   upgradeButtonText: {
     color: 'white',
