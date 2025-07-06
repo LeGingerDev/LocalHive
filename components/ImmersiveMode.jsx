@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Platform, StatusBar } from 'react-native';
+import { Platform, StatusBar, UIManager, findNodeHandle } from 'react-native';
 import { useNavigation } from 'expo-router';
 import * as NavigationBar from 'expo-navigation-bar';
 
@@ -13,14 +13,27 @@ const ImmersiveMode = ({ children }) => {
   useEffect(() => {
     const setupImmersiveMode = async () => {
       if (Platform.OS === 'android') {
-        // Hide the navigation bar
-        await NavigationBar.setVisibilityAsync('hidden');
-        
-        // Make it transparent
-        await NavigationBar.setBackgroundColorAsync('transparent');
-        
-        // Set behavior to show on swipe
-        await NavigationBar.setBehaviorAsync('inset-swipe');
+        // Force immersive mode more aggressively
+        try {
+          // Hide the navigation bar
+          await NavigationBar.setVisibilityAsync('hidden');
+          
+          // Make it transparent
+          await NavigationBar.setBackgroundColorAsync('transparent');
+          
+          // Set behavior to show on swipe
+          await NavigationBar.setBehaviorAsync('inset-swipe');
+
+          // Apply these settings repeatedly to ensure they take effect
+          const interval = setInterval(async () => {
+            await NavigationBar.setVisibilityAsync('hidden');
+            await NavigationBar.setBackgroundColorAsync('transparent');
+          }, 1000);
+
+          return () => clearInterval(interval);
+        } catch (error) {
+          console.log('Navigation bar customization error:', error);
+        }
       }
     };
 
@@ -29,7 +42,7 @@ const ImmersiveMode = ({ children }) => {
     // Reset when component unmounts
     return () => {
       if (Platform.OS === 'android') {
-        NavigationBar.setVisibilityAsync('visible');
+        // Don't restore visibility on unmount - we want to keep immersive mode
       }
     };
   }, []);

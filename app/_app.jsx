@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { LogBox, AppState, Platform } from 'react-native';
 import { SplashScreen } from 'expo-router';
-import * as NavigationBar from 'expo-navigation-bar';
 
 // Prevent the splash screen from auto-hiding before we're ready
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -23,17 +22,6 @@ export default function App({ children }) {
   useEffect(() => {
     // We'll let the splash.jsx component handle hiding the native splash screen
     // This ensures a smooth transition from native splash to our custom splash
-    
-    // Configure navigation bar on Android
-    if (Platform.OS === 'android') {
-      try {
-        // Make navigation bar transparent to match our splash screen
-        NavigationBar.setBackgroundColorAsync('transparent').catch(() => {});
-        NavigationBar.setButtonStyleAsync('light').catch(() => {});
-      } catch (error) {
-        console.log('Navigation bar customization error:', error);
-      }
-    }
     
     // App state change listener to improve stability
     const subscription = AppState.addEventListener('change', (nextAppState) => {

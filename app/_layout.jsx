@@ -5,7 +5,6 @@ import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import { AuthProvider } from "../context/AuthContext";
 import { Colors } from "../constants/Colors";
 import { StatusBar } from "expo-status-bar";
-import * as NavigationBar from 'expo-navigation-bar';
 import GradientBackground from "../components/GradientBackground";
 import BottomTabBar from "../components/BottomTabBar";
 import ImmersiveMode from "../components/ImmersiveMode";
@@ -52,27 +51,6 @@ const StackNavigator = () => {
   
   // Check if current screen is the splash screen
   const isSplashScreen = pathname === '/splash';
-  
-  useEffect(() => {
-    // Configure navigation bar on Android
-    if (Platform.OS === 'android') {
-      try {
-        // Set button style based on theme
-        NavigationBar.setButtonStyleAsync(isDarkMode ? 'light' : 'dark').catch(() => {});
-        
-        // Hide the navigation bar
-        NavigationBar.setVisibilityAsync('hidden').catch(() => {});
-        
-        // Make it transparent
-        NavigationBar.setBackgroundColorAsync('transparent').catch(() => {});
-        
-        // Set behavior to show on swipe
-        NavigationBar.setBehaviorAsync('inset-swipe').catch(() => {});
-      } catch (error) {
-        console.log('Navigation bar customization error:', error);
-      }
-    }
-  }, [isDarkMode]);
 
   // Define gradient colors for splash and landing screens
   const gradientColors = isDarkMode

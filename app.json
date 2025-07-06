@@ -49,9 +49,7 @@
       }
     },
     "owner": "legingerdev",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/3a0c123a-2465-4f90-9799-f29fbe0c4bd4"
     }
