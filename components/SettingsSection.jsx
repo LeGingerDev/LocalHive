@@ -1,43 +1,38 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { Colors } from '../constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import ToggleButton from './ToggleButton';
 
+/**
+ * A reusable settings section component
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.title - Section title
+ * @param {string} props.icon - Ionicons icon name
+ * @param {React.ReactNode} props.children - Section content
+ */
 const SettingsSection = ({ 
-  onToggleTheme, 
-  onToggleSystemTheme, 
-  isSaving = false 
+  title,
+  icon,
+  children,
+  style
 }) => {
-  const { theme, isDarkMode, useSystemTheme } = useTheme();
+  const { theme } = useTheme();
   
   return (
-    <View style={[styles.section, { backgroundColor: theme.cardColor, borderColor: theme.border }]}>
+    <View style={[
+      styles.section, 
+      { backgroundColor: theme.cardColor, borderColor: theme.border },
+      style
+    ]}>
       <View style={styles.sectionHeader}>
-        <Ionicons name="settings-outline" size={20} color={theme.text} />
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Settings</Text>
+        <Ionicons name={icon} size={20} color={theme.text} />
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
       </View>
       
-      {/* Dark Mode Toggle */}
-      <ToggleButton
-        label="Dark Mode"
-        icon={<Ionicons name={isDarkMode ? "moon" : "sunny"} size={20} color={theme.text} />}
-        value={isDarkMode}
-        onValueChange={onToggleTheme}
-        loading={isSaving}
-        style={styles.toggleItem}
-      />
-      
-      {/* System Theme Toggle */}
-      <ToggleButton
-        label="Use System Theme"
-        icon={<MaterialIcons name="phone-android" size={20} color={theme.text} />}
-        value={useSystemTheme}
-        onValueChange={onToggleSystemTheme}
-        loading={isSaving}
-        style={[styles.toggleItem, { borderBottomWidth: 0 }]}
-      />
+      <View style={styles.sectionContent}>
+        {children}
+      </View>
     </View>
   );
 };
@@ -61,8 +56,8 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
-  toggleItem: {
-    borderBottomColor: 'transparent',
+  sectionContent: {
+    width: '100%',
   }
 });
 

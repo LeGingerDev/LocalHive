@@ -14,6 +14,7 @@ import { useTheme } from '../context/ThemeContext';
  * @param {boolean} [props.disabled=false] - Whether button is disabled
  * @param {Function} props.onPress - Function to call when button is pressed
  * @param {React.ReactNode} props.children - Button content
+ * @param {string} [props.title] - Button text (alternative to children)
  */
 const Button = ({
   variant = 'primary',
@@ -23,6 +24,7 @@ const Button = ({
   disabled = false,
   onPress,
   children,
+  title,
   style,
   ...props
 }) => {
@@ -103,6 +105,9 @@ const Button = ({
   const colors = getColors();
   const sizeStyles = getSizeStyles();
   
+  // Determine content - use children if provided, otherwise use title
+  const buttonContent = children || title;
+  
   return (
     <TouchableOpacity
       style={[
@@ -126,7 +131,7 @@ const Button = ({
           size="small" 
           color={variant === 'outline' || variant === 'text' ? Colors.primary : '#fff'} 
         />
-      ) : (
+      ) : typeof buttonContent === 'string' ? (
         <Text
           style={[
             styles.buttonText,
@@ -136,8 +141,29 @@ const Button = ({
             },
           ]}
         >
-          {children}
+          {buttonContent}
         </Text>
+      ) : (
+        // If children is an array or contains mixed content (icon + text)
+        // we need to ensure text elements have proper styling
+        React.Children.map(buttonContent, child => {
+          if (typeof child === 'string') {
+            return (
+              <Text
+                style={[
+                  styles.buttonText,
+                  {
+                    color: colors.text,
+                    fontSize: sizeStyles.fontSize,
+                  },
+                ]}
+              >
+                {child}
+              </Text>
+            );
+          }
+          return child;
+        })
       )}
     </TouchableOpacity>
   );

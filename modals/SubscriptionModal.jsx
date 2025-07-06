@@ -1,5 +1,5 @@
-import React from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Pressable, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { useTheme } from '../context/ThemeContext';
@@ -8,17 +8,71 @@ import { LinearGradient } from 'expo-linear-gradient';
 const SubscriptionModal = ({ visible, onClose, onStartTrial }) => {
   const { theme, isDarkMode } = useTheme();
   
+  // Animation references
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const iconRotate = useRef(new Animated.Value(0)).current;
+  
+  // Start animations when modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      // Fade in and scale up
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 300,
+          easing: Easing.out(Easing.back(1.5)),
+          useNativeDriver: true,
+        })
+      ]).start();
+      
+      // Start icon rotation
+      Animated.loop(
+        Animated.timing(iconRotate, {
+          toValue: 1,
+          duration: 4000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      // Reset animations
+      fadeAnim.setValue(0);
+      scaleAnim.setValue(0.9);
+    }
+  }, [visible]);
+  
+  // Interpolate the rotation value
+  const spin = iconRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
+  
   return (
     <Modal
       visible={visible}
       transparent={true}
-      animationType="fade"
+      animationType="none" // We'll handle animations ourselves
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
+      <Animated.View style={[
+        styles.overlay,
+        { opacity: fadeAnim }
+      ]}>
         <Pressable style={styles.dismissArea} onPress={onClose} />
         
-        <View style={[styles.modalContainer, { backgroundColor: theme.cardColor }]}>
+        <Animated.View style={[
+          styles.modalContainer, 
+          { 
+            backgroundColor: theme.cardColor,
+            transform: [{ scale: scaleAnim }]
+          }
+        ]}>
           {/* Header */}
           <LinearGradient
             colors={[Colors.premiumLight, Colors.premiumDark]}
@@ -31,7 +85,9 @@ const SubscriptionModal = ({ visible, onClose, onStartTrial }) => {
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: '#fff' }]}>Local Hive Pro</Text>
             <View style={styles.iconContainer}>
-              <Ionicons name="flash" size={24} color="#fff" />
+              <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                <Ionicons name="flash" size={24} color="#fff" />
+              </Animated.View>
             </View>
           </LinearGradient>
           
@@ -86,7 +142,7 @@ const SubscriptionModal = ({ visible, onClose, onStartTrial }) => {
           {/* Action button */}
           <View style={styles.actionContainer}>
             <LinearGradient
-              colors={[Colors.premiumLight, Colors.premiumDark]}
+              colors={[Colors.premiumGradientStart, Colors.premiumGradientEnd]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.actionButton}
@@ -102,20 +158,45 @@ const SubscriptionModal = ({ visible, onClose, onStartTrial }) => {
               Free for 7 days, then $4.99/month. Cancel anytime.
             </Text>
           </View>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 };
 
 const FeatureItem = ({ icon, title, description }) => {
   const { theme } = useTheme();
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      })
+    ).start();
+  }, []);
+  
+  const shimmerOpacity = shimmerAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.8, 1, 0.8]
+  });
   
   return (
     <View style={styles.featureItem}>
-      <View style={[styles.featureIconContainer, { backgroundColor: theme.premiumBackground }]}>
+      <Animated.View 
+        style={[
+          styles.featureIconContainer, 
+          { 
+            backgroundColor: theme.premiumBackground,
+            opacity: shimmerOpacity
+          }
+        ]}
+      >
         <Ionicons name={icon} size={16} color={Colors.premium} />
-      </View>
+      </Animated.View>
       <View style={styles.featureTextContainer}>
         <Text style={[styles.featureTitle, { color: theme.text }]}>{title}</Text>
         <Text style={[styles.featureDescription, { color: theme.textSecondary }]}>{description}</Text>

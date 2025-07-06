@@ -24,6 +24,7 @@ const ProfileScreen = () => {
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isNameSaving, setIsNameSaving] = useState(false);
   const [isThemeSaving, setIsThemeSaving] = useState(false);
   
   // Profile data state
@@ -108,7 +109,7 @@ const ProfileScreen = () => {
         }));
         
         // Update editable bio
-        setEditableBio(data.bio || profile.bio);
+        setEditableBio(data.bio || prevProfile.bio);
         
         // Update theme from profile data
         updateThemeFromProfile(data);
@@ -123,9 +124,13 @@ const ProfileScreen = () => {
   const handleSignOut = async () => {
     showAlert(
       'Sign Out',
-      'Are you sure you want to sign out?',
+      'Are you sure you want to sign out of your account?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Cancel', 
+          style: 'cancel',
+          onPress: () => hideAlert()
+        },
         { 
           text: 'Sign Out', 
           style: 'destructive',
@@ -165,6 +170,12 @@ const ProfileScreen = () => {
         throw error;
       }
       
+      // Update local profile state with the saved bio
+      setProfile(prev => ({
+        ...prev,
+        bio: editableBio
+      }));
+      
       showAlert(
         'Success',
         'Profile saved successfully!',
@@ -179,6 +190,56 @@ const ProfileScreen = () => {
       );
     } finally {
       setIsSaving(false);
+    }
+  };
+  
+  // Handle name change
+  const handleNameChange = async (newName) => {
+    setIsNameSaving(true);
+    
+    try {
+      // Update profile in Supabase
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          full_name: newName,
+          updated_at: new Date().toISOString(),
+        });
+      
+      if (profileError) {
+        throw profileError;
+      }
+      
+      // Update user metadata in Supabase Auth
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { full_name: newName }
+      });
+      
+      if (authError) {
+        throw authError;
+      }
+      
+      // Update local state
+      setProfile(prev => ({
+        ...prev,
+        name: newName
+      }));
+      
+      showAlert(
+        'Success',
+        'Name updated successfully!',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error updating name:', error);
+      showAlert(
+        'Error',
+        'Failed to update name. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsNameSaving(false);
     }
   };
   
@@ -248,23 +309,28 @@ const ProfileScreen = () => {
   };
   
   const handleUpgradeToPro = () => {
+    // TODO: Implement pro subscription flow
     showAlert(
       'Upgrade to Pro',
-      'This feature will be available soon. Stay tuned!',
+      'This feature is coming soon!',
       [{ text: 'OK' }]
     );
   };
   
   const handleAvatarChange = (url) => {
-    setProfile(prevProfile => ({
-      ...prevProfile,
+    setProfile(prev => ({
+      ...prev,
       avatar_url: url
     }));
   };
   
-  if (loading) {
+  const handleBioChange = (newBio) => {
+    setEditableBio(newBio);
+  };
+  
+  if (loading && !profile) {
     return (
-      <ThemedView style={[styles.container, styles.centered]}>
+      <ThemedView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </ThemedView>
     );
@@ -281,6 +347,16 @@ const ProfileScreen = () => {
           }}
           avatarUrl={profile.avatar_url}
           onAvatarChange={handleAvatarChange}
+          onNameChange={handleNameChange}
+          isSavingName={isNameSaving}
+        />
+        
+        {/* Bio section */}
+        <ProfileBio 
+          bio={profile.bio} 
+          onBioChange={handleBioChange} 
+          onSave={handleSaveProfile}
+          isSaving={isSaving}
         />
         
         {/* User Activity Stats */}
@@ -301,46 +377,51 @@ const ProfileScreen = () => {
           onUpgrade={handleUpgradeToPro}
         />
         
-        {/* Bio section */}
-        <ProfileBio 
-          bio={profile.bio}
-          onBioChange={(newBio) => {
-            setEditableBio(newBio);
-            setProfile(prev => ({ ...prev, bio: newBio }));
-          }}
-          onSave={handleSaveProfile}
-          isSaving={isSaving}
-        />
-        
         {/* Settings section */}
         <SettingsSection 
-          onToggleTheme={handleToggleTheme}
-          onToggleSystemTheme={handleToggleSystemTheme}
-          isSaving={isThemeSaving}
-        />
+          title="Appearance" 
+          icon="color-palette-outline"
+        >
+          <View style={styles.settingRow}>
+            <Text style={[styles.settingText, { color: theme.text }]}>Dark Mode</Text>
+            <Switch
+              value={isDarkMode}
+              onValueChange={handleToggleTheme}
+              trackColor={{ false: '#767577', true: Colors.primaryLight }}
+              thumbColor={isDarkMode ? Colors.primary : '#f4f3f4'}
+              disabled={useSystemTheme || isThemeSaving}
+            />
+          </View>
+          <View style={styles.settingRow}>
+            <Text style={[styles.settingText, { color: theme.text }]}>Use System Theme</Text>
+            <Switch
+              value={useSystemTheme}
+              onValueChange={handleToggleSystemTheme}
+              trackColor={{ false: '#767577', true: Colors.primaryLight }}
+              thumbColor={useSystemTheme ? Colors.primary : '#f4f3f4'}
+              disabled={isThemeSaving}
+            />
+          </View>
+        </SettingsSection>
         
-        {/* Save Profile Button */}
-        <View style={styles.buttonContainer}>
-          <Button 
-            onPress={handleSaveProfile} 
-            loading={isSaving}
-            disabled={isSaving}
-            fullWidth
-          >
-            Save Profile
-          </Button>
-        </View>
-        
-        {/* Sign Out Button */}
-        <View style={styles.buttonContainer}>
+        {/* Account section */}
+        <SettingsSection 
+          title="Account" 
+          icon="person-outline"
+          style={styles.accountSection}
+        >
           <Button 
             variant="danger"
-            onPress={handleSignOut}
+            size="medium"
             fullWidth
+            onPress={handleSignOut} 
+            loading={loading}
+            style={styles.signOutButton}
           >
+            <Ionicons name="log-out-outline" size={20} color="#fff" style={styles.buttonIcon} />
             Sign Out
           </Button>
-        </View>
+        </SettingsSection>
       </ScrollView>
       
       <CustomAlert
@@ -358,7 +439,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  centered: {
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -368,69 +450,29 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingBottom: 40,
   },
-  section: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 8,
-    flex: 1,
-  },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  editButtonText: {
-    color: Colors.primary,
-    fontSize: 14,
-    marginLeft: 4,
-  },
-  bioText: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  bioInput: {
-    fontSize: 14,
-    lineHeight: 20,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    textAlignVertical: 'top',
-    minHeight: 100,
-  },
-
-  settingItem: {
+  settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
   },
-  settingLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  settingIcon: {
-    marginRight: 8,
-  },
-  settingLabel: {
+  settingText: {
     fontSize: 16,
   },
-  buttonContainer: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 16,
+  accountSection: {
+    marginBottom: 40,
+  },
+  signOutButton: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  buttonIcon: {
+    marginRight: 8,
   },
 });
 

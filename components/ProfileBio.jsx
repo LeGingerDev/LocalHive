@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
@@ -13,6 +13,11 @@ const ProfileBio = ({
   const { theme } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [editableBio, setEditableBio] = useState(bio);
+  
+  // Update local state when bio prop changes
+  useEffect(() => {
+    setEditableBio(bio);
+  }, [bio]);
   
   const handleEditToggle = () => {
     if (isEditing) {

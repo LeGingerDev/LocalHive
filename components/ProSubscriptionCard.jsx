@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { useTheme } from '../context/ThemeContext';
@@ -9,6 +9,80 @@ import { LinearGradient } from 'expo-linear-gradient';
 const ProSubscriptionCard = ({ daysLeft = 5, onUpgrade }) => {
   const { theme, isDarkMode } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
+  
+  // Animation values
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+  const iconRotate = useRef(new Animated.Value(0)).current;
+  
+  // Start animations when component mounts
+  useEffect(() => {
+    // Subtle pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
+    
+    // Glow effect animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        })
+      ])
+    ).start();
+    
+    // Subtle icon rotation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(iconRotate, {
+          toValue: 1,
+          duration: 3000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(iconRotate, {
+          toValue: 0,
+          duration: 3000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
+  }, []);
+  
+  // Interpolate the rotation value
+  const spin = iconRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
+  
+  // Interpolate the glow opacity
+  const glowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.0, 0.3]
+  });
   
   const handleOpenModal = () => {
     setModalVisible(true);
@@ -28,13 +102,27 @@ const ProSubscriptionCard = ({ daysLeft = 5, onUpgrade }) => {
   
   return (
     <>
-      <View style={[
-        styles.container, 
-        { 
-          backgroundColor: theme.premiumBackground,
-          borderColor: theme.premiumBorder,
-        }
-      ]}>
+      <Animated.View 
+        style={[
+          styles.container,
+          { 
+            backgroundColor: theme.premiumBackground,
+            borderColor: theme.premiumBorder,
+            transform: [{ scale: pulseAnim }]
+          }
+        ]}
+      >
+        {/* Glow effect */}
+        <Animated.View 
+          style={[
+            styles.glowEffect, 
+            { 
+              backgroundColor: Colors.premium,
+              opacity: glowOpacity 
+            }
+          ]} 
+        />
+        
         <View style={styles.contentContainer}>
           <View style={styles.textContainer}>
             <Text style={[styles.title, { color: theme.premiumText }]}>Local Hive Pro</Text>
@@ -51,13 +139,15 @@ const ProSubscriptionCard = ({ daysLeft = 5, onUpgrade }) => {
               colors={[Colors.premiumLight, Colors.premiumDark]}
               style={styles.iconBackground}
             >
-              <Ionicons name="flash" size={28} color="#fff" />
+              <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                <Ionicons name="flash" size={28} color="#fff" />
+              </Animated.View>
             </LinearGradient>
           </View>
         </View>
         
         <LinearGradient
-          colors={[Colors.premiumLight, Colors.premiumDark]}
+          colors={[Colors.premiumGradientStart, Colors.premiumGradientEnd]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.upgradeButton}
@@ -70,7 +160,7 @@ const ProSubscriptionCard = ({ daysLeft = 5, onUpgrade }) => {
             <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
           </TouchableOpacity>
         </LinearGradient>
-      </View>
+      </Animated.View>
       
       <SubscriptionModal 
         visible={modalVisible}
@@ -89,6 +179,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     padding: 16,
     borderWidth: 1,
+    position: 'relative',
+  },
+  glowEffect: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
   },
   contentContainer: {
     flexDirection: 'row',

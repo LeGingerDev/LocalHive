@@ -1,11 +1,26 @@
-import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/Colors';
 import ProfileAvatar from './ProfileAvatar';
+import ProfileName from './ProfileName';
 
-const ProfileBanner = ({ user, avatarUrl, onAvatarChange }) => {
+const ProfileBanner = ({ user, avatarUrl, onAvatarChange, onNameChange, isSavingName }) => {
   const { theme, isDarkMode } = useTheme();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableName, setEditableName] = useState(user.name);
+
+  const handleNameChange = (newName) => {
+    setEditableName(newName);
+  };
+
+  const handleEditingChange = (editing) => {
+    setIsEditing(editing);
+  };
+
+  const handleSave = () => {
+    onNameChange(editableName);
+  };
 
   return (
     <View style={[
@@ -23,14 +38,11 @@ const ProfileBanner = ({ user, avatarUrl, onAvatarChange }) => {
         />
       </View>
       <View style={styles.userInfo}>
-        <Text 
-          style={[
-            styles.name, 
-            { color: theme.text }
-          ]}
-        >
-          {user.name}
-        </Text>
+        <ProfileName
+          name={user.name}
+          onNameChange={handleNameChange}
+          onEditingChange={handleEditingChange}
+        />
         <Text 
           style={[
             styles.email,
@@ -39,6 +51,20 @@ const ProfileBanner = ({ user, avatarUrl, onAvatarChange }) => {
         >
           {user.email}
         </Text>
+        
+        {isEditing && (
+          <View style={styles.actionContainer}>
+            <TouchableOpacity
+              style={[styles.saveButton, { backgroundColor: Colors.primary }]}
+              onPress={handleSave}
+              disabled={isSavingName}
+            >
+              <Text style={styles.saveButtonText}>
+                {isSavingName ? "Saving..." : "Save"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -47,10 +73,11 @@ const ProfileBanner = ({ user, avatarUrl, onAvatarChange }) => {
 const styles = StyleSheet.create({
   banner: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    marginBottom: 15,
+    paddingTop: 15,
+    paddingBottom: 20,
+    marginBottom: 24,
     marginHorizontal: 16,
     borderRadius: 16,
     borderWidth: 1,
@@ -66,14 +93,25 @@ const styles = StyleSheet.create({
   userInfo: {
     flex: 1,
   },
-  name: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
   email: {
     fontSize: 14,
+    marginBottom: 8,
   },
+  actionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 8,
+  },
+  saveButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  }
 });
 
 export default ProfileBanner; 
