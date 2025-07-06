@@ -15,7 +15,7 @@ import ProfileBanner from '../../components/ProfileBanner';
 import ProfileBio from '../../components/ProfileBio';
 import ProSubscriptionCard from '../../components/ProSubscriptionCard';
 import SettingsSection from '../../components/SettingsSection';
-import { supabase } from '../../lib/supabase';
+import { fetchUserProfile, updateProfile, createProfile, updateThemePreferences } from '../../services/profileService';
 
 const ProfileScreen = () => {
   const router = useRouter();
@@ -48,47 +48,36 @@ const ProfileScreen = () => {
   // Fetch profile data from Supabase on component mount
   useEffect(() => {
     if (user) {
-      fetchProfile();
+      fetchProfileData();
     }
   }, [user]);
   
-  const fetchProfile = async () => {
+  const fetchProfileData = async () => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      const { exists, data, error } = await fetchUserProfile(user.id);
       
       if (error) {
         console.error('Error fetching profile:', error);
+        return;
+      }
+      
+      if (!exists) {
+        // Create a new profile
+        const newProfileData = {
+          full_name: user?.user_metadata?.full_name || 'User',
+          email: user?.email,
+          bio: profile.bio,
+          location: profile.location,
+          theme_preference: isDarkMode ? 'dark' : 'light',
+          use_system_theme: useSystemTheme
+        };
         
-        // If the error is that the table doesn't exist or no rows were found
-        if (error.code === 'PGRST116' || error.message.includes('contains 0 rows') || 
-            error.code === '42P01' || error.message.includes('does not exist')) {
-          
-          // Create a new profile
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: user.id,
-              full_name: user?.user_metadata?.full_name || 'User',
-              email: user?.email,
-              bio: profile.bio,
-              location: profile.location,
-              theme_preference: isDarkMode ? 'dark' : 'light',
-              use_system_theme: useSystemTheme,
-              created_at: new Date().toISOString(),
-            })
-            .select();
-          
-          if (createError) {
-            console.error('Error creating profile:', createError);
-          } else if (newProfile) {
-            console.log('New profile created:', newProfile);
-          }
+        const { success, data: newProfile } = await createProfile(user.id, newProfileData);
+        
+        if (success && newProfile) {
+          console.log('New profile created:', newProfile);
         }
         
         return;
@@ -109,13 +98,13 @@ const ProfileScreen = () => {
         }));
         
         // Update editable bio
-        setEditableBio(data.bio || prevProfile.bio);
+        setEditableBio(data.bio || profile.bio);
         
         // Update theme from profile data
         updateThemeFromProfile(data);
       }
     } catch (error) {
-      console.error('Error in fetchProfile:', error);
+      console.error('Error in fetchProfileData:', error);
     } finally {
       setLoading(false);
     }
@@ -155,18 +144,14 @@ const ProfileScreen = () => {
     setIsSaving(true);
     
     try {
-      // Update profile in Supabase
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          bio: editableBio,
-          theme_preference: isDarkMode ? 'dark' : 'light',
-          use_system_theme: useSystemTheme,
-          updated_at: new Date().toISOString(),
-        });
+      // Update profile in Supabase using the service
+      const { success, error } = await updateProfile(user.id, {
+        bio: editableBio,
+        theme_preference: isDarkMode ? 'dark' : 'light',
+        use_system_theme: useSystemTheme
+      });
       
-      if (error) {
+      if (!success) {
         throw error;
       }
       
@@ -198,26 +183,13 @@ const ProfileScreen = () => {
     setIsNameSaving(true);
     
     try {
-      // Update profile in Supabase
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          full_name: newName,
-          updated_at: new Date().toISOString(),
-        });
-      
-      if (profileError) {
-        throw profileError;
-      }
-      
-      // Update user metadata in Supabase Auth
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { full_name: newName }
+      // Update profile with new name
+      const { success, error } = await updateProfile(user.id, {
+        full_name: newName
       });
       
-      if (authError) {
-        throw authError;
+      if (!success) {
+        throw error;
       }
       
       // Update local state
@@ -226,11 +198,6 @@ const ProfileScreen = () => {
         name: newName
       }));
       
-      showAlert(
-        'Success',
-        'Name updated successfully!',
-        [{ text: 'OK' }]
-      );
     } catch (error) {
       console.error('Error updating name:', error);
       showAlert(
@@ -243,30 +210,17 @@ const ProfileScreen = () => {
     }
   };
   
-  // Handle dark mode toggle with direct save to profile
   const handleToggleTheme = async () => {
     try {
       setIsThemeSaving(true);
       
-      // Toggle theme in context (this already saves to AsyncStorage)
+      // Toggle theme in context
       toggleTheme();
       
-      // Save directly to profile if user is logged in
+      // Save to profile if user is logged in
       if (user) {
-        const newTheme = !isDarkMode ? 'dark' : 'light';
-        
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            theme_preference: newTheme,
-            use_system_theme: false,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', user.id);
-          
-        if (error) {
-          console.error('Error updating theme preference in profile:', error);
-        }
+        const newIsDarkMode = !isDarkMode;
+        await updateThemePreferences(user.id, newIsDarkMode, useSystemTheme);
       }
     } catch (error) {
       console.error('Error toggling theme:', error);
@@ -275,31 +229,17 @@ const ProfileScreen = () => {
     }
   };
   
-  // Handle system theme toggle with direct save to profile
   const handleToggleSystemTheme = async () => {
     try {
       setIsThemeSaving(true);
       
-      // Toggle system theme in context (this already saves to AsyncStorage)
+      // Toggle system theme in context
       toggleUseSystemTheme();
       
-      // Save directly to profile if user is logged in
+      // Save to profile if user is logged in
       if (user) {
         const newUseSystemTheme = !useSystemTheme;
-        const currentTheme = isDarkMode ? 'dark' : 'light';
-        
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            theme_preference: currentTheme,
-            use_system_theme: newUseSystemTheme,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', user.id);
-          
-        if (error) {
-          console.error('Error updating system theme preference in profile:', error);
-        }
+        await updateThemePreferences(user.id, isDarkMode, newUseSystemTheme);
       }
     } catch (error) {
       console.error('Error toggling system theme:', error);

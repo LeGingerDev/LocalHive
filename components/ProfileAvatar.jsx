@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, TouchableOpacity, ActivityIndicator, Alert, Image, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../lib/supabase';
-import { uploadFile } from '../lib/supabaseStorage';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/Colors';
 import * as FileSystem from 'expo-file-system';
+import { uploadAvatar } from '../services/profileService';
 
 const ProfileAvatar = ({ size = 100, editable = true, avatarUrl, onAvatarChange }) => {
   const { user } = useAuth();
@@ -59,52 +58,8 @@ const ProfileAvatar = ({ size = 100, editable = true, avatarUrl, onAvatarChange 
       setUploading(true);
       console.log('Starting image upload process...');
 
-      // Get file extension
-      const fileExt = uri.split('.').pop();
-      
-      // Create a consistent path structure: profiles/{user_id}/avatar.{extension}
-      const filePath = `profiles/${user.id}/avatar.${fileExt}`;
-      
-      console.log('Using file path:', filePath);
-      
-      // Get file info
-      const fileInfo = await FileSystem.getInfoAsync(uri);
-      console.log('File size:', fileInfo.size);
-      
-      // If file is too large, compress it further
-      if (fileInfo.size > 2000000) { // 2MB
-        Alert.alert('Image too large', 'Please select a smaller image or use a lower quality setting.');
-        return;
-      }
-
-      let fileData;
-      let contentType = `image/${fileExt}`;
-      
-      if (Platform.OS === 'web') {
-        // For web, use fetch to get the blob
-        const response = await fetch(uri);
-        fileData = await response.blob();
-      } else {
-        // For native platforms, read the file as base64
-        const base64 = await FileSystem.readAsStringAsync(uri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        
-        // Create a Blob-like object for Supabase
-        fileData = {
-          uri,
-          name: `avatar.${fileExt}`,
-          type: contentType,
-        };
-      }
-      
-      // Upload the file using our helper - will replace existing file at the same path
-      const result = await uploadFile(
-        'profile-avatars',
-        filePath,
-        fileData,
-        { contentType }
-      );
+      // Use the service to upload the avatar
+      const result = await uploadAvatar(user.id, uri);
       
       if (!result.success) {
         console.error('Upload failed:', result.error);
@@ -113,20 +68,6 @@ const ProfileAvatar = ({ size = 100, editable = true, avatarUrl, onAvatarChange 
       
       const publicUrl = result.data.publicUrl;
       console.log('Public URL:', publicUrl);
-      
-      // Update profile with new avatar URL
-      console.log('Updating profile with new avatar URL...');
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
-
-      if (updateError) {
-        console.error('Profile update error:', updateError);
-        throw updateError;
-      }
-
-      console.log('Profile updated successfully!');
       
       // Update cache buster to force image refresh
       setCacheBuster(Date.now());
