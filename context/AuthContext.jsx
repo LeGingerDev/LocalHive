@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
 
   // Initialize remember me preference
   useEffect(() => {
-    const initializeRememberMe = async () => {
+    const initialize = async () => {
       try {
         // Check if the remember me preference is already set
         const value = await AsyncStorage.getItem(REMEMBER_ME_KEY);
@@ -31,11 +31,11 @@ export const AuthProvider = ({ children }) => {
           console.log('Remember me preference loaded:', value !== 'false');
         }
       } catch (e) {
-        console.error('Failed to initialize remember me preference:', e);
+        console.error('Failed to initialize:', e);
       }
     };
 
-    initializeRememberMe();
+    initialize();
   }, []);
 
   // Check if profile exists and create if it doesn't

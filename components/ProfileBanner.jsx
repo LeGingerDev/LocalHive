@@ -1,39 +1,57 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { StyleSheet, View, Text } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { Colors } from '../constants/Colors';
+import ProfileAvatar from './ProfileAvatar';
 
-const ProfileBanner = ({ user = { name: 'Sarah Johnson', email: 'sarah.johnson@email.com' } }) => {
+const ProfileBanner = ({ user, avatarUrl, onAvatarChange }) => {
   const { theme, isDarkMode } = useTheme();
-  
-  // Get first letter of name for avatar
-  const initial = user.name.charAt(0).toUpperCase();
-  
+
   return (
-    <View style={[styles.container, { 
-      backgroundColor: theme.cardColor, 
-      borderColor: theme.border 
-    }]}>
-      <View style={[styles.avatarContainer, { backgroundColor: Colors.primary }]}>
-        <Text style={styles.avatarText}>{initial}</Text>
+    <View style={[
+      styles.banner, 
+      { 
+        backgroundColor: theme.cardColor,
+        borderColor: theme.border,
+      }
+    ]}>
+      <View style={styles.avatarContainer}>
+        <ProfileAvatar 
+          size={80} 
+          avatarUrl={avatarUrl}
+          onAvatarChange={onAvatarChange}
+        />
       </View>
-      
-      <View style={styles.infoContainer}>
-        <Text style={[styles.name, { color: theme.text }]}>{user.name}</Text>
-        <Text style={[styles.email, { color: theme.textSecondary }]}>{user.email}</Text>
+      <View style={styles.userInfo}>
+        <Text 
+          style={[
+            styles.name, 
+            { color: theme.text }
+          ]}
+        >
+          {user.name}
+        </Text>
+        <Text 
+          style={[
+            styles.email,
+            { color: theme.textSecondary }
+          ]}
+        >
+          {user.email}
+        </Text>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  banner: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    marginBottom: 15,
     marginHorizontal: 16,
-    marginTop: 20,
-    marginBottom: 16,
-    padding: 16,
     borderRadius: 16,
     borderWidth: 1,
     shadowColor: '#000',
@@ -43,36 +61,18 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   avatarContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
+    marginRight: 15,
   },
-  avatarText: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  infoContainer: {
+  userInfo: {
     flex: 1,
-    justifyContent: 'center',
   },
   name: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginBottom: 4,
-    letterSpacing: 0.3,
   },
   email: {
     fontSize: 14,
-    opacity: 0.8,
   },
 });
 

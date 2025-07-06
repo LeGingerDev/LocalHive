@@ -37,7 +37,8 @@ const ProfileScreen = () => {
       itemsAdded: 23,
       searches: 47
     },
-    personalCode: 'HIVE-SJ47'
+    personalCode: 'HIVE-SJ47',
+    avatar_url: null
   });
   
   // Editable bio state
@@ -103,6 +104,7 @@ const ProfileScreen = () => {
             month: 'long'
           }),
           location: data.location || prevProfile.location,
+          avatar_url: data.avatar_url
         }));
         
         // Update editable bio
@@ -180,8 +182,6 @@ const ProfileScreen = () => {
     }
   };
   
-
-  
   // Handle dark mode toggle with direct save to profile
   const handleToggleTheme = async () => {
     try {
@@ -255,6 +255,13 @@ const ProfileScreen = () => {
     );
   };
   
+  const handleAvatarChange = (url) => {
+    setProfile(prevProfile => ({
+      ...prevProfile,
+      avatar_url: url
+    }));
+  };
+  
   if (loading) {
     return (
       <ThemedView style={[styles.container, styles.centered]}>
@@ -272,6 +279,8 @@ const ProfileScreen = () => {
             name: profile.name,
             email: profile.email
           }}
+          avatarUrl={profile.avatar_url}
+          onAvatarChange={handleAvatarChange}
         />
         
         {/* User Activity Stats */}
@@ -302,8 +311,6 @@ const ProfileScreen = () => {
           onSave={handleSaveProfile}
           isSaving={isSaving}
         />
-        
-
         
         {/* Settings section */}
         <SettingsSection 

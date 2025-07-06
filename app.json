@@ -25,20 +25,32 @@
       "edgeToEdgeEnabled": true,
       "softwareNavBarColor": "transparent",
       "navigationBarColor": "transparent",
-      "windowSoftInputMode": "adjustResize"
+      "windowSoftInputMode": "adjustResize",
+      "package": "com.legingerdev.LocalHive"
     },
     "web": {
       "favicon": "./assets/local-hive-logo.png"
     },
-    "plugins": ["expo-router"],
-    "assetBundlePatterns": ["**/*"],
+    "plugins": [
+      "expo-router"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "extra": {
       "router": {
         "origin": false
       },
       "eas": {
-        "projectId": "local-hive"
+        "projectId": "3a0c123a-2465-4f90-9799-f29fbe0c4bd4"
       }
+    },
+    "owner": "legingerdev",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3a0c123a-2465-4f90-9799-f29fbe0c4bd4"
     }
   }
 }
