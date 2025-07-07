@@ -1,173 +1,77 @@
-# Local Hive - React Native App
+# Welcome to your new ignited app!
 
-A local knowledge sharing platform built with React Native and Supabase.
+> The latest and greatest boilerplate for Infinite Red opinions
 
-## Supabase Integration
+This is the boilerplate that [Infinite Red](https://infinite.red) uses as a way to test bleeding-edge changes to our React Native stack.
 
-This project uses Supabase for authentication and database operations.
+- [Quick start documentation](https://github.com/infinitered/ignite/blob/master/docs/boilerplate/Boilerplate.md)
+- [Full documentation](https://github.com/infinitered/ignite/blob/master/docs/README.md)
 
-### Setup Instructions
-
-1. **Install dependencies**
+## Getting Started
 
 ```bash
 npm install
+npm run start
 ```
 
-2. **Supabase Configuration**
-
-The Supabase client is configured in `lib/supabase.js`. The URL and anonymous key are currently hardcoded for development purposes.
-
-In a production environment, you should use environment variables:
-- Create a `.env` file based on `.env.example`
-- Add your Supabase URL and anonymous key
-
-3. **Disable Email Confirmation (Important)**
-
-For this app, email confirmation is disabled to allow immediate sign-in after registration:
-
-- Go to your Supabase dashboard at https://xnnobyeytyycngybinqj.supabase.co
-- Navigate to Authentication > Settings
-- Under "Email Auth", uncheck "Enable email confirmations"
-- Save changes
-
-4. **Database Schema**
-
-Create the following tables in your Supabase project:
-
-**profiles**
-```sql
--- Create profiles table
-create table public.profiles (
-  id uuid references auth.users primary key,
-  full_name text,
-  email text,
-  bio text,
-  created_at timestamp with time zone default now(),
-  updated_at timestamp with time zone
-);
-
--- Enable Row Level Security
-alter table public.profiles enable row level security;
-
--- Create policies for authenticated users
-create policy "Users can view their own profile" 
-  on public.profiles for select 
-  using (auth.uid() = id);
-
-create policy "Users can update their own profile" 
-  on public.profiles for update 
-  using (auth.uid() = id);
-
-create policy "New users can create their profile" 
-  on public.profiles for insert 
-  with check (auth.uid() = id);
-
--- Important: Create a policy to allow the service role to manage profiles
--- This is needed for server-side operations
-create policy "Service role can manage all profiles" 
-  on public.profiles 
-  using (auth.role() = 'service_role');
-```
-
-5. **Authentication**
-
-The app uses Supabase Authentication with email/password sign-in. The authentication flow is managed through the `AuthContext` in `context/AuthContext.jsx`.
-
-6. **Environment-specific Databases**
-
-The app is configured to support different databases for development, testing, and production environments. See `lib/supabaseDb.js` for the implementation.
-
-## Running the App
+To make things work on your local simulator, or on your phone, you need first to [run `eas build`](https://github.com/infinitered/ignite/blob/master/docs/expo/EAS.md). We have many shortcuts on `package.json` to make it easier:
 
 ```bash
-npm start
+npm run build:ios:sim # build for ios simulator
+npm run build:ios:dev # build for ios device
+npm run build:ios:prod # build for ios device
 ```
 
-## Features
+### `./assets` directory
 
-- User authentication (sign up, sign in, sign out)
-- Profile management
-- Theme switching (light/dark mode) with toggle control
-- Protected routes
-- Custom alert dialogs with animations and theming
-- Beautiful gradient backgrounds that adapt to the current theme (using expo-linear-gradient)
+This directory is designed to organize and store various assets, making it easy for you to manage and use them in your application. The assets are further categorized into subdirectories, including `icons` and `images`:
 
-## Project Structure
+```tree
+assets
+├── icons
+└── images
+```
 
-- `app/` - Expo Router screens
-- `components/` - Reusable React components
-- `context/` - React context providers
-- `lib/` - Utility functions and Supabase client
-- `constants/` - App constants like colors
-- `assets/` - Images and other static assets
-- `hooks/` - Custom React hooks
+**icons**
+This is where your icon assets will live. These icons can be used for buttons, navigation elements, or any other UI components. The recommended format for icons is PNG, but other formats can be used as well.
 
-## UI Components
+Ignite comes with a built-in `Icon` component. You can find detailed usage instructions in the [docs](https://github.com/infinitered/ignite/blob/master/docs/boilerplate/app/components/Icon.md).
 
-### CustomAlert
+**images**
+This is where your images will live, such as background images, logos, or any other graphics. You can use various formats such as PNG, JPEG, or GIF for your images.
 
-The app uses a custom alert component instead of the default React Native Alert for a more polished user experience:
+Another valuable built-in component within Ignite is the `AutoImage` component. You can find detailed usage instructions in the [docs](https://github.com/infinitered/ignite/blob/master/docs/Components-AutoImage.md).
 
-- Rounded corners
-- Darkened background overlay
-- Smooth animations (fade in/out and scale)
-- Theme-aware (adapts to light/dark mode)
-- Customizable buttons with different styles
+How to use your `icon` or `image` assets:
 
-To use the custom alert in a component:
-
-```jsx
-import CustomAlert from '../components/CustomAlert';
-import { useCustomAlert } from '../hooks/useCustomAlert';
+```typescript
+import { Image } from 'react-native';
 
 const MyComponent = () => {
-  const { alertConfig, showAlert, hideAlert } = useCustomAlert();
-  
-  // Show an alert
-  showAlert(
-    'Alert Title',
-    'Alert message here',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'OK', onPress: () => console.log('OK pressed') }
-    ]
-  );
-  
   return (
-    <View>
-      {/* Your component content */}
-      
-      {/* Add this at the end of your component */}
-      <CustomAlert
-        visible={alertConfig.visible}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        buttons={alertConfig.buttons}
-        onDismiss={hideAlert}
-      />
-    </View>
+    <Image source={require('assets/images/my_image.png')} />
   );
-}
+};
 ```
 
-### ThemeToggle
+## Running Maestro end-to-end tests
 
-A reusable component for switching between light and dark mode:
+Follow our [Maestro Setup](https://ignitecookbook.com/docs/recipes/MaestroSetup) recipe.
 
-- Located in the profile page under "App Settings"
-- Features animated switch with sun/moon icons
-- Automatically persists theme preference
-- Adapts UI colors throughout the app
+## Next Steps
 
-### GradientBackground
+### Ignite Cookbook
 
-A component that provides beautiful gradient backgrounds:
+[Ignite Cookbook](https://ignitecookbook.com/) is an easy way for developers to browse and share code snippets (or “recipes”) that actually work.
 
-- Uses expo-linear-gradient for compatibility with Expo
-- Theme-aware gradient colors that change with light/dark mode
-- Used on the landing page for a visually appealing introduction
-- Customizable with your own gradient colors and directions
-- Seamless integration with the app's theme system
+### Upgrade Ignite boilerplate
 
-For more details, see the [components documentation](./components/README.md). 
+Read our [Upgrade Guide](https://ignitecookbook.com/docs/recipes/UpdatingIgnite) to learn how to upgrade your Ignite project.
+
+## Community
+
+⭐️ Help us out by [starring on GitHub](https://github.com/infinitered/ignite), filing bug reports in [issues](https://github.com/infinitered/ignite/issues) or [ask questions](https://github.com/infinitered/ignite/discussions).
+
+💬 Join us on [Slack](https://join.slack.com/t/infiniteredcommunity/shared_invite/zt-1f137np4h-zPTq_CbaRFUOR_glUFs2UA) to discuss.
+
+📰 Make our Editor-in-chief happy by [reading the React Native Newsletter](https://reactnativenewsletter.com/).

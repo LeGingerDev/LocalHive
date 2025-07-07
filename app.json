@@ -1,57 +1,64 @@
 {
-  "expo": {
-    "scheme": "localhive",
-    "name": "Local Hive",
-    "slug": "LocalHive",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/local-hive-logo.png",
-    "userInterfaceStyle": "automatic",
-    "backgroundColor": "#7928CA",
-    "splash": {
-      "image": "./assets/local-hive-logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#7928CA"
+  "name": "LocalHiveProject",
+  "slug": "LocalHiveProject",
+  "scheme": "localhiveproject",
+  "version": "1.0.0",
+  "orientation": "portrait",
+  "userInterfaceStyle": "automatic",
+  "icon": "./assets/images/app-icon-all.png",
+  "updates": {
+    "fallbackToCacheTimeout": 0
+  },
+  "newArchEnabled": true,
+  "jsEngine": "hermes",
+  "assetBundlePatterns": ["**/*"],
+  "android": {
+    "icon": "./assets/images/app-icon-android-legacy.png",
+    "package": "com.legingerdev.localhiveproject",
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/images/app-icon-android-adaptive-foreground.png",
+      "backgroundImage": "./assets/images/app-icon-android-adaptive-background.png"
     },
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/local-hive-logo.png",
-        "backgroundColor": "#7928CA"
-      },
-      "edgeToEdgeEnabled": true,
-      "softwareNavBarColor": "transparent",
-      "navigationBarColor": "transparent",
-      "windowSoftInputMode": "adjustResize",
-      "package": "com.legingerdev.LocalHive",
-      "userInterfaceStyle": "automatic",
-      "androidNavigationBar": {
-        "visible": "immersive"
+    "allowBackup": false,
+    "edgeToEdgeEnabled": true
+  },
+  "ios": {
+    "icon": "./assets/images/app-icon-ios.png",
+    "supportsTablet": true,
+    "bundleIdentifier": "com.legingerdev.localhiveproject"
+  },
+  "web": {
+    "favicon": "./assets/images/app-icon-web-favicon.png",
+    "bundler": "metro"
+  },
+  "plugins": [
+    "expo-localization",
+    "expo-font",
+    [
+      "expo-splash-screen",
+      {
+        "image": "./assets/images/app-icon-android-adaptive-foreground.png",
+        "imageWidth": 300,
+        "resizeMode": "contain",
+        "backgroundColor": "#191015"
       }
-    },
-    "web": {
-      "favicon": "./assets/local-hive-logo.png"
-    },
-    "plugins": [
-      "expo-router"
     ],
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "extra": {
-      "router": {
-        "origin": false
-      },
-      "eas": {
-        "projectId": "3a0c123a-2465-4f90-9799-f29fbe0c4bd4"
+    [
+      "react-native-edge-to-edge",
+      {
+        "android": {
+          "parentTheme": "Light",
+          "enforceNavigationBarContrast": false
+        }
       }
-    },
-    "owner": "legingerdev",
-    "runtimeVersion": "1.0.0",
-    "updates": {
-      "url": "https://u.expo.dev/3a0c123a-2465-4f90-9799-f29fbe0c4bd4"
+    ]
+  ],
+  "experiments": {
+    "tsconfigPaths": true
+  },
+  "extra": {
+    "ignite": {
+      "version": "11.0.0"
     }
   }
 }
