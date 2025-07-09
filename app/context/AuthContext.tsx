@@ -4,9 +4,22 @@ import googleAuthService from "@/services/supabase/googleAuthService"
 import { AuthService } from "@/services/supabase/authService"
 import { createSupabaseClient } from "@/services/supabase/supabase"
 
+interface UserProfile {
+  id: string
+  full_name?: string
+  email?: string
+  avatar_url?: string
+  bio?: string
+  created_at?: string
+  updated_at?: string
+  theme_preference?: string
+  use_system_theme?: boolean
+}
+
 interface AuthContextType {
   user: User | null
   googleUser: any | null
+  userProfile: UserProfile | null
   isLoading: boolean
   signOut: () => Promise<void>
   refreshUser: () => Promise<void>
@@ -21,6 +34,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [googleUser, setGoogleUser] = useState<any | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const refreshUser = async () => {
@@ -32,6 +46,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Get Google user if available
       const googleUserData = await googleAuthService.getCurrentUser()
       setGoogleUser(googleUserData)
+
+      // Fetch user profile from database if we have a user
+      if (supabaseUser) {
+        const { data: profileData, error } = await AuthService.getProfileByUserId(supabaseUser.id)
+        
+        if (profileData) {
+          setUserProfile(profileData as UserProfile)
+        } else {
+          // If profile doesn't exist but we have user data, create it
+          try {
+            const { data: newProfile, error: createError } = await AuthService.createOrUpdateProfile(supabaseUser.id, {
+              email: supabaseUser.email,
+              full_name: supabaseUser.user_metadata?.full_name,
+              avatar_url: supabaseUser.user_metadata?.avatar_url,
+            })
+            
+            if (newProfile) {
+              setUserProfile(newProfile as UserProfile)
+            } else {
+              console.error("Failed to create profile:", createError)
+            }
+          } catch (profileError) {
+            console.error("Error creating user profile during refresh:", profileError)
+          }
+        }
+      } else {
+        setUserProfile(null)
+      }
     } catch (error) {
       console.error("Error refreshing user:", error)
     } finally {
@@ -49,6 +91,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Clear local state
       setUser(null)
       setGoogleUser(null)
+      setUserProfile(null)
     } catch (error) {
       console.error("Error during sign out:", error)
     } finally {
@@ -78,9 +121,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Also check for Google user
             const googleUserData = await googleAuthService.getCurrentUser()
             setGoogleUser(googleUserData)
+            
+            // Fetch or create user profile
+            const { data: profileData, error } = await AuthService.getProfileByUserId(session.user.id)
+            
+            if (profileData) {
+              setUserProfile(profileData as UserProfile)
+            } else {
+              try {
+                const { data: newProfile, error: createError } = await AuthService.createOrUpdateProfile(session.user.id, {
+                  email: session.user.email,
+                  full_name: session.user.user_metadata?.full_name,
+                  avatar_url: session.user.user_metadata?.avatar_url,
+                })
+                
+                if (newProfile) {
+                  setUserProfile(newProfile as UserProfile)
+                } else {
+                  console.error("Failed to create profile after sign-in:", createError)
+                }
+              } catch (profileError) {
+                console.error("Error creating user profile during auth change:", profileError)
+              }
+            }
           } else if (event === 'SIGNED_OUT') {
             setUser(null)
             setGoogleUser(null)
+            setUserProfile(null)
           }
           setIsLoading(false)
         }
@@ -96,6 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     googleUser,
+    userProfile,
     isLoading,
     signOut,
     refreshUser,

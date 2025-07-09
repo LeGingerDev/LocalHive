@@ -28,6 +28,7 @@ try {
 }
 
 import { supabase } from "./supabase"
+import { AuthService } from "./authService"
 
 // Types for Google Sign-In responses
 export interface SignInResult {
@@ -128,6 +129,26 @@ class GoogleAuthService {
           error: "NO_USER",
           message: "No user data returned",
         }
+      }
+
+      // Create or update the user profile with Google data
+      try {
+        // Extract relevant user information from Google and Supabase
+        const userId = data.user.id
+        const email = data.user.email
+        const fullName = userInfo.user?.name || data.user.user_metadata?.full_name
+        const avatarUrl = userInfo.user?.photo || data.user.user_metadata?.avatar_url
+
+        // Save profile data to the profiles table
+        await AuthService.createOrUpdateProfile(userId, {
+          email,
+          full_name: fullName,
+          avatar_url: avatarUrl,
+        })
+      } catch (profileError) {
+        console.error("Error creating user profile:", profileError)
+        // We don't want to fail the sign-in if profile creation fails
+        // The user is still authenticated, but might see incomplete profile data
       }
 
       return {

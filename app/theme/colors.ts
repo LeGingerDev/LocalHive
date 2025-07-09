@@ -30,6 +30,13 @@ const palette = {
   accent500: "#F0C83E",
   accent600: "#D9B52A",
 
+  orange100: "#FFF4E6",
+  orange200: "#FFE4B3",
+  orange300: "#FFD180",
+  orange400: "#FFB84D",
+  orange500: "#FF9F1A",
+  orange600: "#E68500",
+
   angry100: "#FFF0F0",
   angry500: "#FF4D4D",
 
@@ -108,6 +115,10 @@ export const colors = {
    * Gradient colors for accent theme
    */
   gradientAccent: ["#FFD45C", "#D9B52A"],
+  /**
+   * Gradient colors for orange theme
+   */
+  gradientOrange: ["#FF9F1A", "#E68500"],
   cardColor: palette.primary100,
   sectionBorderColor: palette.neutral300,
 } as const

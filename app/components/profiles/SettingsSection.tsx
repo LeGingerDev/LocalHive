@@ -1,43 +1,15 @@
 import React from "react"
-import { StyleProp, TextStyle, View, ViewStyle } from "react-native"
-import { useAppTheme } from "@/theme/context"
-import type { ThemedStyle } from "@/theme/types"
-import { Text } from "@/components/Text"
+import { View, StyleProp, ViewStyle } from "react-native"
 
 export interface SettingsSectionProps {
+  children: React.ReactNode
   style?: StyleProp<ViewStyle>
-  header?: string
-  children?: React.ReactNode
 }
 
-export const SettingsSection = (props: SettingsSectionProps) => {
-  const { style, children, header } = props
-  const { themed, theme } = useAppTheme();
-  const $styles = [themed($container), style]
-
+export const SettingsSection: React.FC<SettingsSectionProps> = ({ children, style }) => {
   return (
-    <View style={$styles}>
-      {header && <Text style={themed($header)}>{header}</Text>}
+    <View style={style}>
       {children}
     </View>
   )
 }
-
-const $container: ThemedStyle<ViewStyle> = ({ colors }) => ({
-  borderRadius: 16,
-  backgroundColor: colors.background,
-  borderWidth: 1.5,
-  borderColor: colors.sectionBorderColor,
-  paddingVertical: 8,
-  marginVertical: 12,
-})
-
-const $header: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.bold,
-  fontSize: 16,
-  color: colors.text,
-  marginBottom: 10,
-  marginTop: 4,
-  marginHorizontal: 12,
-  letterSpacing: 0.5,
-})

@@ -1,9 +1,10 @@
-import React, { FC, memo, useCallback, useMemo } from "react"
+import React, { FC, memo, useCallback, useMemo, useEffect } from "react"
 import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator } from "react-native"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
+import ProfileStat from "./ProfileStat"
 
 // #region Types & Interfaces
 export interface ProfileBoxProps {
@@ -49,6 +50,7 @@ interface ProfileBoxData {
   email?: string
   avatarUrl?: string
   displayName?: string
+  bio?: string
 }
 // #endregion
 
@@ -65,6 +67,11 @@ const _getDisplayName = (data: ProfileBoxData | null | undefined): string => {
 const _getDisplayEmail = (data: ProfileBoxData | null | undefined): string => {
   if (!_isValidData(data)) return "No email available"
   return data.email ?? "No email provided"
+}
+
+const _getDisplayBio = (data: ProfileBoxData | null | undefined): string => {
+  if (!_isValidData(data) || !data.bio) return ""
+  return data.bio
 }
 
 const _getAvatarInitial = (data: ProfileBoxData | null | undefined): string => {
@@ -101,8 +108,19 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
 
   // #region Hooks & Context
   const { themed } = useAppTheme()
-  const { user, googleUser, isLoading: authLoading } = useAuth()
+  const { user, googleUser, userProfile, isLoading: authLoading } = useAuth()
   // #endregion
+
+  // Debug logs for auth data
+  useEffect(() => {
+    console.log("🔍 [ProfileBox] Component mounted/updated")
+    console.log("🔍 [ProfileBox] Auth data:", {
+      user: user ? { id: user.id, email: user.email } : null,
+      googleUser: googleUser ? { id: googleUser.user?.id, email: googleUser.user?.email } : null,
+      userProfile: userProfile,
+      isLoading: authLoading
+    })
+  }, [user, googleUser, userProfile, authLoading])
 
   // #region Memoized Values
   const _containerStyles = useMemo(() => [
@@ -112,9 +130,32 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
 
   // Use provided data or fall back to auth context data
   const _userData = useMemo((): ProfileBoxData | null => {
-    if (data) return data
+    console.log("🔍 [ProfileBox] Computing userData")
+    if (data) {
+      console.log("🔍 [ProfileBox] Using provided data:", data)
+      return data
+    }
     
+    // First priority: use the user profile from the database
+    if (userProfile) {
+      console.log("🔍 [ProfileBox] Using userProfile data:", userProfile)
+      return {
+        id: userProfile.id,
+        email: userProfile.email,
+        name: userProfile.full_name,
+        displayName: userProfile.full_name || userProfile.email?.split('@')[0],
+        avatarUrl: userProfile.avatar_url,
+        bio: userProfile.bio
+      }
+    }
+    
+    // Second priority: use Supabase user data
     if (user) {
+      console.log("🔍 [ProfileBox] Using Supabase user data:", { 
+        id: user.id, 
+        email: user.email,
+        metadata: user.user_metadata 
+      })
       return {
         id: user.id,
         email: user.email,
@@ -124,7 +165,9 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
       }
     }
     
+    // Third priority: use Google user data
     if (googleUser) {
+      console.log("🔍 [ProfileBox] Using Google user data:", googleUser.user)
       return {
         id: googleUser.id,
         email: googleUser.email,
@@ -134,15 +177,45 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
       }
     }
     
+    console.log("🔍 [ProfileBox] No user data available")
     return null
-  }, [data, user, googleUser])
+  }, [data, user, googleUser, userProfile])
 
-  const _displayName = useMemo(() => _getDisplayName(_userData), [_userData])
-  const _displayEmail = useMemo(() => _getDisplayEmail(_userData), [_userData])
-  const _avatarInitial = useMemo(() => _getAvatarInitial(_userData), [_userData])
+  const _displayName = useMemo(() => {
+    const name = _getDisplayName(_userData)
+    console.log("🔍 [ProfileBox] Display name:", name)
+    return name
+  }, [_userData])
   
-  const _hasValidData = useMemo(() => _isValidData(_userData), [_userData])
-  const _isLoading = useMemo(() => isLoading || authLoading, [isLoading, authLoading])
+  const _displayEmail = useMemo(() => {
+    const email = _getDisplayEmail(_userData)
+    console.log("🔍 [ProfileBox] Display email:", email)
+    return email
+  }, [_userData])
+  
+  const _displayBio = useMemo(() => {
+    const bio = _getDisplayBio(_userData)
+    console.log("🔍 [ProfileBox] Display bio:", bio)
+    return bio
+  }, [_userData])
+  
+  const _avatarInitial = useMemo(() => {
+    const initial = _getAvatarInitial(_userData)
+    console.log("🔍 [ProfileBox] Avatar initial:", initial)
+    return initial
+  }, [_userData])
+  
+  const _hasValidData = useMemo(() => {
+    const isValid = _isValidData(_userData)
+    console.log("🔍 [ProfileBox] Has valid data:", isValid)
+    return isValid
+  }, [_userData])
+  
+  const _isLoading = useMemo(() => {
+    const loading = isLoading || authLoading
+    console.log("🔍 [ProfileBox] Is loading:", loading)
+    return loading
+  }, [isLoading, authLoading])
   // #endregion
 
   // #region Event Handlers
@@ -204,41 +277,47 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
   }, [onPress, _handlePress])
   // #endregion
 
-  const _renderContent = (): React.ReactElement => (
-    <View 
-      style={_containerStyles} 
-      testID={testID}
-      {..._getPressableProps()}
-    >
-      {/* Avatar */}
-      <View style={themed($avatar)}>
-        <Text style={themed($avatarInitial)}>{_avatarInitial}</Text>
+  const _renderContent = (): React.ReactElement => {
+    console.log("🔍 [ProfileBox] Rendering content with data:", _userData)
+    return (
+      <View 
+        style={_containerStyles} 
+        testID={testID}
+        {..._getPressableProps()}
+      >
+        <View style={themed($contentContainer)}>
+          {/* Avatar */}
+          <View style={themed($avatar)}>
+            <Text style={themed($avatarInitial)}>{_avatarInitial}</Text>
+          </View>
+          {/* User Name */}
+          <Text 
+            style={themed($name)} 
+            text={_displayName}
+            testID={`${testID}_name`}
+          />
+          {/* User Email */}
+          <Text 
+            style={themed($email)} 
+            text={_displayEmail}
+            testID={`${testID}_email`}
+          />
+          {/* User Bio - only show if there is bio content */}
+          {_displayBio ? (
+            <Text 
+              style={themed($bio)} 
+              text={_displayBio}
+              testID={`${testID}_bio`}
+            />
+          ) : null}
+        </View>
+        {/* Separator line */}
+        <View style={themed($separator)} />
+        {/* ProfileStat */}
+        <ProfileStat />
       </View>
-      
-      {/* User Name */}
-      <Text 
-        style={themed($name)} 
-        text={_displayName}
-        testID={`${testID}_name`}
-      />
-      
-      {/* User Email */}
-      <Text 
-        style={themed($email)} 
-        text={_displayEmail}
-        testID={`${testID}_email`}
-      />
-      
-      {/* Debug info in development */}
-      {__DEV__ && _userData && (
-        <Text 
-          style={themed($debugText)} 
-          text={`ID: ${_userData.id ?? 'N/A'}`}
-          testID={`${testID}_debugInfo`}
-        />
-      )}
-    </View>
-  )
+    )
+  }
 
   const _renderEmptyState = (): React.ReactElement => (
     <View style={_containerStyles} testID={`${testID}_empty`}>
@@ -253,14 +332,17 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
 
   // #region Main Render Logic
   if (_isLoading) {
+    console.log("🔍 [ProfileBox] Rendering loading state")
     return _renderLoadingState()
   }
 
   if (error) {
+    console.log("🔍 [ProfileBox] Rendering error state:", error)
     return _renderErrorState()
   }
 
   if (!_hasValidData) {
+    console.log("🔍 [ProfileBox] Rendering empty state")
     return _renderEmptyState()
   }
 
@@ -274,28 +356,46 @@ ProfileBox.displayName = "ProfileBox"
 
 // #region Styles
 const $container: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
+  flex: 1,
   alignItems: "center",
   justifyContent: "center",
-  paddingVertical: spacing.lg,
+  paddingVertical: spacing.md,
+  paddingHorizontal: spacing.md,
   backgroundColor: colors.background,
-  borderRadius: 12,
-  marginBottom: spacing.md,
+  borderRadius: 16,
+  marginBottom: 12,
+  elevation: 1,
+  borderWidth: 1.5,
+  borderColor: colors.sectionBorderColor,
+  shadowColor: colors.palette.neutral800,
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.05,
+  shadowRadius: 2,
+  minHeight: 160,
+})
+
+const $contentContainer: ThemedStyle<ViewStyle> = () => ({
+  flex: 1,
+  alignItems: "center",
+  justifyContent: "center",
 })
 
 const $avatar: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  width: 64,
-  height: 64,
-  borderRadius: 32,
+  width: 70,
+  height: 70,
+  borderRadius: 35,
   backgroundColor: colors.palette.primary200,
   alignItems: "center",
   justifyContent: "center",
-  marginBottom: spacing.md,
+  marginBottom: 12,
+  borderWidth: 2,
+  borderColor: colors.palette.primary400,
 })
 
 const $avatarInitial: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.palette.primary600,
   fontFamily: typography.primary.bold,
-  fontSize: 32,
+  fontSize: 28,
 })
 
 const $name: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
@@ -306,11 +406,20 @@ const $name: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   textAlign: "center",
 })
 
-const $email: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+const $email: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   fontFamily: typography.primary.normal,
-  fontSize: 15,
+  fontSize: 14,
   color: colors.textDim,
   textAlign: "center",
+})
+
+const $bio: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.text,
+  textAlign: "center",
+  fontStyle: "italic",
+  paddingHorizontal: spacing.md,
 })
 
 const $loadingIndicator: ThemedStyle<ViewStyle> = ({ spacing }) => ({
@@ -348,19 +457,19 @@ const $emptyText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontStyle: "italic",
 })
 
-const $debugText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 12,
-  color: colors.textDim,
-  marginTop: spacing.xs,
-  opacity: 0.7,
-})
-
 const $activityIndicator: ThemedStyle<ViewStyle> = () => ({
   // Color is passed directly to ActivityIndicator component
 })
 
 const $activityIndicatorColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.tint,
+})
+
+const $separator: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  height: 1,
+  width: "100%",
+  backgroundColor: colors.sectionBorderColor,
+  opacity: 0.3,
+  marginVertical: spacing.md,
 })
 // #endregion

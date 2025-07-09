@@ -34,9 +34,8 @@ export type AppStackParamList = {
   Home: undefined // Renamed from Main
   // 🔥 Your screens go here
   Profile: undefined
-	Profile: undefined
-	Profile: undefined
-	Profile: undefined
+
+	Groups: undefined
 	// IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
 

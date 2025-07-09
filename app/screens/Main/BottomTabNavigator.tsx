@@ -1,9 +1,10 @@
 // NOTE: Requires @react-navigation/bottom-tabs
 import React from "react"
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar } from "react-native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import Ionicons from "react-native-vector-icons/Ionicons"
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 import { useAppTheme } from "../../theme/context"
 import { BottomTabButton } from "@/components/BottomTabButton"
@@ -14,6 +15,7 @@ import { AppearanceSection } from "@/components/profiles/AppearanceSection"
 import { AuthService } from "@/services/supabase/authService"
 import { useNavigation } from "@react-navigation/native"
 import ProfileScreen from "@/screens/Main/ProfileScreen"
+import { Screen } from "@/components/Screen"
 
 const Tab = createBottomTabNavigator()
 
@@ -22,18 +24,28 @@ type TabRoute = {
 }
 
 function PlaceholderScreen({ label }: { label: string }) {
-  const { theme } = useAppTheme()
+  const { theme, themeContext } = useAppTheme()
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: theme.colors.background,
-      }}
+    <Screen 
+      preset="fixed"
+      safeAreaEdges={["top"]}
+      systemBarStyle={themeContext === "dark" ? "light" : "dark"}
     >
-      <Text style={{ color: theme.colors.text, fontSize: 20 }}>{label}</Text>
-    </View>
+      <StatusBar 
+        barStyle={themeContext === "dark" ? "light-content" : "dark-content"} 
+        backgroundColor="transparent" 
+        translucent 
+      />
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text style={{ color: theme.colors.text, fontSize: 20 }}>{label}</Text>
+      </View>
+    </Screen>
   )
 }
 

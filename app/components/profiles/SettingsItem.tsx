@@ -12,27 +12,23 @@ export interface SettingsItemProps {
   onPress?: () => void
   style?: StyleProp<ViewStyle>
   signOut?: boolean
-  first?: boolean
-  last?: boolean
   toggle?: boolean
   toggleValue?: boolean
   onToggleChange?: (value: boolean) => void
 }
 
 export const SettingsItem = (props: SettingsItemProps) => {
-  const { icon, label, onPress, style, signOut, first, last, toggle, toggleValue, onToggleChange } = props
+  const { icon, label, onPress, style, signOut, toggle, toggleValue, onToggleChange } = props
   const { themed, theme } = useAppTheme();
   const $styles = [
     themed($container),
-    first && themed($first),
-    last && themed($last),
     signOut && themed($signOut),
     style,
   ]
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={$styles}>
-      <View style={themed($iconContainer)}>
+      <View style={themed([ $iconContainer, signOut && $iconContainerSignOut ])}>
         <Ionicons name={icon} size={22} color={signOut ? theme.colors.palette.angry500 : theme.colors.text} />
       </View>
       <Text style={themed([ $label, signOut && $labelSignOut ])}>{label}</Text>
@@ -56,19 +52,27 @@ const $container: ThemedStyle<ViewStyle> = ({ colors }) => ({
   backgroundColor: colors.cardColor,
   paddingVertical: 16,
   paddingHorizontal: 20,
-  borderRadius: 12,
-  marginVertical: 6,
-  marginHorizontal: 12,
+  
+  marginBottom: 0,
+  shadowColor: colors.palette.neutral900,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  elevation: 2,
 })
 
 const $iconContainer: ThemedStyle<ViewStyle> = ({ colors }) => ({
-  width: 32,
-  height: 32,
-  borderRadius: 16,
+  width: 36,
+  height: 36,
+  borderRadius: 18,
   backgroundColor: colors.palette.neutral100,
   alignItems: "center",
   justifyContent: "center",
-  marginRight: 16,
+  marginRight: 8
+})
+
+const $iconContainerSignOut: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  backgroundColor: colors.palette.angry100,
 })
 
 const $label: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
@@ -84,12 +88,4 @@ const $labelSignOut: ThemedStyle<TextStyle> = ({ colors }) => ({
 
 const $signOut: ThemedStyle<ViewStyle> = ({ colors }) => ({
   backgroundColor: colors.palette.angry100,
-})
-
-const $first: ThemedStyle<ViewStyle> = () => ({
-  marginTop: 0,
-})
-
-const $last: ThemedStyle<ViewStyle> = () => ({
-  marginBottom: 0,
 })

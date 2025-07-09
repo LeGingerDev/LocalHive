@@ -28,6 +28,12 @@ const palette = {
   accent200: "#FFD45C",
   accent100: "#F0C83E",
 
+  orange500: "#FFF4E6",
+  orange400: "#FFE4B3",
+  orange300: "#FFD180",
+  orange200: "#FFB84D",
+  orange100: "#FF9F1A",
+
   angry100: "#3F0000",
   angry500: "#FF6B6B",
 
@@ -64,4 +70,8 @@ export const colors = {
    * Gradient colors for accent theme
    */
   gradientAccent: ["#FFD45C", "#D9B52A"],
+  /**
+   * Gradient colors for orange theme
+   */
+  gradientOrange: ["#FF9F1A", "#E68500"],
 } as const

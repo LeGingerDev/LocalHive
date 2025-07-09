@@ -29,7 +29,7 @@ const supabaseStorage = {
 }
 
 // Create a function to get Supabase client with configurable session persistence
-export const createSupabaseClient = (persistSession: boolean = false) => {
+export const createSupabaseClient = (persistSession: boolean = true) => {
   return createClient(supabaseUrl, supabaseKey, {
     auth: {
       storage: persistSession ? supabaseStorage : undefined,
@@ -40,5 +40,5 @@ export const createSupabaseClient = (persistSession: boolean = false) => {
   })
 }
 
-// Default client with session persistence disabled
-export const supabase = createSupabaseClient(false)
+// Default client with session persistence enabled
+export const supabase = createSupabaseClient(true)

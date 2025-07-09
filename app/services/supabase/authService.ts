@@ -140,4 +140,50 @@ export class AuthService {
   static async getProfileByUserId(userId: string) {
     return DatabaseService.getById<any>("profiles", userId, { idColumn: "id" })
   }
+
+  /**
+   * Create or update a user profile in the 'profiles' table
+   * @param userId The user's ID from auth.users
+   * @param profileData The profile data to save
+   */
+  static async createOrUpdateProfile(userId: string, profileData: {
+    email?: string;
+    full_name?: string;
+    avatar_url?: string;
+    bio?: string;
+    theme_preference?: string;
+    use_system_theme?: boolean;
+    updated_at?: string;
+  }) {
+    try {
+      // Check if profile already exists
+      const { data: existingProfile } = await this.getProfileByUserId(userId)
+      
+      if (existingProfile) {
+        // Update existing profile
+        return DatabaseService.update("profiles", userId, {
+          ...profileData,
+          updated_at: new Date().toISOString(),
+        }, { idColumn: "id" })
+      } else {
+        // Create new profile
+        return DatabaseService.create("profiles", {
+          id: userId, // Use the auth.users id as the profile id
+          ...profileData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          // Set defaults for new profiles
+          theme_preference: profileData.theme_preference || 'light',
+          use_system_theme: profileData.use_system_theme !== undefined ? profileData.use_system_theme : true,
+          bio: profileData.bio || '',
+        })
+      }
+    } catch (error) {
+      console.error("Error creating/updating user profile:", error)
+      return {
+        data: null,
+        error,
+      }
+    }
+  }
 }
