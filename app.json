@@ -11,7 +11,9 @@
   },
   "newArchEnabled": true,
   "jsEngine": "hermes",
-  "assetBundlePatterns": ["**/*"],
+  "assetBundlePatterns": [
+    "**/*"
+  ],
   "android": {
     "icon": "./assets/images/app-icon-android-legacy.png",
     "package": "com.legingerdev.localhiveproject",
@@ -20,7 +22,10 @@
       "backgroundImage": "./assets/images/app-icon-android-adaptive-background.png"
     },
     "allowBackup": false,
-    "edgeToEdgeEnabled": true
+    "edgeToEdgeEnabled": true,
+    "softwareNavBarColor": "transparent",
+    "navigationBarColor": "transparent",
+    "windowSoftInputMode": "adjustResize"
   },
   "ios": {
     "icon": "./assets/images/app-icon-ios.png",
@@ -48,10 +53,12 @@
       {
         "android": {
           "parentTheme": "Light",
-          "enforceNavigationBarContrast": false
+          "enforceNavigationBarContrast": false,
+          "navigationBarColor": "transparent"
         }
       }
-    ]
+    ],
+    "@react-native-google-signin/google-signin"
   ],
   "experiments": {
     "tsconfigPaths": true
@@ -59,6 +66,9 @@
   "extra": {
     "ignite": {
       "version": "11.0.0"
+    },
+    "eas": {
+      "projectId": "de71a7ec-f6cf-4f88-ad5b-39fd0aeecd1e"
     }
   }
 }

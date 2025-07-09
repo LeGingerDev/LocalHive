@@ -151,8 +151,17 @@ export function useNavigationPersistence(storage: Storage, persistenceKey: strin
 
       // Only restore the state if app has not started from a deep link
       if (!initialUrl) {
-        const state = (await storage.load(persistenceKey)) as NavigationProps["initialState"] | null
-        if (state) setInitialNavigationState(state)
+        // Always start from Splash screen regardless of saved state
+        // Comment out the state restoration to ensure splash screen is shown on every app launch
+        // const state = (await storage.load(persistenceKey)) as NavigationProps["initialState"] | null
+        // if (state) setInitialNavigationState(state)
+
+        // Set initial state to Splash screen
+        const splashScreenState = {
+          index: 0,
+          routes: [{ name: "Splash" }],
+        }
+        setInitialNavigationState(splashScreenState)
       }
     } finally {
       if (isMounted()) setIsRestored(true)

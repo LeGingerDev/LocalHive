@@ -19,17 +19,20 @@ if (__DEV__) {
 import "./utils/gestureHandler"
 
 import { useEffect, useState } from "react"
+import { AppState, AppStateStatus } from "react-native"
 import { useFonts } from "expo-font"
 import * as Linking from "expo-linking"
 import { KeyboardProvider } from "react-native-keyboard-controller"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
 
+import { AlertProvider } from "./components/Alert"
 import { initI18n } from "./i18n"
 import { AppNavigator } from "./navigators/AppNavigator"
 import { useNavigationPersistence } from "./navigators/navigationUtilities"
 import { ThemeProvider } from "./theme/context"
 import { customFontsToLoad } from "./theme/typography"
 import { loadDateFnsLocale } from "./utils/formatDate"
+import { hideNavigationBar, setupNavigationBarHidingInterval } from "./utils/navigationBarUtils"
 import * as storage from "./utils/storage"
 
 export const NAVIGATION_PERSISTENCE_KEY = "NAVIGATION_STATE"
@@ -76,6 +79,26 @@ export function App() {
       .then(() => loadDateFnsLocale())
   }, [])
 
+  // Hide navigation bar on startup and keep it hidden with an interval
+  useEffect(() => {
+    const cleanupInterval = setupNavigationBarHidingInterval()
+    return cleanupInterval
+  }, [])
+
+  // Re-hide navigation bar when app regains focus
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
+      if (nextAppState === "active") {
+        // App has come to the foreground - hide navigation bar again
+        hideNavigationBar()
+      }
+    })
+
+    return () => {
+      subscription.remove()
+    }
+  }, [])
+
   // Before we show the app, we have to wait for our state to be ready.
   // In the meantime, don't render anything. This will be the background
   // color set in native by rootView's background color.
@@ -96,11 +119,13 @@ export function App() {
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <KeyboardProvider>
         <ThemeProvider>
-          <AppNavigator
-            linking={linking}
-            initialState={initialNavigationState}
-            onStateChange={onNavigationStateChange}
-          />
+          <AlertProvider>
+            <AppNavigator
+              linking={linking}
+              initialState={initialNavigationState}
+              onStateChange={onNavigationStateChange}
+            />
+          </AlertProvider>
         </ThemeProvider>
       </KeyboardProvider>
     </SafeAreaProvider>

@@ -21,6 +21,9 @@ export type Spacing = typeof spacingLight | typeof spacingDark
 export type Timing = typeof timing
 export type Typography = typeof typography
 
+// Define the gradient colors type
+export type GradientColors = readonly [string, string]
+
 // The overall Theme object should contain all of the data you need to style your app.
 export interface Theme {
   colors: Colors

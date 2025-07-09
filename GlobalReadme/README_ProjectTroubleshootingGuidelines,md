@@ -1,0 +1,190 @@
+# Project Troubleshooting & Common Issues
+
+This document covers recurring issues during setup or development and how to quickly resolve them. These are problems commonly encountered when working with React Native, Ignite CLI, TypeScript, and Expo.
+
+---
+
+## 🔄 Dependency Conflicts
+
+### ❌ Problem:
+
+```
+npm ERR! ERESOLVE unable to resolve dependency tree
+```
+
+### ✅ Fix:
+
+Use `--legacy-peer-deps` during install:
+
+```bash
+npm install --legacy-peer-deps
+```
+
+Or switch to Yarn:
+
+```bash
+yarn install
+```
+
+---
+
+## 🧠 `typeof` vs `instanceof` Confusion
+
+### ❌ Problem:
+
+Using `typeof` to check objects, which doesn't work correctly:
+
+```ts
+if (typeof user === 'User') // ❌ always false
+```
+
+### ✅ Fix:
+
+Use `instanceof`:
+
+```ts
+if (user instanceof User) // ✅ works as expected
+```
+
+Or check for shape:
+
+```ts
+if (user && 'email' in user && 'id' in user) { ... }
+```
+
+---
+
+## 📱 iOS Pods Not Installed
+
+### ❌ Problem:
+
+Missing iOS dependencies after installing new packages
+
+### ✅ Fix:
+
+```bash
+cd ios && pod install && cd ..
+```
+
+---
+
+## 🔁 Metro Cache Issues
+
+### ❌ Problem:
+
+App crashes or doesn’t pick up recent file changes
+
+### ✅ Fix:
+
+Reset the cache:
+
+```bash
+npx react-native start --reset-cache
+```
+
+---
+
+## 🧩 Alias Not Working (`@/components/...`)
+
+### ❌ Problem:
+
+Module not found error for aliases
+
+### ✅ Fix:
+
+Ensure your `metro.config.js` includes:
+
+```js
+resolver: {
+  alias: {
+    '@': './app',
+    '@components': './app/components',
+    // etc...
+  },
+},
+```
+
+Then restart Metro.
+
+---
+
+## 🔄 Expo Constants Missing `.env`
+
+### ❌ Problem:
+
+`Constants.manifest.extra` is undefined
+
+### ✅ Fix:
+
+Ensure `extra` is defined in `app.json`:
+
+```json
+"extra": {
+  "API_URL": "https://api.yourdomain.com"
+}
+```
+
+Then access it:
+
+```ts
+Constants?.manifest?.extra?.API_URL
+```
+
+---
+
+## 🧼 Cleaning Broken Native Builds
+
+### ❌ Problem:
+
+Builds failing for unclear native reasons (Android/iOS)
+
+### ✅ Fix:
+
+```bash
+watchman watch-del-all
+rm -rf node_modules
+rm -rf ios/Pods ios/Podfile.lock
+rm -rf android/.gradle
+npm install --legacy-peer-deps
+cd ios && pod install && cd ..
+npx react-native start --reset-cache
+```
+
+---
+
+## 🛠 ESLint/Prettier Conflicts
+
+### ❌ Problem:
+
+Linting fails or autofix doesn’t work as expected
+
+### ✅ Fix:
+
+Ensure `.eslintrc.js` is configured for TypeScript and aliases
+Ensure `.prettierrc` and VSCode plugin support project formatting rules
+
+---
+
+## 🧪 Jest Test Errors with AsyncStorage or Expo
+
+### ❌ Problem:
+
+Tests break on import of native modules
+
+### ✅ Fix:
+
+Mock AsyncStorage in `jest.setup.js`:
+
+```ts
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+```
+
+Use `jest-expo` preset if using Expo:
+
+```json
+"preset": "jest-expo"
+```
+
+---
+
+This document evolves as new bugs are encountered. Feel free to extend it when you solve a tricky issue.

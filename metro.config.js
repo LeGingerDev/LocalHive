@@ -1,9 +1,25 @@
 /* eslint-env node */
 // Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require("expo/metro-config")
+const path = require("path")
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname)
+
+// Add path aliases for cleaner imports
+config.resolver.alias = {
+  "@": path.resolve(__dirname, "app"),
+  "@components": path.resolve(__dirname, "app/components"),
+  "@screens": path.resolve(__dirname, "app/screens"),
+  "@navigation": path.resolve(__dirname, "app/navigators"),
+  "@services": path.resolve(__dirname, "app/services"),
+  "@utils": path.resolve(__dirname, "app/utils"),
+  "@theme": path.resolve(__dirname, "app/theme"),
+  "@config": path.resolve(__dirname, "app/config"),
+  "@hooks": path.resolve(__dirname, "app/hooks"),
+  "@types": path.resolve(__dirname, "types"),
+  "@assets": path.resolve(__dirname, "assets"),
+}
 
 config.transformer.getTransformOptions = async () => ({
   transform: {
