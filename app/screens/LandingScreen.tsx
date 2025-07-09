@@ -10,7 +10,6 @@ import {
   Alert,
 } from "react-native"
 import { useNavigation } from "@react-navigation/native"
-import Feather from "react-native-vector-icons/Feather"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
 
 import { CustomGradient } from "@/components/CustomGradient"
@@ -37,47 +36,28 @@ const AppleIcon = () => (
   </View>
 )
 
-const EmailIcon = () => (
-  <View style={styles.iconContainer}>
-    <Feather name="mail" size={20} color="white" />
-  </View>
-)
-
-// Outline icons for features
-const SearchIcon = () => <Feather name="search" size={18} color="white" />
-
-const ShareIcon = () => <Feather name="share-2" size={18} color="white" />
-
-const DiscoverIcon = () => <Feather name="map-pin" size={18} color="white" />
-
 export const LandingScreen = () => {
-  const $containerInsets = useSafeAreaInsetsStyle(["top", "bottom"])
   const navigation = useNavigation<any>()
   const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false)
-
-  // Animation for fade-in
   const fadeAnim = useRef(new Animated.Value(0)).current
-  const translateYAnim = useRef(new Animated.Value(20)).current
+  const translateYAnim = useRef(new Animated.Value(50)).current
+  const $containerInsets = useSafeAreaInsetsStyle(["top", "bottom"])
 
-  // Hide navigation bar when landing screen mounts
   useEffect(() => {
     hideNavigationBar()
-  }, [])
-
-  // Fade in animation when screen mounts
-  useEffect(() => {
+    // Animate content in
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 600,
+        duration: 1000,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
-        easing: Easing.out(Easing.ease),
       }),
       Animated.timing(translateYAnim, {
         toValue: 0,
-        duration: 600,
+        duration: 1000,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
-        easing: Easing.out(Easing.ease),
       }),
     ]).start()
   }, [fadeAnim, translateYAnim])
@@ -122,14 +102,6 @@ export const LandingScreen = () => {
     } finally {
       setIsGoogleSigningIn(false)
     }
-  }
-
-  const handleEmailSignIn = () => {
-    navigation.navigate("Login")
-  }
-
-  const handleSignUp = () => {
-    navigation.navigate("SignUp")
   }
 
   return (
@@ -187,59 +159,40 @@ export const LandingScreen = () => {
               <RoundedButton
                 text="Sign in with Apple"
                 preset="apple"
-                onPress={handleEmailSignIn}
-                style={styles.authButton}
-                disabled={isGoogleSigningIn}
-              />
-            </View>
-
-            {/* Email Sign In */}
-            <View style={styles.buttonWrapper}>
-              <EmailIcon />
-              <RoundedButton
-                text="Sign in with Email"
-                preset="email"
-                onPress={handleEmailSignIn}
+                onPress={() => {}}
                 style={styles.authButton}
                 disabled={isGoogleSigningIn}
               />
             </View>
           </View>
 
-          {/* Sign Up Link */}
-          <TouchableOpacity style={styles.signInLink} onPress={handleSignUp}>
-            <Text style={styles.signInText}>
-              Not got an account? <Text style={styles.signInBold}>Sign Up</Text>
-            </Text>
-          </TouchableOpacity>
-
           {/* Features List */}
           <View style={styles.featuresList}>
             <View style={styles.featureItem}>
               <View style={styles.featureIconContainer}>
                 <View style={styles.featureIconCircle}>
-                  <SearchIcon />
+                  <FontAwesome name="users" size={16} color="white" />
                 </View>
               </View>
-              <Text style={styles.featureText}>AI-powered smart search</Text>
+              <Text style={styles.featureText}>Connect with your local community</Text>
             </View>
 
             <View style={styles.featureItem}>
               <View style={styles.featureIconContainer}>
                 <View style={styles.featureIconCircle}>
-                  <ShareIcon />
+                  <FontAwesome name="lightbulb-o" size={16} color="white" />
                 </View>
               </View>
-              <Text style={styles.featureText}>Share knowledge with your group</Text>
+              <Text style={styles.featureText}>Share knowledge and insights</Text>
             </View>
 
             <View style={styles.featureItem}>
               <View style={styles.featureIconContainer}>
                 <View style={styles.featureIconCircle}>
-                  <DiscoverIcon />
+                  <FontAwesome name="map-marker" size={16} color="white" />
                 </View>
               </View>
-              <Text style={styles.featureText}>Discover local gems together</Text>
+              <Text style={styles.featureText}>Discover local resources and events</Text>
             </View>
           </View>
         </Animated.View>
@@ -332,20 +285,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  signInBold: {
-    fontWeight: "bold",
-    textDecorationLine: "underline",
-  },
-  signInLink: {
-    marginBottom: 40,
-    marginTop: 12,
-  },
-  signInText: {
-    color: "white",
-    fontSize: 14,
-  },
   spacer: {
-    height: height * 0.15, // 15% of screen height as top spacing
+    height: height * 0.1, // 10% of screen height
   },
   subtitle: {
     color: "rgba(255, 255, 255, 0.9)",
@@ -356,7 +297,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "white",
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
     marginBottom: 8,
     textAlign: "center",

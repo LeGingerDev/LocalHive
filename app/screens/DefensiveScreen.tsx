@@ -1,10 +1,3 @@
----
-destinationDir: app/screens
-patches:
-- path: "app/navigators/AppNavigator.tsx"
-  replace: "// IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST"
-  insert: "<%= props.pascalCaseName %>: undefined\n\t// IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST"
----
 import { FC, useState, useEffect, useCallback } from "react"
 import { ViewStyle, TextStyle, ActivityIndicator } from "react-native"
 import type { AppStackScreenProps } from "@/navigators/AppNavigator"
@@ -15,15 +8,15 @@ import type { ThemedStyle } from "@/theme/types"
 // import { useNavigation } from "@react-navigation/native"
 
 // #region Types & Interfaces
-interface <%= props.pascalCaseName %>ScreenProps extends AppStackScreenProps<"<%= props.pascalCaseName %>"> {}
+interface ProfileScreenProps extends AppStackScreenProps<"Profile"> {}
 
-interface <%= props.pascalCaseName %>Data {
+interface ProfileData {
   // TODO: Define your data structure here
   id?: string
   name?: string
 }
 
-interface <%= props.pascalCaseName %>Error {
+interface ProfileError {
   message: string
   code?: string
 }
@@ -31,7 +24,7 @@ interface <%= props.pascalCaseName %>Error {
 
 // #region Screen Component
 /**
- * <%= props.pascalCaseName %>Screen - A defensive screen with proper error handling and loading states
+ * ProfileScreen - A defensive screen with proper error handling and loading states
  * 
  * Features:
  * - Loading state support
@@ -43,17 +36,17 @@ interface <%= props.pascalCaseName %>Error {
  * Note: This screen should be wrapped in an error boundary at the app level
  * for comprehensive error handling.
  */
-export const <%= props.pascalCaseName %>Screen: FC<<%= props.pascalCaseName %>ScreenProps> = () => {
+export const ProfileScreen: FC<ProfileScreenProps> = () => {
   // #region Private State Variables
   const [_isLoading, setIsLoading] = useState<boolean>(true)
-  const [_data, setData] = useState<<%= props.pascalCaseName %>Data | null>(null)
-  const [_error, setError] = useState<<%= props.pascalCaseName %>Error | null>(null)
+  const [_data, setData] = useState<ProfileData | null>(null)
+  const [_error, setError] = useState<ProfileError | null>(null)
   const [_isRefreshing, setIsRefreshing] = useState<boolean>(false)
   // #endregion
 
   // #region Hooks & Context
   const { themed } = useAppTheme()
-  // const navigation = useNavigation<AppStackNavigationProp<"<%= props.pascalCaseName %>">>()
+  // const navigation = useNavigation<AppStackNavigationProp<"Profile">>()
   // #endregion
 
   // #region Data Fetching Functions
@@ -69,16 +62,16 @@ export const <%= props.pascalCaseName %>Screen: FC<<%= props.pascalCaseName %>Sc
       
       // TEMPORARY: Mock data for development/testing
       // REMOVE THIS SECTION when implementing real API calls
-      const mockData: <%= props.pascalCaseName %>Data = {
+      const mockData: ProfileData = {
         id: "1",
-        name: "<%= props.camelCaseName %> data"
+        name: "profile data"
       }
       
       setData(mockData)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
       setError({ message: errorMessage })
-      console.error("[<%= props.pascalCaseName %>Screen] Error fetching data:", error)
+      console.error("[ProfileScreen] Error fetching data:", error)
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -143,7 +136,7 @@ export const <%= props.pascalCaseName %>Screen: FC<<%= props.pascalCaseName %>Sc
       refreshing={_isRefreshing}
       onRefresh={_handleRefresh}
     >
-      <Text style={themed($title)} text="<%= props.pascalCaseName %>" />
+      <Text style={themed($title)} text="Profile" />
       {_data && (
         <>
           <Text style={themed($dataText)} text={`ID: ${_data.id ?? 'N/A'}`} />

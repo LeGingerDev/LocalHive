@@ -11,9 +11,7 @@ import { createNativeStackNavigator, NativeStackScreenProps } from "@react-navig
 import Config from "@/config"
 import { ErrorBoundary } from "@/screens/ErrorScreen/ErrorBoundary"
 import { LandingScreen } from "@/screens/LandingScreen"
-import { LoginScreen } from "@/screens/LoginScreen"
 import { HomeScreen } from "@/screens/Main/HomeScreen"
-import { SignUpScreen } from "@/screens/SignUpScreen"
 import { SplashScreen } from "@/screens/SplashScreen"
 import { WelcomeScreen } from "@/screens/WelcomeScreen"
 import { useAppTheme } from "@/theme/context"
@@ -33,11 +31,13 @@ export type AppStackParamList = {
   Welcome: undefined
   Splash: undefined
   Landing: undefined
-  Login: undefined
-  SignUp: undefined
   Home: undefined // Renamed from Main
   // 🔥 Your screens go here
-  // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
+  Profile: undefined
+	Profile: undefined
+	Profile: undefined
+	Profile: undefined
+	// IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
 
 /**
@@ -75,8 +75,6 @@ const AppStack = () => {
     >
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Landing" component={LandingScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="SignUp" component={SignUpScreen} />
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="Home" component={HomeScreen} />
       {/** 🔥 Your screens go here */}

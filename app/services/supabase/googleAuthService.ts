@@ -43,6 +43,8 @@ export interface CheckSignInResult {
 
 // Google Auth Service Class
 class GoogleAuthService {
+  private signInSilentlyPromise: Promise<any> | null = null
+
   constructor() {
     if (GoogleSignin) {
       this.configureGoogleSignIn()
@@ -165,50 +167,26 @@ class GoogleAuthService {
   }
 
   /**
-   * Check if user is already signed in with Google
-   * @returns Promise<CheckSignInResult>
-   */
-  async checkExistingSignIn(): Promise<CheckSignInResult> {
-    if (!GoogleSignin) {
-      return {
-        isAuthenticated: false,
-      }
-    }
-
-    try {
-      const hasPreviousSignIn = await GoogleSignin.hasPreviousSignIn()
-
-      if (hasPreviousSignIn) {
-        const currentUser = await GoogleSignin.signInSilently()
-        return {
-          isAuthenticated: true,
-          user: currentUser,
-        }
-      }
-
-      return {
-        isAuthenticated: false,
-      }
-    } catch (error) {
-      console.error("Error checking Google sign-in status:", error)
-      return {
-        isAuthenticated: false,
-      }
-    }
-  }
-
-  /**
    * Sign out from Google
    * @returns Promise<void>
    */
   async signOut(): Promise<void> {
     try {
+      // First sign out from Supabase to clear the main session
+      await supabase.auth.signOut()
+      
+      // Then sign out from Google Sign-In
       if (GoogleSignin) {
         await GoogleSignin.signOut()
       }
-      await supabase.auth.signOut()
     } catch (error) {
       console.error("Error signing out from Google:", error)
+      // Even if Google sign-out fails, ensure Supabase is signed out
+      try {
+        await supabase.auth.signOut()
+      } catch (supabaseError) {
+        console.error("Error signing out from Supabase:", supabaseError)
+      }
     }
   }
 
@@ -221,11 +199,88 @@ class GoogleAuthService {
       return null
     }
 
+    // Prevent multiple simultaneous calls to signInSilently
+    if (this.signInSilentlyPromise) {
+      try {
+        return await this.signInSilentlyPromise
+      } catch (error) {
+        // If the existing promise fails, clear it and return null
+        this.signInSilentlyPromise = null
+        console.error("Error getting current user from existing promise:", error)
+        return null
+      }
+    }
+
     try {
-      return await GoogleSignin.signInSilently()
+      this.signInSilentlyPromise = GoogleSignin.signInSilently()
+      const result = await this.signInSilentlyPromise
+      this.signInSilentlyPromise = null
+      return result
     } catch (error) {
+      this.signInSilentlyPromise = null
       console.error("Error getting current user:", error)
       return null
+    }
+  }
+
+  /**
+   * Check if user is already signed in with Google
+   * @returns Promise<CheckSignInResult>
+   */
+  async checkExistingSignIn(): Promise<CheckSignInResult> {
+    try {
+      // STEP 1: Check Supabase session first (primary source of truth)
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session) {
+        // Valid Supabase session - user is authenticated
+        return { isAuthenticated: true, user: session.user }
+      }
+
+      // STEP 2: No Supabase session - attempt restoration from Google
+      if (!GoogleSignin) {
+        return { isAuthenticated: false }
+      }
+
+      const hasPreviousSignIn = await GoogleSignin.hasPreviousSignIn()
+      if (!hasPreviousSignIn) {
+        return { isAuthenticated: false }
+      }
+
+      // STEP 3: Google has cached credentials - attempt to restore Supabase session
+      try {
+        // Use the protected getCurrentUser method instead of direct signInSilently call
+        const currentUser = await this.getCurrentUser()
+        if (!currentUser) {
+          return { isAuthenticated: false }
+        }
+        
+        const { idToken } = await GoogleSignin.getTokens()
+        
+        // Attempt to restore Supabase session using Google token
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        })
+
+        if (!error && data.session) {
+          // Successfully restored Supabase session
+          return { isAuthenticated: true, user: data.user }
+        }
+        
+        // Failed to restore - clear Google state and return unauthenticated
+        await GoogleSignin.signOut()
+        return { isAuthenticated: false }
+        
+      } catch (error) {
+        // Google credentials invalid - clear and return unauthenticated
+        await GoogleSignin.signOut()
+        return { isAuthenticated: false }
+      }
+
+    } catch (error) {
+      console.error("Error checking authentication:", error)
+      return { isAuthenticated: false }
     }
   }
 
@@ -249,3 +304,4 @@ class GoogleAuthService {
 // Export a singleton instance
 const googleAuthService = new GoogleAuthService()
 export default googleAuthService
+

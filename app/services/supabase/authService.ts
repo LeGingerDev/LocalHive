@@ -8,62 +8,6 @@ import { createSupabaseClient } from "./supabase"
  */
 export class AuthService {
   /**
-   * Sign up a new user with email and password
-   */
-  static async signUpWithEmail(
-    email: string,
-    password: string,
-  ): Promise<{ user: User | null; error: AuthError | null }> {
-    try {
-      const supabase = createSupabaseClient(false) // No session persistence for sign up
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-
-      return {
-        user: data?.user || null,
-        error,
-      }
-    } catch (error) {
-      console.error("Error signing up:", error)
-      return {
-        user: null,
-        error: error as AuthError,
-      }
-    }
-  }
-
-  /**
-   * Sign in a user with email and password
-   * Note: Session persistence is controlled by rememberMe parameter
-   */
-  static async signInWithEmail(
-    email: string,
-    password: string,
-    rememberMe: boolean = false,
-  ): Promise<{ user: User | null; error: AuthError | null }> {
-    try {
-      const supabase = createSupabaseClient(rememberMe)
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      return {
-        user: data?.user || null,
-        error,
-      }
-    } catch (error) {
-      console.error("Error signing in:", error)
-      return {
-        user: null,
-        error: error as AuthError,
-      }
-    }
-  }
-
-  /**
    * Sign in a user with a third-party provider
    */
   static async signInWithProvider(provider: "google" | "apple"): Promise<void> {
@@ -185,42 +129,6 @@ export class AuthService {
       console.error("Error getting session:", error)
       return {
         session: null,
-        error: error as AuthError,
-      }
-    }
-  }
-
-  /**
-   * Send a password reset email
-   */
-  static async resetPassword(email: string): Promise<{ error: AuthError | null }> {
-    try {
-      const supabase = createSupabaseClient(false) // No session persistence for password reset
-      const { error } = await supabase.auth.resetPasswordForEmail(email)
-      return { error }
-    } catch (error) {
-      console.error("Error resetting password:", error)
-      return { error: error as AuthError }
-    }
-  }
-
-  /**
-   * Update a user's password
-   */
-  static async updatePassword(
-    password: string,
-  ): Promise<{ user: User | null; error: AuthError | null }> {
-    try {
-      const supabase = createSupabaseClient(false) // No session persistence for password update
-      const { data, error } = await supabase.auth.updateUser({ password })
-      return {
-        user: data?.user || null,
-        error,
-      }
-    } catch (error) {
-      console.error("Error updating password:", error)
-      return {
-        user: null,
         error: error as AuthError,
       }
     }

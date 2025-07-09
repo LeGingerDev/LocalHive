@@ -26,7 +26,7 @@ export interface RoundedButtonProps {
   /**
    * Button preset style
    */
-  preset?: "primary" | "secondary" | "outline" | "google" | "apple" | "email"
+  preset?: "primary" | "secondary" | "outline" | "google" | "apple"
 
   /**
    * Optional icon name to display before text
@@ -108,11 +108,6 @@ export function RoundedButton(props: RoundedButtonProps) {
       elevation: 2,
     },
     preset === "apple" && { backgroundColor: "black" },
-    preset === "email" && {
-      backgroundColor: "transparent",
-      borderWidth: 1,
-      borderColor: "rgba(255, 255, 255, 0.6)",
-    },
     disabled && { opacity: 0.6 },
     styleOverride,
   ]
@@ -125,7 +120,6 @@ export function RoundedButton(props: RoundedButtonProps) {
     preset === "outline" && { color: "white" },
     preset === "google" && { color: "#333" },
     preset === "apple" && { color: "white" },
-    preset === "email" && { color: "white" },
     disabled && { opacity: 0.6 },
     textStyleOverride,
   ]

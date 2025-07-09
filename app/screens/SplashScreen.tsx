@@ -117,11 +117,14 @@ export const SplashScreen = () => {
     // Check for existing session and navigate accordingly
     const checkAuthAndNavigate = async () => {
       try {
-        // First check for Google Auth session
-        const googleAuthResult = await googleAuthService.checkExistingSignIn()
-
-        // Then check for Supabase session
+        // First check for Supabase session - this is the primary source of truth
         const { session } = await AuthService.getSession()
+
+        // Only check Google Auth if Supabase doesn't have a session
+        let googleAuthResult = { isAuthenticated: false }
+        if (!session) {
+          googleAuthResult = await googleAuthService.checkExistingSignIn()
+        }
 
         // Navigate after 3.5 seconds
         const timer = setTimeout(() => {
@@ -143,8 +146,8 @@ export const SplashScreen = () => {
             // Hide navigation bar again before navigating
             hideNavigationBar().then(() => {
               // Navigate based on authentication status
-              // User is authenticated if either Google Auth or Supabase session exists
-              const isAuthenticated = googleAuthResult.isAuthenticated || !!session
+              // Prioritize Supabase session over Google Auth state
+              const isAuthenticated = !!session || googleAuthResult.isAuthenticated
               const targetRoute = isAuthenticated ? "Home" : "Landing"
 
               // Use immediate transition to avoid jitter

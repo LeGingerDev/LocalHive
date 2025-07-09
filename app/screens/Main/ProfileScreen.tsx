@@ -6,27 +6,24 @@ import { ProfileBox } from "@/components/profiles/ProfileBox"
 import { AppearanceSection } from "@/components/profiles/AppearanceSection"
 import { SettingsSection } from "@/components/profiles/SettingsSection"
 import { SettingsItem } from "@/components/profiles/SettingsItem"
-import { AuthService } from "@/services/supabase/authService"
+import googleAuthService  from "@/services/supabase/googleAuthService"
 
 const ProfileScreen = () => {
   const { theme } = useAppTheme()
   const navigation = useNavigation<any>()
 
-  const handleSignOut = async () => {
-    try {
-      const { error } = await AuthService.signOut()
-      if (error) {
-        console.error("Error signing out:", error)
-      } else {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Landing" }],
-        })
-      }
-    } catch (error) {
-      console.error("Error during sign out:", error)
-    }
+const handleSignOut = async () => {
+  try {
+    await googleAuthService.signOut(); // ✅ Use Google auth service
+    
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Landing" }],
+    });
+  } catch (error) {
+    console.error("Error during sign out:", error);
   }
+};
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 }}>
