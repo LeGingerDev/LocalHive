@@ -1,3 +1,4 @@
+import React, { ReactNode } from "react";
 import { FC, memo, useCallback, useMemo } from "react"
 import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator } from "react-native"
 import { useAppTheme } from "@/theme/context"
@@ -5,7 +6,7 @@ import type { ThemedStyle } from "@/theme/types"
 import { Text } from "@/components/Text"
 
 // #region Types & Interfaces
-export interface GroupStatsProps {
+export interface GroupHeaderProps {
   /**
    * An optional style override useful for padding & margin.
    */
@@ -14,7 +15,7 @@ export interface GroupStatsProps {
   /**
    * The main data for this component
    */
-  data?: GroupStatsData | null
+  data?: GroupHeaderData | null
   
   /**
    * Loading state indicator
@@ -42,7 +43,7 @@ export interface GroupStatsProps {
   testID?: string
 }
 
-interface GroupStatsData {
+interface GroupHeaderData {
   // TODO: Define your data structure here
   id?: string
   title?: string
@@ -51,16 +52,16 @@ interface GroupStatsData {
 // #endregion
 
 // #region Private Helper Functions
-const _isValidData = (data: GroupStatsData | null | undefined): data is GroupStatsData => {
+const _isValidData = (data: GroupHeaderData | null | undefined): data is GroupHeaderData => {
   return data != null && typeof data === 'object'
 }
 
-const _getDisplayTitle = (data: GroupStatsData | null | undefined): string => {
+const _getDisplayTitle = (data: GroupHeaderData | null | undefined): string => {
   if (!_isValidData(data)) return "No Title"
   return data.title ?? "Untitled"
 }
 
-const _getDisplayDescription = (data: GroupStatsData | null | undefined): string => {
+const _getDisplayDescription = (data: GroupHeaderData | null | undefined): string => {
   if (!_isValidData(data)) return "No description available"
   return data.description ?? "No description provided"
 }
@@ -68,7 +69,7 @@ const _getDisplayDescription = (data: GroupStatsData | null | undefined): string
 
 // #region Component
 /**
- * GroupStats - A defensive component with proper error handling and loading states
+ * GroupHeader - A defensive component with proper error handling and loading states
  * 
  * Features:
  * - Loading state support
@@ -77,7 +78,7 @@ const _getDisplayDescription = (data: GroupStatsData | null | undefined): string
  * - Memoized for performance
  * - Follows SOLID principles
  */
-export const GroupStats: FC<GroupStatsProps> = memo((props) => {
+export const GroupHeader: FC<GroupHeaderProps> = memo((props) => {
   // #region Props Destructuring with Defaults
   const {
     style,
@@ -86,7 +87,7 @@ export const GroupStats: FC<GroupStatsProps> = memo((props) => {
     error = null,
     onPress,
     onRetry,
-    testID = "groupStatsComponent"
+    testID = "groupHeaderComponent"
   } = props
   // #endregion
 
@@ -121,7 +122,7 @@ export const GroupStats: FC<GroupStatsProps> = memo((props) => {
   // #endregion
 
   // #region Render Helpers
-  const _renderLoadingState = (): JSX.Element => (
+  const _renderLoadingState = (): React.ReactNode => (
     <View style={_containerStyles} testID={`${testID}_loading`}>
       <ActivityIndicator 
         size="small" 
@@ -136,7 +137,7 @@ export const GroupStats: FC<GroupStatsProps> = memo((props) => {
     </View>
   )
 
-  const _renderErrorState = (): JSX.Element => (
+  const _renderErrorState = (): React.ReactNode => (
     <View style={_containerStyles} testID={`${testID}_error`}>
       <Text 
         style={themed($errorText)} 
@@ -165,7 +166,7 @@ export const GroupStats: FC<GroupStatsProps> = memo((props) => {
   }, [onPress, _handlePress])
   // #endregion
 
-  const _renderContent = (): JSX.Element => (
+  const _renderContent = (): React.ReactNode => (
     <View 
       style={_containerStyles} 
       testID={testID}
@@ -193,7 +194,7 @@ export const GroupStats: FC<GroupStatsProps> = memo((props) => {
     </View>
   )
 
-  const _renderEmptyState = (): JSX.Element => (
+  const _renderEmptyState = (): React.ReactNode => (
     <View style={_containerStyles} testID={`${testID}_empty`}>
       <Text 
         style={themed($emptyText)} 
@@ -222,7 +223,7 @@ export const GroupStats: FC<GroupStatsProps> = memo((props) => {
 })
 
 // Set display name for debugging
-GroupStats.displayName = "GroupStats"
+GroupHeader.displayName = "GroupHeader"
 // #endregion
 
 // #region Styles

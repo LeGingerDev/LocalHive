@@ -70,10 +70,10 @@ export const LandingScreen = () => {
       const result = await googleAuthService.signInWithGoogle()
 
       if (result.success) {
-        // Navigate to home screen on successful authentication
+        // Navigate to main app with bottom tabs on successful authentication
         navigation.reset({
           index: 0,
-          routes: [{ name: "Home" }],
+          routes: [{ name: "Main" }],
         })
       } else {
         // Handle different error cases
@@ -127,7 +127,7 @@ export const LandingScreen = () => {
           <View style={styles.logoContainer}>
             <View style={styles.logoBox}>
               <Image
-                source={require("../../assets/images/logo.png")}
+                source={require("@assets/images/logo.png")}
                 style={styles.logo}
                 resizeMode="contain"
               />

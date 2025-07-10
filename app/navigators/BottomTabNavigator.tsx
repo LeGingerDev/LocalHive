@@ -1,52 +1,35 @@
 // NOTE: Requires @react-navigation/bottom-tabs
 import React from "react"
 import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar } from "react-native"
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import { createBottomTabNavigator, BottomTabScreenProps as NavigationBottomTabScreenProps } from "@react-navigation/bottom-tabs"
 import Ionicons from "react-native-vector-icons/Ionicons"
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"
-import { SafeAreaView } from "react-native-safe-area-context"
 
-import { useAppTheme } from "../../theme/context"
-import { BottomTabButton } from "@/components/BottomTabButton"
-import { ProfileBox } from "@/components/profiles/ProfileBox"
-import { SettingsSection } from "@/components/profiles/SettingsSection"
-import { SettingsItem } from "@/components/profiles/SettingsItem"
-import { AppearanceSection } from "@/components/profiles/AppearanceSection"
-import { AuthService } from "@/services/supabase/authService"
-import { useNavigation } from "@react-navigation/native"
-import ProfileScreen from "@/screens/Main/ProfileScreen"
+import { useAppTheme } from "../theme/context"
 import { Screen } from "@/components/Screen"
+import { HomeScreen } from "@/screens/Main/HomeScreen"
+import { SearchScreen } from "@/screens/Main/SearchScreen"
+import { AddScreen } from "@/screens/Main/AddScreen"
+import { GroupsScreen } from "@/screens/Main/GroupsScreen"
+import ProfileScreen from "@/screens/Main/ProfileScreen"
 
-const Tab = createBottomTabNavigator()
+export type BottomTabParamList = {
+  Home: undefined
+  Search: undefined
+  Add: undefined
+  Groups: undefined
+  Profile: undefined
+}
+
+const Tab = createBottomTabNavigator<BottomTabParamList>()
+
+export type BottomTabScreenProps<T extends keyof BottomTabParamList> = NavigationBottomTabScreenProps<
+  BottomTabParamList,
+  T
+>
 
 type TabRoute = {
   name: string
-}
-
-function PlaceholderScreen({ label }: { label: string }) {
-  const { theme, themeContext } = useAppTheme()
-  return (
-    <Screen 
-      preset="fixed"
-      safeAreaEdges={["top"]}
-      systemBarStyle={themeContext === "dark" ? "light" : "dark"}
-    >
-      <StatusBar 
-        barStyle={themeContext === "dark" ? "light-content" : "dark-content"} 
-        backgroundColor="transparent" 
-        translucent 
-      />
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text style={{ color: theme.colors.text, fontSize: 20 }}>{label}</Text>
-      </View>
-    </Screen>
-  )
 }
 
 function AddButton({ onPress, focused }: { onPress: (event: any) => void; focused: boolean }) {
@@ -165,11 +148,11 @@ export function BottomTabNavigator() {
         tabBarInactiveTintColor: theme.colors.textDim,
       })}
     >
-      <Tab.Screen name="Home" children={() => <PlaceholderScreen label="Home" />} />
-      <Tab.Screen name="Search" children={() => <PlaceholderScreen label="Search" />} />
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Search" component={SearchScreen} />
       <Tab.Screen
         name="Add"
-        children={() => null}
+        component={AddScreen}
         options={{
           tabBarButton: (props) => (
             <TouchableOpacity
@@ -211,7 +194,7 @@ export function BottomTabNavigator() {
           ),
         }}
       />
-      <Tab.Screen name="Groups" children={() => <PlaceholderScreen label="Groups" />} />
+      <Tab.Screen name="Groups" component={GroupsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   )
@@ -260,4 +243,4 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: "100%",
   },
-})
+}) 

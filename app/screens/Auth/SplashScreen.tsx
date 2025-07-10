@@ -147,15 +147,27 @@ export const SplashScreen = () => {
             hideNavigationBar().then(() => {
               // Navigate based on authentication status
               // Prioritize Supabase session over Google Auth state
-              const isAuthenticated = !!session || googleAuthResult.isAuthenticated
-              const targetRoute = isAuthenticated ? "Home" : "Landing"
-
-              // Use immediate transition to avoid jitter
-              navigation.reset({
-                index: 0,
-                routes: [{ name: targetRoute }],
-                key: undefined, // Force a new navigation state
-              })
+              const isAuthenticated = !!session || googleAuthResult.isAuthenticated;
+              if (isAuthenticated) {
+                navigation.reset({
+                  index: 0,
+                  routes: [
+                    {
+                      name: "Main",
+                      state: {
+                        routes: [{ name: "Home" }],
+                      },
+                    },
+                  ],
+                  key: undefined,
+                });
+              } else {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "Landing" }],
+                  key: undefined,
+                });
+              }
             })
           })
         }, 3500)

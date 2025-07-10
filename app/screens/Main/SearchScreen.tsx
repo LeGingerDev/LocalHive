@@ -1,6 +1,6 @@
-import { FC, useState, useEffect, useCallback } from "react"
+import React, { FC, useState, useEffect, useCallback } from "react"
 import { ViewStyle, TextStyle, ActivityIndicator } from "react-native"
-import type { AppStackScreenProps } from "@/navigators/AppNavigator"
+import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
@@ -8,15 +8,15 @@ import type { ThemedStyle } from "@/theme/types"
 // import { useNavigation } from "@react-navigation/native"
 
 // #region Types & Interfaces
-interface ProfileScreenProps extends AppStackScreenProps<"Profile"> {}
+interface SearchScreenProps extends BottomTabScreenProps<"Search"> {}
 
-interface ProfileData {
+interface SearchData {
   // TODO: Define your data structure here
   id?: string
   name?: string
 }
 
-interface ProfileError {
+interface SearchError {
   message: string
   code?: string
 }
@@ -24,7 +24,7 @@ interface ProfileError {
 
 // #region Screen Component
 /**
- * ProfileScreen - A defensive screen with proper error handling and loading states
+ * SearchScreen - A defensive screen with proper error handling and loading states
  * 
  * Features:
  * - Loading state support
@@ -36,17 +36,17 @@ interface ProfileError {
  * Note: This screen should be wrapped in an error boundary at the app level
  * for comprehensive error handling.
  */
-export const ProfileScreen: FC<ProfileScreenProps> = () => {
+export const SearchScreen: FC<SearchScreenProps> = () => {
   // #region Private State Variables
   const [_isLoading, setIsLoading] = useState<boolean>(true)
-  const [_data, setData] = useState<ProfileData | null>(null)
-  const [_error, setError] = useState<ProfileError | null>(null)
+  const [_data, setData] = useState<SearchData | null>(null)
+  const [_error, setError] = useState<SearchError | null>(null)
   const [_isRefreshing, setIsRefreshing] = useState<boolean>(false)
   // #endregion
 
   // #region Hooks & Context
   const { themed } = useAppTheme()
-  // const navigation = useNavigation<AppStackNavigationProp<"Profile">>()
+  // const navigation = useNavigation<AppStackNavigationProp<"Search">>()
   // #endregion
 
   // #region Data Fetching Functions
@@ -62,16 +62,16 @@ export const ProfileScreen: FC<ProfileScreenProps> = () => {
       
       // TEMPORARY: Mock data for development/testing
       // REMOVE THIS SECTION when implementing real API calls
-      const mockData: ProfileData = {
+      const mockData: SearchData = {
         id: "1",
-        name: "profile data"
+        name: "search data"
       }
       
       setData(mockData)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
       setError({ message: errorMessage })
-      console.error("[ProfileScreen] Error fetching data:", error)
+      console.error("[SearchScreen] Error fetching data:", error)
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -110,14 +110,14 @@ export const ProfileScreen: FC<ProfileScreenProps> = () => {
   // #endregion
 
   // #region Render Helpers
-  const _renderLoadingState = (): JSX.Element => (
+  const _renderLoadingState = (): React.JSX.Element => (
     <Screen style={themed($loadingContainer)} preset="fixed">
       <ActivityIndicator size="large" color={themed($activityIndicator).color} />
       <Text style={themed($loadingText)} text="Loading..." />
     </Screen>
   )
 
-  const _renderErrorState = (): JSX.Element => (
+  const _renderErrorState = (): React.JSX.Element => (
     <Screen style={themed($errorContainer)} preset="fixed">
       <Text style={themed($errorTitle)} text="Oops! Something went wrong" />
       <Text style={themed($errorMessage)} text={_error?.message ?? "Unknown error"} />
@@ -129,14 +129,12 @@ export const ProfileScreen: FC<ProfileScreenProps> = () => {
     </Screen>
   )
 
-  const _renderContent = (): JSX.Element => (
+  const _renderContent = (): React.JSX.Element => (
     <Screen 
       style={themed($root)} 
       preset="scroll"
-      refreshing={_isRefreshing}
-      onRefresh={_handleRefresh}
     >
-      <Text style={themed($title)} text="Profile" />
+      <Text style={themed($title)} text="Search" />
       {_data && (
         <>
           <Text style={themed($dataText)} text={`ID: ${_data.id ?? 'N/A'}`} />

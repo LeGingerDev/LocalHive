@@ -1,3 +1,4 @@
+import React, { ReactNode } from "react";
 import { FC, memo, useCallback, useMemo } from "react"
 import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator } from "react-native"
 import { useAppTheme } from "@/theme/context"
@@ -5,7 +6,7 @@ import type { ThemedStyle } from "@/theme/types"
 import { Text } from "@/components/Text"
 
 // #region Types & Interfaces
-export interface GroupDisplayBoxProps {
+export interface ActivityItemProps {
   /**
    * An optional style override useful for padding & margin.
    */
@@ -14,7 +15,7 @@ export interface GroupDisplayBoxProps {
   /**
    * The main data for this component
    */
-  data?: GroupDisplayBoxData | null
+  data?: ActivityItemData | null
   
   /**
    * Loading state indicator
@@ -42,7 +43,7 @@ export interface GroupDisplayBoxProps {
   testID?: string
 }
 
-interface GroupDisplayBoxData {
+interface ActivityItemData {
   // TODO: Define your data structure here
   id?: string
   title?: string
@@ -51,16 +52,16 @@ interface GroupDisplayBoxData {
 // #endregion
 
 // #region Private Helper Functions
-const _isValidData = (data: GroupDisplayBoxData | null | undefined): data is GroupDisplayBoxData => {
+const _isValidData = (data: ActivityItemData | null | undefined): data is ActivityItemData => {
   return data != null && typeof data === 'object'
 }
 
-const _getDisplayTitle = (data: GroupDisplayBoxData | null | undefined): string => {
+const _getDisplayTitle = (data: ActivityItemData | null | undefined): string => {
   if (!_isValidData(data)) return "No Title"
   return data.title ?? "Untitled"
 }
 
-const _getDisplayDescription = (data: GroupDisplayBoxData | null | undefined): string => {
+const _getDisplayDescription = (data: ActivityItemData | null | undefined): string => {
   if (!_isValidData(data)) return "No description available"
   return data.description ?? "No description provided"
 }
@@ -68,7 +69,7 @@ const _getDisplayDescription = (data: GroupDisplayBoxData | null | undefined): s
 
 // #region Component
 /**
- * GroupDisplayBox - A defensive component with proper error handling and loading states
+ * ActivityItem - A defensive component with proper error handling and loading states
  * 
  * Features:
  * - Loading state support
@@ -77,7 +78,7 @@ const _getDisplayDescription = (data: GroupDisplayBoxData | null | undefined): s
  * - Memoized for performance
  * - Follows SOLID principles
  */
-export const GroupDisplayBox: FC<GroupDisplayBoxProps> = memo((props) => {
+export const ActivityItem: FC<ActivityItemProps> = memo((props) => {
   // #region Props Destructuring with Defaults
   const {
     style,
@@ -86,7 +87,7 @@ export const GroupDisplayBox: FC<GroupDisplayBoxProps> = memo((props) => {
     error = null,
     onPress,
     onRetry,
-    testID = "groupDisplayBoxComponent"
+    testID = "activityItemComponent"
   } = props
   // #endregion
 
@@ -121,7 +122,7 @@ export const GroupDisplayBox: FC<GroupDisplayBoxProps> = memo((props) => {
   // #endregion
 
   // #region Render Helpers
-  const _renderLoadingState = (): JSX.Element => (
+  const _renderLoadingState = (): React.ReactNode => (
     <View style={_containerStyles} testID={`${testID}_loading`}>
       <ActivityIndicator 
         size="small" 
@@ -136,7 +137,7 @@ export const GroupDisplayBox: FC<GroupDisplayBoxProps> = memo((props) => {
     </View>
   )
 
-  const _renderErrorState = (): JSX.Element => (
+  const _renderErrorState = (): React.ReactNode => (
     <View style={_containerStyles} testID={`${testID}_error`}>
       <Text 
         style={themed($errorText)} 
@@ -165,7 +166,7 @@ export const GroupDisplayBox: FC<GroupDisplayBoxProps> = memo((props) => {
   }, [onPress, _handlePress])
   // #endregion
 
-  const _renderContent = (): JSX.Element => (
+  const _renderContent = (): React.ReactNode => (
     <View 
       style={_containerStyles} 
       testID={testID}
@@ -193,7 +194,7 @@ export const GroupDisplayBox: FC<GroupDisplayBoxProps> = memo((props) => {
     </View>
   )
 
-  const _renderEmptyState = (): JSX.Element => (
+  const _renderEmptyState = (): React.ReactNode => (
     <View style={_containerStyles} testID={`${testID}_empty`}>
       <Text 
         style={themed($emptyText)} 
@@ -222,7 +223,7 @@ export const GroupDisplayBox: FC<GroupDisplayBoxProps> = memo((props) => {
 })
 
 // Set display name for debugging
-GroupDisplayBox.displayName = "GroupDisplayBox"
+ActivityItem.displayName = "ActivityItem"
 // #endregion
 
 // #region Styles

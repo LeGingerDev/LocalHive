@@ -10,11 +10,12 @@ import { createNativeStackNavigator, NativeStackScreenProps } from "@react-navig
 
 import Config from "@/config"
 import { ErrorBoundary } from "@/screens/ErrorScreen/ErrorBoundary"
-import { LandingScreen } from "@/screens/LandingScreen"
-import { HomeScreen } from "@/screens/Main/HomeScreen"
-import { SplashScreen } from "@/screens/SplashScreen"
-import { WelcomeScreen } from "@/screens/WelcomeScreen"
+import { LandingScreen } from "@/screens/Auth/LandingScreen"
+import { SplashScreen } from "@/screens/Auth/SplashScreen"
+import { CreateGroupScreen } from "@/screens/Main/CreateGroupScreen"
+import { GroupDetailScreen } from "@/screens/Main/GroupDetailScreen"
 import { useAppTheme } from "@/theme/context"
+import { BottomTabNavigator } from "./BottomTabNavigator"
 
 import { navigationRef, useBackButtonHandler } from "./navigationUtilities"
 
@@ -28,15 +29,13 @@ import { navigationRef, useBackButtonHandler } from "./navigationUtilities"
  *   https://reactnavigation.org/docs/typescript/#organizing-types
  */
 export type AppStackParamList = {
-  Welcome: undefined
   Splash: undefined
   Landing: undefined
-  Home: undefined // Renamed from Main
+  Main: undefined // Main app with bottom tabs
+  CreateGroup: undefined
+  GroupDetail: { groupId: string }
   // 🔥 Your screens go here
-  Profile: undefined
-
-	Groups: undefined
-	// IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
+  // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
 
 /**
@@ -74,8 +73,9 @@ const AppStack = () => {
     >
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Landing" component={LandingScreen} />
-      <Stack.Screen name="Welcome" component={WelcomeScreen} />
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Main" component={BottomTabNavigator} />
+      <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
+      <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
       {/** 🔥 Your screens go here */}
       {/* IGNITE_GENERATOR_ANCHOR_APP_STACK_SCREENS */}
     </Stack.Navigator>

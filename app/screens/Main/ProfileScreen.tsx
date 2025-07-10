@@ -11,6 +11,7 @@ import googleAuthService from "@/services/supabase/googleAuthService"
 import { PersonalCodeBox } from "@/components/PersonalCodeBox"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import SubContainer from "@/components/Subscription/SubContainer"
+import { spacing } from "@/theme/spacing"
 
 const ProfileScreen = () => {
   const { theme, themeContext } = useAppTheme()
@@ -91,28 +92,28 @@ const ProfileScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 8,
-    paddingTop: 16, // Account for status bar
-    paddingBottom: 110, // Account for bottom navigation bar
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.md, // Account for status bar
+    paddingBottom: spacing.xl * 3 + spacing.md, // Account for bottom navigation bar (approximate 110)
   },
   profileBoxContainer: {
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 16, // Add margin between ProfileBox container and SettingsSection
+    marginBottom: spacing.md, // Add margin between ProfileBox container and SettingsSection
   },
   profileBox: {
     width: '100%',
     minHeight: 160,
     justifyContent: 'center',
-    marginBottom: 16, // Add margin between ProfileBox and PersonalCodeBox
+    marginBottom: spacing.md, // Add margin between ProfileBox and PersonalCodeBox
   },
   personalCodeBox: {
     width: '100%',
   },
   subContainer: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   settingsSection: {
     
