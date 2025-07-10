@@ -10,8 +10,8 @@ interface CustomAlertProps {
   confirmText?: string
   cancelText?: string
   onConfirm: () => void
-  onCancel: () => void
-  confirmStyle?: "default" | "destructive"
+  onCancel?: () => void
+  confirmStyle?: "default" | "destructive" | "success"
 }
 
 export const CustomAlert = ({ 
@@ -83,18 +83,22 @@ export const CustomAlert = ({
             <Text style={themed($message)} text={message} />
             
             <View style={themed($buttonContainer)}>
-              <TouchableOpacity 
-                style={themed($cancelButton)} 
-                onPress={onCancel}
-                activeOpacity={0.8}
-              >
-                <Text style={themed($cancelButtonText)} text={cancelText} />
-              </TouchableOpacity>
+              {onCancel && (
+                <TouchableOpacity 
+                  style={themed($cancelButton)} 
+                  onPress={onCancel}
+                  activeOpacity={0.8}
+                >
+                  <Text style={themed($cancelButtonText)} text={cancelText} />
+                </TouchableOpacity>
+              )}
               
               <TouchableOpacity 
                 style={[
                   themed($confirmButton),
-                  confirmStyle === "destructive" && themed($destructiveButton)
+                  confirmStyle === "destructive" && themed($destructiveButton),
+                  confirmStyle === "success" && themed($successButton),
+                  !onCancel && themed($singleButton)
                 ]} 
                 onPress={onConfirm}
                 activeOpacity={0.8}
@@ -102,7 +106,8 @@ export const CustomAlert = ({
                 <Text 
                   style={[
                     themed($confirmButtonText),
-                    confirmStyle === "destructive" && themed($destructiveButtonText)
+                    confirmStyle === "destructive" && themed($destructiveButtonText),
+                    confirmStyle === "success" && themed($successButtonText)
                   ]} 
                   text={confirmText} 
                 />
@@ -203,4 +208,16 @@ const $destructiveButton = ({ colors }: any): ViewStyle => ({
 
 const $destructiveButtonText = ({ colors }: any): TextStyle => ({ 
   color: colors.background
+})
+
+const $successButton = ({ colors }: any): ViewStyle => ({ 
+  backgroundColor: colors.tint
+})
+
+const $successButtonText = ({ colors }: any): TextStyle => ({ 
+  color: colors.background
+})
+
+const $singleButton = (): ViewStyle => ({ 
+  flex: 1 
 }) 

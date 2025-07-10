@@ -92,7 +92,8 @@ export const CreateGroupScreen = ({ navigation }: any) => {
               onPress={() => navigation.goBack()}
               preset="default"
             />
-            <Text style={themed($headerAligned)} text="Create A Group" />
+            <Text style={themed($headerTitle)} text="Create A Group" />
+            <View style={themed($headerSpacer)} />
           </View>
           <Text style={themed($label)} text="Group Name" />
           <TextField
@@ -237,10 +238,11 @@ const $gradientButton = (): ViewStyle => ({ borderRadius: 16, overflow: "hidden"
 const $gradientButtonInner = (): ViewStyle => ({ backgroundColor: "transparent", borderRadius: 16, minHeight: 48 })
 
 const $inputContainerFlat = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.sm, paddingHorizontal: 0, backgroundColor: "transparent", borderWidth: 0, elevation: 0, shadowOpacity: 0 })
-const $headerRow = ({ spacing }: any): ViewStyle => ({ flexDirection: "row", alignItems: "center", marginBottom: spacing.sm })
+const $headerRow = ({ spacing }: any): ViewStyle => ({ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm })
 const $gradientButtonTextWhite = ({ typography }: any): TextStyle => ({ color: '#fff', fontFamily: typography.primary.bold, fontSize: 16 }) 
 const $backButtonPlain = ({ spacing }: any): ViewStyle => ({ marginRight: spacing.sm, paddingHorizontal: 0, paddingVertical: 0, backgroundColor: 'transparent', borderWidth: 0, elevation: 0, shadowOpacity: 0 })
-const $headerAligned = ({ typography, colors, spacing }: any): TextStyle => ({ fontFamily: typography.primary.bold, fontSize: 24, color: colors.text, marginBottom: 0, textAlign: "center", flex: 1, alignSelf: 'center' }) 
+const $headerTitle = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.bold, fontSize: 20, color: colors.text, flex: 1, textAlign: "center" })
+const $headerSpacer = (): ViewStyle => ({ width: 40 }) // Same width as back button for balance 
 const $formContentWithTopMargin = ({ spacing }: any): ViewStyle => ({ flexGrow: 1, justifyContent: "center", padding: spacing.lg, gap: 6,  paddingBottom: spacing.xl * 2 })
 const $cancelButtonRed = ({ spacing, colors }: any): ViewStyle => ({ backgroundColor: colors.error || '#d32f2f', borderRadius: 16, minHeight: 48, marginTop: spacing.xs })
 const $cancelButtonTextRed = ({ typography, colors }: any): TextStyle => ({ color: '#fff', fontFamily: typography.primary.bold, fontSize: 16 }) 

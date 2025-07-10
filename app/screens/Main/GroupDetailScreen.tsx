@@ -11,6 +11,8 @@ import { RecentActivitySection } from "@/components/Groups/RecentActivitySection
 import { useGroups } from "@/hooks/useGroups"
 import { CustomAlert } from "@/components/Alert"
 import { spacing } from "@/theme/spacing"
+import { Button } from "@/components/Button"
+import { Icon } from "@/components/Icon"
 
 interface GroupDetailScreenProps {
   route: { params: { groupId: string } }
@@ -18,7 +20,7 @@ interface GroupDetailScreenProps {
 }
 
 export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps) => {
-  const { themed } = useAppTheme()
+  const { themed, theme } = useAppTheme()
   const { deleteGroup } = useGroups()
   const { groupId } = route.params
   const [group, setGroup] = useState<Group | null>(null)
@@ -126,13 +128,12 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   return (
     <Screen style={themed($root)} preset="scroll" safeAreaEdges={['top', 'bottom']}>
       <View style={themed($headerRow)}>
-        <TouchableOpacity 
-          style={themed($backButton)} 
+        <Button
+          LeftAccessory={() => <Icon icon="back" size={22} color={theme.colors.text} />}
+          style={themed($backButtonPlain)}
           onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
-        >
-          <Text style={themed($backButtonText)} text="← Back" />
-        </TouchableOpacity>
+          preset="default"
+        />
         <Text style={themed($headerTitle)} text={group.name} />
         <TouchableOpacity 
           style={themed($headerActionButton)} 
@@ -206,8 +207,8 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         title="Success"
         message="Group has been closed successfully."
         confirmText="OK"
+        confirmStyle="success"
         onConfirm={handleSuccessAlertConfirm}
-        onCancel={() => setShowSuccessAlert(false)}
       />
     </Screen>
   )
@@ -218,6 +219,7 @@ const $root = (): ViewStyle => ({ flex: 1, padding: spacing.md })
 const $headerRow = (): ViewStyle => ({ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md })
 const $backButton = ({ colors }: any): ViewStyle => ({ backgroundColor: colors.primary100, borderRadius: 8, paddingVertical: spacing.xs, paddingHorizontal: spacing.md })
 const $backButtonText = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.medium, fontSize: 16, color: colors.tint })
+const $backButtonPlain = ({ spacing }: any): ViewStyle => ({ marginRight: spacing.sm, paddingHorizontal: 0, paddingVertical: 0, backgroundColor: 'transparent', borderWidth: 0, elevation: 0, shadowOpacity: 0 })
 const $headerTitle = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.bold, fontSize: 20, color: colors.text, flex: 1, textAlign: "center" })
 const $headerActionButton = ({ colors }: any): ViewStyle => ({ backgroundColor: colors.primary100, borderRadius: 8, paddingVertical: spacing.xs, paddingHorizontal: spacing.md })
 const $headerActionText = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.medium, fontSize: 16, color: colors.tint })
