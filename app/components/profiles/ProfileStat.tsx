@@ -1,7 +1,9 @@
 import React from "react"
 import { View, StyleProp, ViewStyle } from "react-native"
+
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
+
 import StatVisual from "./StatVisual"
 
 export interface ProfileStatProps {
@@ -20,7 +22,12 @@ export const ProfileStat: React.FC<ProfileStatProps> = ({ stats, style }) => {
   return (
     <View style={[themed($container), style]}>
       {displayStats.map((stat, idx) => (
-        <StatVisual key={stat.label} value={stat.value} label={stat.label} style={idx < 2 ? themed($item) : undefined} />
+        <StatVisual
+          key={stat.label}
+          value={stat.value}
+          label={stat.label}
+          style={idx < 2 ? themed($item) : undefined}
+        />
       ))}
     </View>
   )

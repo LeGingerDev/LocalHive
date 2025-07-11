@@ -1,10 +1,19 @@
 import React from "react"
 import { FC, memo } from "react"
-import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator } from "react-native"
-import { useAppTheme } from "@/theme/context"
-import type { ThemedStyle } from "@/theme/types"
+import {
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+  View,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native"
+
+import { Icon } from "@/components/Icon"
 import { Text } from "@/components/Text"
 import { GroupMember } from "@/services/api/types"
+import { useAppTheme } from "@/theme/context"
+import type { ThemedStyle } from "@/theme/types"
 
 // #region Types & Interfaces
 export interface MemberCardProps {
@@ -13,6 +22,8 @@ export interface MemberCardProps {
   isLoading?: boolean
   error?: string | null
   onPress?: () => void
+  onRemove?: () => void
+  canRemove?: boolean
   onRetry?: () => void
   testID?: string
 }
@@ -26,15 +37,21 @@ export const MemberCard: FC<MemberCardProps> = memo((props) => {
     isLoading = false,
     error = null,
     onPress,
+    onRemove,
+    canRemove = false,
     onRetry,
-    testID = "memberCardComponent"
+    testID = "memberCardComponent",
   } = props
   const { themed } = useAppTheme()
 
   if (isLoading) {
     return (
       <View style={[themed($container), style]} testID={`${testID}_loading`}>
-        <ActivityIndicator size="small" color={themed($activityIndicatorColor).color} style={themed($loadingIndicator)} />
+        <ActivityIndicator
+          size="small"
+          color={themed($activityIndicatorColor).color}
+          style={themed($loadingIndicator)}
+        />
         <Text style={themed($loadingText)} text="Loading..." testID={`${testID}_loadingText`} />
       </View>
     )
@@ -43,9 +60,18 @@ export const MemberCard: FC<MemberCardProps> = memo((props) => {
   if (error) {
     return (
       <View style={[themed($container), style]} testID={`${testID}_error`}>
-        <Text style={themed($errorText)} text={error ?? "Something went wrong"} testID={`${testID}_errorText`} />
+        <Text
+          style={themed($errorText)}
+          text={error ?? "Something went wrong"}
+          testID={`${testID}_errorText`}
+        />
         {onRetry && (
-          <Text style={themed($retryButton)} text="Retry" onPress={onRetry} testID={`${testID}_retryButton`} />
+          <Text
+            style={themed($retryButton)}
+            text="Retry"
+            onPress={onRetry}
+            testID={`${testID}_retryButton`}
+          />
         )}
       </View>
     )
@@ -60,22 +86,34 @@ export const MemberCard: FC<MemberCardProps> = memo((props) => {
   const initial = memberName[0]?.toUpperCase() || "?"
 
   // Generate avatar color based on member name
-  const avatarColors = ['primary300', 'accent200', 'secondary300', 'primary200', 'accent300']
+  const avatarColors = ["primary300", "accent200", "secondary300", "primary200", "accent300"]
   const colorIndex = memberName.length % avatarColors.length
   const avatarColor = avatarColors[colorIndex]
 
   return (
-    <View style={[themed($container), style]} testID={testID} onTouchEnd={onPress}>
-      <View style={[themed($avatar), themed($avatarColor(avatarColor))]}> 
-        <Text style={themed($avatarInitial)} text={initial} />
-      </View>
-      <View style={$infoContainer}>
-        <Text style={themed($name)} text={memberName} />
-        <Text style={themed($meta)} text={`${memberRole} • Joined ${joinedDate}`} />
-      </View>
-      <View style={$roleContainer}>
-        <Text style={themed($roleText)} text={memberRole} />
-      </View>
+    <View style={[themed($container), style]} testID={testID}>
+      <TouchableOpacity style={$cardContent} onPress={onPress} activeOpacity={0.7}>
+        <View style={[themed($avatar), themed($avatarColor(avatarColor))]}>
+          <Text style={themed($avatarInitial)} text={initial} />
+        </View>
+        <View style={$infoContainer}>
+          <Text style={themed($name)} text={memberName} />
+          <Text style={themed($meta)} text={`Joined ${joinedDate}`} />
+        </View>
+        <View style={$rightContainer}>
+          <Text style={themed($roleText)} text={memberRole} />
+          {canRemove && onRemove && (
+            <TouchableOpacity
+              style={themed($removeButton)}
+              onPress={onRemove}
+              activeOpacity={0.7}
+              testID={`${testID}_remove_button`}
+            >
+              <Icon icon="x" size={12} color="#FFFFFF" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
     </View>
   )
 })
@@ -84,16 +122,26 @@ export const MemberCard: FC<MemberCardProps> = memo((props) => {
 const $container: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
   flexDirection: "row",
   alignItems: "center",
-  backgroundColor: colors.background,
-  borderRadius: 16,
-  padding: spacing.md,
+  backgroundColor: colors.cardColor,
+  borderRadius: 12,
+  padding: spacing.sm,
+  paddingVertical: spacing.sm + 2,
   marginBottom: spacing.sm,
   shadowColor: colors.palette.neutral800,
-  shadowOpacity: 0.04,
+  shadowOpacity: 0.08,
   shadowRadius: 8,
-  shadowOffset: { width: 0, height: 2 },
-  elevation: 1,
+  shadowOffset: { width: 0, height: 3 },
+  elevation: 2,
+  borderWidth: 1,
+  borderColor: colors.border,
+  position: "relative",
 })
+
+const $cardContent: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  flex: 1,
+}
 
 const $avatar: ThemedStyle<ViewStyle> = () => ({
   width: 44,
@@ -104,9 +152,12 @@ const $avatar: ThemedStyle<ViewStyle> = () => ({
   marginRight: 16,
 })
 
-const $avatarColor = (colorKey: string): ThemedStyle<ViewStyle> => ({ colors }) => ({
-  backgroundColor: colors.palette[colorKey as keyof typeof colors.palette] || colors.palette.primary300,
-})
+const $avatarColor =
+  (colorKey: string): ThemedStyle<ViewStyle> =>
+  ({ colors }) => ({
+    backgroundColor:
+      colors.palette[colorKey as keyof typeof colors.palette] || colors.palette.primary300,
+  })
 
 const $avatarInitial: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.palette.neutral100,
@@ -132,10 +183,11 @@ const $meta: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   marginTop: 2,
 })
 
-const $roleContainer: ViewStyle = {
-  alignItems: "flex-end",
-  justifyContent: "center",
-  minWidth: 60,
+const $rightContainer: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  minWidth: 80,
 }
 
 const $roleText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
@@ -148,6 +200,17 @@ const $roleText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   paddingVertical: 4,
   borderRadius: 12,
   overflow: "hidden",
+  textAlign: "center",
+})
+
+const $removeButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  width: 22,
+  height: 22,
+  borderRadius: 11,
+  backgroundColor: colors.error,
+  alignItems: "center",
+  justifyContent: "center",
+  marginLeft: spacing.xs,
 })
 
 const $activityIndicatorColor: ThemedStyle<{ color: string }> = ({ colors }) => ({

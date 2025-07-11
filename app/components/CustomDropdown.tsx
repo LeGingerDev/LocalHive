@@ -1,7 +1,19 @@
 import React, { useState, useRef, useEffect } from "react"
-import { Modal, View, TouchableOpacity, FlatList, StyleProp, ViewStyle, TextStyle, Pressable, Animated, Easing } from "react-native"
-import { useAppTheme } from "@/theme/context"
+import {
+  Modal,
+  View,
+  TouchableOpacity,
+  FlatList,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+  Pressable,
+  Animated,
+  Easing,
+} from "react-native"
+
 import { Text } from "@/components/Text"
+import { useAppTheme } from "@/theme/context"
 
 export interface CustomDropdownOption {
   label: string
@@ -29,7 +41,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   const [modalVisible, setModalVisible] = useState(false)
   const scaleAnim = useRef(new Animated.Value(0.9)).current
 
-  const selectedOption = options.find(opt => opt.value === value)
+  const selectedOption = options.find((opt) => opt.value === value)
 
   useEffect(() => {
     if (modalVisible) {
@@ -79,13 +91,10 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
           <Animated.View style={[themed($modalContent), { transform: [{ scale: scaleAnim }] }]}>
             <FlatList
               data={options}
-              keyExtractor={item => item.value}
+              keyExtractor={(item) => item.value}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[
-                    themed($option),
-                    value === item.value && themed($optionSelected),
-                  ]}
+                  style={[themed($option), value === item.value && themed($optionSelected)]}
                   onPress={() => handleSelect(item.value)}
                   accessibilityRole="button"
                   testID={`${testID}_option_${item.value}`}
@@ -114,7 +123,7 @@ const $dropdownContainer = ({ colors, spacing }: any): ViewStyle => ({
   alignItems: "center",
   justifyContent: "space-between",
   borderWidth: 2,
-  borderColor: '#fff',
+  borderColor: "#fff",
   borderRadius: 12,
   backgroundColor: colors.input || colors.cardColor,
   paddingHorizontal: spacing.sm,
@@ -137,20 +146,20 @@ const $chevron = ({ colors }: any): TextStyle => ({
 
 const $modalOverlay = ({ colors }: any): ViewStyle => ({
   flex: 1,
-  backgroundColor: colors.backgroundOverlay || 'rgba(0,0,0,0.5)',
-  justifyContent: 'center',
-  alignItems: 'center',
+  backgroundColor: colors.backgroundOverlay || "rgba(0,0,0,0.5)",
+  justifyContent: "center",
+  alignItems: "center",
 })
 
 const $modalContent = ({ colors, spacing }: any): ViewStyle => ({
   backgroundColor: colors.input || colors.cardColor,
   borderRadius: 16,
   paddingVertical: spacing.sm,
-  width: '80%',
+  width: "80%",
   maxWidth: 400,
   borderWidth: 1,
-  borderColor: '#fff',
-  shadowColor: '#000',
+  borderColor: "#fff",
+  shadowColor: "#000",
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 0.2,
   shadowRadius: 8,
@@ -174,6 +183,6 @@ const $optionText = ({ colors, typography }: any): TextStyle => ({
 })
 
 const $optionTextSelected = ({ colors, typography }: any): TextStyle => ({
-  color: colors.orange || '#FFA500',
+  color: colors.orange || "#FFA500",
   fontFamily: typography.primary.bold,
 })

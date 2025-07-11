@@ -32,7 +32,7 @@ export class AuthService {
       // Try both clients to ensure we sign out regardless of session persistence setting
       const supabaseWithPersistence = createSupabaseClient(true)
       const supabaseWithoutPersistence = createSupabaseClient(false)
-      
+
       // Sign out from both clients
       const [result1, result2] = await Promise.allSettled([
         supabaseWithPersistence.auth.signOut(),
@@ -40,8 +40,12 @@ export class AuthService {
       ])
 
       // Return the first error if any
-      const error = result1.status === 'rejected' ? result1.reason : 
-                   result2.status === 'rejected' ? result2.reason : null
+      const error =
+        result1.status === "rejected"
+          ? result1.reason
+          : result2.status === "rejected"
+            ? result2.reason
+            : null
 
       return { error }
     } catch (error) {
@@ -58,21 +62,21 @@ export class AuthService {
       // Try both clients to check for existing sessions
       const supabaseWithPersistence = createSupabaseClient(true)
       const supabaseWithoutPersistence = createSupabaseClient(false)
-      
+
       const [result1, result2] = await Promise.allSettled([
         supabaseWithPersistence.auth.getUser(),
         supabaseWithoutPersistence.auth.getUser(),
       ])
 
       // Return the first successful result
-      if (result1.status === 'fulfilled' && result1.value.data?.user) {
+      if (result1.status === "fulfilled" && result1.value.data?.user) {
         return {
           user: result1.value.data.user,
           error: result1.value.error,
         }
       }
-      
-      if (result2.status === 'fulfilled' && result2.value.data?.user) {
+
+      if (result2.status === "fulfilled" && result2.value.data?.user) {
         return {
           user: result2.value.data.user,
           error: result2.value.error,
@@ -100,21 +104,21 @@ export class AuthService {
       // Try both clients to check for existing sessions
       const supabaseWithPersistence = createSupabaseClient(true)
       const supabaseWithoutPersistence = createSupabaseClient(false)
-      
+
       const [result1, result2] = await Promise.allSettled([
         supabaseWithPersistence.auth.getSession(),
         supabaseWithoutPersistence.auth.getSession(),
       ])
 
       // Return the first successful result
-      if (result1.status === 'fulfilled' && result1.value.data?.session) {
+      if (result1.status === "fulfilled" && result1.value.data?.session) {
         return {
           session: result1.value.data.session,
           error: result1.value.error,
         }
       }
-      
-      if (result2.status === 'fulfilled' && result2.value.data?.session) {
+
+      if (result2.status === "fulfilled" && result2.value.data?.session) {
         return {
           session: result2.value.data.session,
           error: result2.value.error,
@@ -146,26 +150,34 @@ export class AuthService {
    * @param userId The user's ID from auth.users
    * @param profileData The profile data to save
    */
-  static async createOrUpdateProfile(userId: string, profileData: {
-    email?: string;
-    full_name?: string;
-    avatar_url?: string;
-    bio?: string;
-    theme_preference?: string;
-    use_system_theme?: boolean;
-    personal_code?: string;
-    updated_at?: string;
-  }) {
+  static async createOrUpdateProfile(
+    userId: string,
+    profileData: {
+      email?: string
+      full_name?: string
+      avatar_url?: string
+      bio?: string
+      theme_preference?: string
+      use_system_theme?: boolean
+      personal_code?: string
+      updated_at?: string
+    },
+  ) {
     try {
       // Check if profile already exists
       const { data: existingProfile } = await this.getProfileByUserId(userId)
-      
+
       if (existingProfile) {
         // Update existing profile
-        return DatabaseService.update("profiles", userId, {
-          ...profileData,
-          updated_at: new Date().toISOString(),
-        }, { idColumn: "id" })
+        return DatabaseService.update(
+          "profiles",
+          userId,
+          {
+            ...profileData,
+            updated_at: new Date().toISOString(),
+          },
+          { idColumn: "id" },
+        )
       } else {
         // Create new profile
         return DatabaseService.create("profiles", {
@@ -174,9 +186,10 @@ export class AuthService {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           // Set defaults for new profiles
-          theme_preference: profileData.theme_preference || 'light',
-          use_system_theme: profileData.use_system_theme !== undefined ? profileData.use_system_theme : true,
-          bio: profileData.bio || '',
+          theme_preference: profileData.theme_preference || "light",
+          use_system_theme:
+            profileData.use_system_theme !== undefined ? profileData.use_system_theme : true,
+          bio: profileData.bio || "",
         })
       }
     } catch (error) {

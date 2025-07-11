@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from "react"
 import { StatusBar, View, StyleSheet } from "react-native"
-import { useAppTheme } from "@/theme/context"
 import { useNavigation } from "@react-navigation/native"
+
+import { Button } from "@/components/Button"
+import { PersonalCodeBox } from "@/components/PersonalCodeBox"
 import { ProfileBox } from "@/components/profiles/ProfileBox"
-import { SettingsSection } from "@/components/profiles/SettingsSection"
 import { SettingsItem } from "@/components/profiles/SettingsItem"
+import { SettingsSection } from "@/components/profiles/SettingsSection"
 import { Screen } from "@/components/Screen"
+import SubContainer from "@/components/Subscription/SubContainer"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { useAuth } from "@/context/AuthContext"
 import googleAuthService from "@/services/supabase/googleAuthService"
-import { PersonalCodeBox } from "@/components/PersonalCodeBox"
 import { PersonalCodeService } from "@/services/supabase/personalCodeService"
-import { ThemeToggle } from "@/components/ThemeToggle"
-import SubContainer from "@/components/Subscription/SubContainer"
-import { spacing } from "@/theme/spacing"
-import { Button } from "@/components/Button"
 import { supabase } from "@/services/supabase/supabase"
+import { useAppTheme } from "@/theme/context"
+import { spacing } from "@/theme/spacing"
 
 const ProfileScreen = () => {
   const { theme, themeContext } = useAppTheme()
@@ -34,7 +35,7 @@ const ProfileScreen = () => {
   // Refresh user data when the screen loads
   useEffect(() => {
     console.log("🔍 [MainProfileScreen] Component mounted")
-    
+
     const loadUserData = async () => {
       console.log("🔍 [MainProfileScreen] Loading user data...")
       try {
@@ -44,14 +45,14 @@ const ProfileScreen = () => {
         console.error("🔍 [MainProfileScreen] Error refreshing user data:", error)
       }
     }
-    
+
     loadUserData()
-    
+
     // Log the current user data for debugging
     console.log("🔍 [MainProfileScreen] Current user profile data:", userProfile)
     console.log("🔍 [MainProfileScreen] Current user auth data:", user)
     console.log("🔍 [MainProfileScreen] Current Google user data:", googleUser?.user)
-    
+
     return () => {
       console.log("🔍 [MainProfileScreen] Component unmounting")
     }
@@ -62,7 +63,7 @@ const ProfileScreen = () => {
       console.log("🔍 [MainProfileScreen] Signing out...")
       await googleAuthService.signOut()
       console.log("🔍 [MainProfileScreen] Sign out successful, navigating to Landing")
-      
+
       navigation.reset({
         index: 0,
         routes: [{ name: "Landing" }],
@@ -75,20 +76,20 @@ const ProfileScreen = () => {
   console.log("🔍 [MainProfileScreen] Rendering with userProfile:", userProfile)
 
   return (
-    <Screen 
+    <Screen
       preset="scroll"
       safeAreaEdges={["top"]}
       systemBarStyle={themeContext === "dark" ? "light" : "dark"}
       contentContainerStyle={styles.container}
     >
-      <StatusBar 
-        barStyle={themeContext === "dark" ? "light-content" : "dark-content"} 
-        backgroundColor="transparent" 
-        translucent 
+      <StatusBar
+        barStyle={themeContext === "dark" ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent
       />
       <View style={styles.profileBoxContainer}>
         <ProfileBox style={styles.profileBox} />
-        <PersonalCodeBox 
+        <PersonalCodeBox
           style={styles.personalCodeBox}
           code={userProfile?.personal_code}
           isLoading={isLoadingCode}
@@ -99,8 +100,10 @@ const ProfileScreen = () => {
       <Button
         text="Print Access Token"
         onPress={async () => {
-          const { data: { session } } = await supabase.auth.getSession();
-          console.log("[DEBUG] Supabase access token:", session?.access_token);
+          const {
+            data: { session },
+          } = await supabase.auth.getSession()
+          console.log("[DEBUG] Supabase access token:", session?.access_token)
         }}
         style={{ marginBottom: 16 }}
       />
@@ -122,27 +125,25 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md, // Account for status bar
     paddingBottom: spacing.xl * 3 + spacing.md, // Account for bottom navigation bar (approximate 110)
   },
-  profileBoxContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: spacing.md, // Add margin between ProfileBox container and SettingsSection
+  personalCodeBox: {
+    width: "100%",
   },
   profileBox: {
-    width: '100%',
-    minHeight: 160,
-    justifyContent: 'center',
-    marginBottom: spacing.md, // Add margin between ProfileBox and PersonalCodeBox
-  },
-  personalCodeBox: {
-    width: '100%',
-  },
-  subContainer: {
-    width: '100%',
+    justifyContent: "center",
     marginBottom: spacing.md,
+    minHeight: 160,
+    width: "100%", // Add margin between ProfileBox and PersonalCodeBox
   },
-  settingsSection: {
-    
+  profileBoxContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+    width: "100%", // Add margin between ProfileBox container and SettingsSection
+  },
+  settingsSection: {},
+  subContainer: {
+    marginBottom: spacing.md,
+    width: "100%",
   },
 })
 

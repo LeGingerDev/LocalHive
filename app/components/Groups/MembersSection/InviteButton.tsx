@@ -1,9 +1,10 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode } from "react"
 import { FC, memo, useCallback, useMemo } from "react"
 import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator } from "react-native"
+
+import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
-import { Text } from "@/components/Text"
 
 // #region Types & Interfaces
 export interface InviteButtonProps {
@@ -11,32 +12,32 @@ export interface InviteButtonProps {
    * An optional style override useful for padding & margin.
    */
   style?: StyleProp<ViewStyle>
-  
+
   /**
    * The main data for this component
    */
   data?: InviteButtonData | null
-  
+
   /**
    * Loading state indicator
    */
   isLoading?: boolean
-  
+
   /**
    * Error state for the component
    */
   error?: string | null
-  
+
   /**
    * Optional callback when component is pressed
    */
   onPress?: () => void
-  
+
   /**
    * Optional callback for retry action
    */
   onRetry?: () => void
-  
+
   /**
    * Test ID for testing purposes
    */
@@ -53,7 +54,7 @@ interface InviteButtonData {
 
 // #region Private Helper Functions
 const _isValidData = (data: InviteButtonData | null | undefined): data is InviteButtonData => {
-  return data != null && typeof data === 'object'
+  return data != null && typeof data === "object"
 }
 
 const _getDisplayTitle = (data: InviteButtonData | null | undefined): string => {
@@ -70,10 +71,10 @@ const _getDisplayDescription = (data: InviteButtonData | null | undefined): stri
 // #region Component
 /**
  * InviteButton - A defensive component with proper error handling and loading states
- * 
+ *
  * Features:
  * - Loading state support
- * - Error state handling  
+ * - Error state handling
  * - Null safety checks
  * - Memoized for performance
  * - Follows SOLID principles
@@ -87,7 +88,7 @@ export const InviteButton: FC<InviteButtonProps> = memo((props) => {
     error = null,
     onPress,
     onRetry,
-    testID = "inviteButtonComponent"
+    testID = "inviteButtonComponent",
   } = props
   // #endregion
 
@@ -96,14 +97,11 @@ export const InviteButton: FC<InviteButtonProps> = memo((props) => {
   // #endregion
 
   // #region Memoized Values
-  const _containerStyles = useMemo(() => [
-    themed($container),
-    style
-  ], [themed, style])
+  const _containerStyles = useMemo(() => [themed($container), style], [themed, style])
 
   const _displayTitle = useMemo(() => _getDisplayTitle(data), [data])
   const _displayDescription = useMemo(() => _getDisplayDescription(data), [data])
-  
+
   const _hasValidData = useMemo(() => _isValidData(data), [data])
   // #endregion
 
@@ -124,29 +122,25 @@ export const InviteButton: FC<InviteButtonProps> = memo((props) => {
   // #region Render Helpers
   const _renderLoadingState = (): React.ReactNode => (
     <View style={_containerStyles} testID={`${testID}_loading`}>
-      <ActivityIndicator 
-        size="small" 
+      <ActivityIndicator
+        size="small"
         color={themed($activityIndicatorColor).color}
         style={themed($loadingIndicator)}
       />
-      <Text 
-        style={themed($loadingText)} 
-        text="Loading..."
-        testID={`${testID}_loadingText`}
-      />
+      <Text style={themed($loadingText)} text="Loading..." testID={`${testID}_loadingText`} />
     </View>
   )
 
   const _renderErrorState = (): React.ReactNode => (
     <View style={_containerStyles} testID={`${testID}_error`}>
-      <Text 
-        style={themed($errorText)} 
+      <Text
+        style={themed($errorText)}
         text={error ?? "Something went wrong"}
         testID={`${testID}_errorText`}
       />
       {onRetry && (
-        <Text 
-          style={themed($retryButton)} 
+        <Text
+          style={themed($retryButton)}
           text="Retry"
           onPress={_handleRetry}
           testID={`${testID}_retryButton`}
@@ -161,33 +155,25 @@ export const InviteButton: FC<InviteButtonProps> = memo((props) => {
     return {
       accessible: true,
       accessibilityRole: "button" as const,
-      onPress: _handlePress
+      onPress: _handlePress,
     }
   }, [onPress, _handlePress])
   // #endregion
 
   const _renderContent = (): React.ReactNode => (
-    <View 
-      style={_containerStyles} 
-      testID={testID}
-      {..._getPressableProps()}
-    >
-      <Text 
-        style={themed($title)} 
-        text={_displayTitle}
-        testID={`${testID}_title`}
-      />
-      <Text 
-        style={themed($description)} 
+    <View style={_containerStyles} testID={testID} {..._getPressableProps()}>
+      <Text style={themed($title)} text={_displayTitle} testID={`${testID}_title`} />
+      <Text
+        style={themed($description)}
         text={_displayDescription}
         testID={`${testID}_description`}
       />
-      
+
       {/* Debug info in development */}
       {__DEV__ && data && (
-        <Text 
-          style={themed($debugText)} 
-          text={`ID: ${data.id ?? 'N/A'}`}
+        <Text
+          style={themed($debugText)}
+          text={`ID: ${data.id ?? "N/A"}`}
           testID={`${testID}_debugInfo`}
         />
       )}
@@ -196,11 +182,7 @@ export const InviteButton: FC<InviteButtonProps> = memo((props) => {
 
   const _renderEmptyState = (): React.ReactNode => (
     <View style={_containerStyles} testID={`${testID}_empty`}>
-      <Text 
-        style={themed($emptyText)} 
-        text="No data available"
-        testID={`${testID}_emptyText`}
-      />
+      <Text style={themed($emptyText)} text="No data available" testID={`${testID}_emptyText`} />
     </View>
   )
   // #endregion

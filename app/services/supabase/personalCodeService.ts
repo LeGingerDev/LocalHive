@@ -13,7 +13,8 @@ export interface PersonalCodeError {
  * Service for handling personal code generation via Edge Function
  */
 export class PersonalCodeService {
-  private static readonly EDGE_FUNCTION_URL = "https://xnnobyeytyycngybinqj.functions.supabase.co/generate-personal-code"
+  private static readonly EDGE_FUNCTION_URL =
+    "https://xnnobyeytyycngybinqj.functions.supabase.co/generate-personal-code"
 
   /**
    * Generate a personal code for the current user
@@ -23,12 +24,15 @@ export class PersonalCodeService {
     try {
       // Get the current session to access the access token
       const supabase = createSupabaseClient(true)
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError || !session?.access_token) {
         return {
           error: "No valid session found",
-          message: "Please sign in again to generate your personal code"
+          message: "Please sign in again to generate your personal code",
         }
       }
 
@@ -45,18 +49,17 @@ export class PersonalCodeService {
         const errorData = await response.json().catch(() => ({}))
         return {
           error: `HTTP ${response.status}`,
-          message: errorData.message || "Failed to generate personal code"
+          message: errorData.message || "Failed to generate personal code",
         }
       }
 
       const data: PersonalCodeResponse = await response.json()
       return data
-
     } catch (error) {
       console.error("Error generating personal code:", error)
       return {
         error: "Network error",
-        message: "Failed to connect to the server. Please check your internet connection."
+        message: "Failed to connect to the server. Please check your internet connection.",
       }
     }
   }
@@ -68,7 +71,7 @@ export class PersonalCodeService {
   static async getCurrentPersonalCode(): Promise<string | null> {
     try {
       const result = await this.generatePersonalCode()
-      
+
       if ("error" in result) {
         // If it's a "code already exists" error, we need to fetch it from the database
         if (result.message?.includes("already has a personal code")) {
@@ -78,7 +81,7 @@ export class PersonalCodeService {
         }
         return null
       }
-      
+
       return result.personal_code
     } catch (error) {
       console.error("Error getting current personal code:", error)
@@ -93,8 +96,11 @@ export class PersonalCodeService {
   static async fetchPersonalCodeFromDatabase(): Promise<string | null> {
     try {
       const supabase = createSupabaseClient(true)
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
+
       if (userError || !user) {
         return null
       }
@@ -115,4 +121,4 @@ export class PersonalCodeService {
       return null
     }
   }
-} 
+}

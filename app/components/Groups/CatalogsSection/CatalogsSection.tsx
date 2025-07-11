@@ -1,9 +1,11 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode } from "react"
 import { FC, memo, useCallback, useMemo } from "react"
 import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator } from "react-native"
+
+import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
-import { Text } from "@/components/Text"
+
 import { CatalogCard } from "./CatalogCard"
 
 // #region Types & Interfaces
@@ -33,15 +35,12 @@ export const CatalogsSection: FC<CatalogsSectionProps> = memo((props) => {
     error = null,
     onPress,
     onRetry,
-    testID = "catalogsSectionComponent"
+    testID = "catalogsSectionComponent",
   } = props
 
   const { themed } = useAppTheme()
 
-  const _containerStyles = useMemo(() => [
-    themed($container),
-    style
-  ], [themed, style])
+  const _containerStyles = useMemo(() => [themed($container), style], [themed, style])
 
   const _handleRetry = useCallback((): void => {
     if (onRetry) {
@@ -51,29 +50,25 @@ export const CatalogsSection: FC<CatalogsSectionProps> = memo((props) => {
 
   const _renderLoadingState = (): React.ReactNode => (
     <View style={_containerStyles} testID={`${testID}_loading`}>
-      <ActivityIndicator 
-        size="small" 
+      <ActivityIndicator
+        size="small"
         color={themed($activityIndicatorColor).color}
         style={themed($loadingIndicator)}
       />
-      <Text 
-        style={themed($loadingText)} 
-        text="Loading..."
-        testID={`${testID}_loadingText`}
-      />
+      <Text style={themed($loadingText)} text="Loading..." testID={`${testID}_loadingText`} />
     </View>
   )
 
   const _renderErrorState = (): React.ReactNode => (
     <View style={_containerStyles} testID={`${testID}_error`}>
-      <Text 
-        style={themed($errorText)} 
+      <Text
+        style={themed($errorText)}
         text={error ?? "Something went wrong"}
         testID={`${testID}_errorText`}
       />
       {onRetry && (
-        <Text 
-          style={themed($retryButton)} 
+        <Text
+          style={themed($retryButton)}
           text="Retry"
           onPress={_handleRetry}
           testID={`${testID}_retryButton`}
@@ -87,11 +82,13 @@ export const CatalogsSection: FC<CatalogsSectionProps> = memo((props) => {
       <Text style={themed($title)} text="Catalogs" testID={`${testID}_title`} />
       <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
         {data && data.length > 0 ? (
-          data.map((catalog) => (
-            <CatalogCard key={catalog.id} data={catalog} />
-          ))
+          data.map((catalog) => <CatalogCard key={catalog.id} data={catalog} />)
         ) : (
-          <Text style={themed($emptyText)} text="No catalogs available" testID={`${testID}_emptyText`} />
+          <Text
+            style={themed($emptyText)}
+            text="No catalogs available"
+            testID={`${testID}_emptyText`}
+          />
         )}
       </View>
     </View>
@@ -154,5 +151,7 @@ const $emptyText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
 })
 
 const $activityIndicator: ThemedStyle<ViewStyle> = () => ({})
-const $activityIndicatorColor: ThemedStyle<{ color: string }> = ({ colors }) => ({ color: colors.tint })
+const $activityIndicatorColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.tint,
+})
 // #endregion

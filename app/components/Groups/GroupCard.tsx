@@ -1,18 +1,19 @@
 import React, { useEffect } from "react"
 import { View, ViewStyle, TouchableOpacity, TextStyle, Image, ImageStyle } from "react-native"
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withTiming, 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
   interpolate,
-  runOnJS
+  runOnJS,
 } from "react-native-reanimated"
+
+import { Icon } from "@/components/Icon"
+import { Text } from "@/components/Text"
 import { Group } from "@/services/api/types"
 import { useAppTheme } from "@/theme/context"
-import { Text } from "@/components/Text"
 import { spacing } from "@/theme/spacing"
-import { Icon } from "@/components/Icon"
 
 interface GroupCardProps {
   group: Group
@@ -22,13 +23,13 @@ interface GroupCardProps {
 
 export const GroupCard = ({ group, navigation, index = 0 }: GroupCardProps) => {
   const { themed, theme } = useAppTheme()
-  
+
   // Animation values
   const scale = useSharedValue(0.8)
   const opacity = useSharedValue(0)
   const translateY = useSharedValue(50)
   const buttonScale = useSharedValue(1)
-  
+
   // Calculate member display text
   const memberCount = group.member_count || 0
   const memberText = group.member_limit ? `${memberCount}/${group.member_limit}` : `${memberCount}`
@@ -47,7 +48,7 @@ export const GroupCard = ({ group, navigation, index = 0 }: GroupCardProps) => {
   }, [])
 
   const handleViewGroup = () => {
-    navigation.navigate('GroupDetail', { groupId: group.id })
+    navigation.navigate("GroupDetail", { groupId: group.id })
   }
 
   const handlePressIn = () => {
@@ -68,20 +69,17 @@ export const GroupCard = ({ group, navigation, index = 0 }: GroupCardProps) => {
 
   // Animated styles
   const animatedCardStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { translateY: translateY.value }
-    ],
-    opacity: opacity.value
+    transform: [{ scale: scale.value }, { translateY: translateY.value }],
+    opacity: opacity.value,
   }))
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }]
+    transform: [{ scale: buttonScale.value }],
   }))
 
   return (
     <Animated.View style={[themed($groupCard), animatedCardStyle]}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={themed($touchableContainer)}
         onPress={handleViewGroup}
         onPressIn={handlePressIn}
@@ -92,44 +90,49 @@ export const GroupCard = ({ group, navigation, index = 0 }: GroupCardProps) => {
           <View style={themed($textContainer)}>
             <View style={themed($nameRow)}>
               {/* Privacy indicator with pulse animation */}
-              <Animated.View style={[
-                themed($privacyIndicator), 
-                { backgroundColor: group.is_public ? theme.colors.success : theme.colors.error }
-              ]} />
-              
-              <Text style={themed($groupName)} text={group.name} numberOfLines={1} ellipsizeMode="tail" />
-              
+              <Animated.View
+                style={[
+                  themed($privacyIndicator),
+                  { backgroundColor: group.is_public ? theme.colors.success : theme.colors.error },
+                ]}
+              />
+
+              <Text
+                style={themed($groupName)}
+                text={group.name}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              />
+
               {/* Privacy label - only show in development */}
-              {__DEV__ && (
-                <Text style={themed($privacyLabel)} text={privacyLabel} />
-              )}
+              {__DEV__ && <Text style={themed($privacyLabel)} text={privacyLabel} />}
             </View>
-            
+
             <View style={themed($metaRow)}>
-              <Icon 
-                icon="menu" 
-                size={14} 
-                color={theme.colors.textDim} 
+              <Icon
+                icon="menu"
+                size={14}
+                color={theme.colors.textDim}
                 containerStyle={themed($memberIconContainer)}
               />
               <Text style={themed($memberCount)} text="Members: " />
               <Text style={themed($memberCountValue)} text={memberText} />
             </View>
           </View>
-          
+
           <Animated.View style={animatedButtonStyle}>
-            <TouchableOpacity 
-              style={themed($viewButton)} 
+            <TouchableOpacity
+              style={themed($viewButton)}
               onPress={handleViewGroup}
               onPressIn={handleButtonPressIn}
               onPressOut={handleButtonPressOut}
               activeOpacity={1}
             >
               <Text style={themed($viewButtonText)} text="View" />
-              <Icon 
-                icon="caretRight" 
-                size={12} 
-                color="#000000" 
+              <Icon
+                icon="caretRight"
+                size={12}
+                color="#000000"
                 containerStyle={themed($buttonIconContainer)}
               />
             </TouchableOpacity>
@@ -141,103 +144,103 @@ export const GroupCard = ({ group, navigation, index = 0 }: GroupCardProps) => {
 }
 
 // Compact styles
-const $groupCard = ({ colors, spacing }: any): ViewStyle => ({ 
-  backgroundColor: colors.cardColor, 
-  borderRadius: 12, 
-  padding: spacing.sm, 
+const $groupCard = ({ colors, spacing }: any): ViewStyle => ({
+  backgroundColor: colors.cardColor,
+  borderRadius: 12,
+  padding: spacing.sm,
   paddingVertical: spacing.sm + 2,
-  marginBottom: spacing.sm, 
-  shadowColor: colors.palette.neutral800, 
-  shadowOpacity: 0.08, 
-  shadowRadius: 8, 
-  shadowOffset: { width: 0, height: 3 }, 
+  marginBottom: spacing.sm,
+  shadowColor: colors.palette.neutral800,
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: 3 },
   elevation: 2,
   borderWidth: 1,
-  borderColor: colors.border
+  borderColor: colors.border,
 })
 
 const $touchableContainer = (): ViewStyle => ({
-  flex: 1
+  flex: 1,
 })
 
-const $contentContainer = (): ViewStyle => ({ 
-  flexDirection: "row", 
-  alignItems: "center", 
-  justifyContent: "space-between" 
+const $contentContainer = (): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
 })
 
-const $textContainer = (): ViewStyle => ({ 
-  flex: 1, 
-  marginRight: spacing.sm 
+const $textContainer = (): ViewStyle => ({
+  flex: 1,
+  marginRight: spacing.sm,
 })
 
 const $nameRow = (): ViewStyle => ({
   flexDirection: "row",
   alignItems: "center",
-  marginBottom: 2
+  marginBottom: 2,
 })
 
 const $privacyIndicator = (): ViewStyle => ({
   width: 8,
   height: 8,
   borderRadius: 4,
-  marginRight: 6
+  marginRight: 6,
 })
 
 const $privacyLabel = ({ colors, typography }: any): TextStyle => ({
   fontFamily: typography.primary.normal,
   fontSize: 12,
   color: colors.textDim,
-  marginLeft: 4
+  marginLeft: 4,
 })
 
-const $groupName = ({ colors, typography }: any): TextStyle => ({ 
-  fontFamily: typography.primary.medium, 
-  fontSize: 16, 
+const $groupName = ({ colors, typography }: any): TextStyle => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
   color: colors.text,
-  flex: 1
+  flex: 1,
 })
 
 const $metaRow = (): ViewStyle => ({
   flexDirection: "row",
-  alignItems: "center"
+  alignItems: "center",
 })
 
 const $memberIconContainer = (): ViewStyle => ({
-  marginRight: 4
+  marginRight: 4,
 })
 
-const $memberCount = ({ colors, typography }: any): TextStyle => ({ 
-  fontFamily: typography.primary.normal, 
-  fontSize: 13, 
-  color: colors.textDim
+const $memberCount = ({ colors, typography }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 13,
+  color: colors.textDim,
 })
 
-const $memberCountValue = ({ colors, typography }: any): TextStyle => ({ 
-  fontFamily: typography.primary.medium, 
-  fontSize: 13, 
-  color: colors.text
+const $memberCountValue = ({ colors, typography }: any): TextStyle => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 13,
+  color: colors.text,
 })
 
-const $viewButton = ({ colors }: any): ViewStyle => ({ 
-  backgroundColor: colors.cta, 
-  borderRadius: 8, 
-  paddingVertical: spacing.xs, 
-  paddingHorizontal: spacing.md, 
+const $viewButton = ({ colors }: any): ViewStyle => ({
+  backgroundColor: colors.cta,
+  borderRadius: 8,
+  paddingVertical: spacing.xs,
+  paddingHorizontal: spacing.md,
   alignSelf: "center",
   flexDirection: "row",
   alignItems: "center",
   borderWidth: 1,
-  borderColor: colors.cta
+  borderColor: colors.cta,
 })
 
-const $viewButtonText = ({ colors, typography }: any): TextStyle => ({ 
-  color: "#000000", 
-  fontFamily: typography.primary.medium, 
-  fontSize: 14, 
-  textAlign: "center" 
+const $viewButtonText = ({ colors, typography }: any): TextStyle => ({
+  color: "#000000",
+  fontFamily: typography.primary.medium,
+  fontSize: 14,
+  textAlign: "center",
 })
 
 const $buttonIconContainer = (): ViewStyle => ({
-  marginLeft: 4
-}) 
+  marginLeft: 4,
+})

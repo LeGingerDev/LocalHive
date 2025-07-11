@@ -9,15 +9,15 @@ import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator, NativeStackScreenProps } from "@react-navigation/native-stack"
 
 import Config from "@/config"
-import { ErrorBoundary } from "@/screens/ErrorScreen/ErrorBoundary"
 import { LandingScreen } from "@/screens/Auth/LandingScreen"
 import { SplashScreen } from "@/screens/Auth/SplashScreen"
+import { ErrorBoundary } from "@/screens/ErrorScreen/ErrorBoundary"
+import { InvitationsScreen } from "@/screens/InvitationsScreen"
 import { CreateGroupScreen } from "@/screens/Main/CreateGroupScreen"
 import { GroupDetailScreen } from "@/screens/Main/GroupDetailScreen"
-import { InvitationsScreen } from "@/screens/InvitationsScreen"
 import { useAppTheme } from "@/theme/context"
-import { BottomTabNavigator } from "./BottomTabNavigator"
 
+import { BottomTabNavigator } from "./BottomTabNavigator"
 import { navigationRef, useBackButtonHandler } from "./navigationUtilities"
 
 /**
@@ -37,7 +37,7 @@ export type AppStackParamList = {
   GroupDetail: { groupId: string }
   // 🔥 Your screens go here
   Invitations: undefined
-	// IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
+  // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
 
 /**

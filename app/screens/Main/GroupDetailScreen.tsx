@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from "react"
-import { View, ScrollView, ViewStyle, TextStyle, Alert, TouchableOpacity, Modal } from "react-native"
-import { Screen } from "@/components/Screen"
-import { Text } from "@/components/Text"
-import { LoadingSpinner } from "@/components/LoadingSpinner"
-import { useAppTheme } from "@/theme/context"
-import { Group, GroupMember, GroupPost } from "@/services/api/types"
-import { GroupService } from "@/services/supabase/groupService"
+import { View, ScrollView, ViewStyle, TextStyle, TouchableOpacity, Modal } from "react-native"
+
+import { CustomAlert } from "@/components/Alert"
+import { Button } from "@/components/Button"
 import { MembersSection } from "@/components/Groups/MembersSection"
 import { RecentActivitySection } from "@/components/Groups/RecentActivitySection"
-import { useGroups } from "@/hooks/useGroups"
-import { CustomAlert } from "@/components/Alert"
-import { InvitationForm } from "@/components/InvitationForm"
-import { spacing } from "@/theme/spacing"
-import { Button } from "@/components/Button"
 import { Icon } from "@/components/Icon"
+import { InvitationForm } from "@/components/InvitationForm"
+import { LoadingSpinner } from "@/components/LoadingSpinner"
+import { Screen } from "@/components/Screen"
+import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
+import { useGroups } from "@/hooks/useGroups"
+import { Group, GroupMember, GroupPost } from "@/services/api/types"
+import { GroupService } from "@/services/supabase/groupService"
+import { useAppTheme } from "@/theme/context"
+import { spacing } from "@/theme/spacing"
 
 interface GroupDetailScreenProps {
   route: { params: { groupId: string } }
@@ -36,6 +37,15 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [showSuccessAlert, setShowSuccessAlert] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [memberToRemove, setMemberToRemove] = useState<GroupMember | null>(null)
+  const [showRemoveMemberAlert, setShowRemoveMemberAlert] = useState(false)
+  const [removingMember, setRemovingMember] = useState(false)
+  const [showCreatePostAlert, setShowCreatePostAlert] = useState(false)
+  const [showMenuAlert, setShowMenuAlert] = useState(false)
+  const [showErrorAlert, setShowErrorAlert] = useState(false)
+  const [showMemberSuccessAlert, setShowMemberSuccessAlert] = useState(false)
+  const [errorAlertMessage, setErrorAlertMessage] = useState("")
+  const [successAlertMessage, setSuccessAlertMessage] = useState("")
 
   useEffect(() => {
     loadGroupDetails()
@@ -45,7 +55,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     try {
       setLoading(true)
       setError(null)
-      
+
       // Load group details
       const { data: groupData, error: groupError } = await GroupService.getGroupById(groupId)
       if (groupError) {
@@ -53,48 +63,48 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         return
       }
       if (groupData) {
-        console.log("Group details loaded:", { 
-          id: groupData.id, 
+        console.log("Group details loaded:", {
+          id: groupData.id,
           name: groupData.name,
           creator_id: groupData.creator_id,
-          members_count: groupData.members?.length || 0
+          members_count: groupData.members?.length || 0,
         })
-        
+
         setGroup(groupData)
         setMembers(groupData.members || [])
         setPosts(groupData.recent_posts || [])
-        
+
         // Determine user's role in the group
         if (user) {
-          console.log("Current user:", { 
-            id: user.id, 
-            email: user.email
+          console.log("Current user:", {
+            id: user.id,
+            email: user.email,
           })
-          
+
           // Check if user is the creator
           const isCreator = groupData.creator_id === user.id
-          
+
           // Check if user is an admin
-          const currentMember = groupData.members?.find(member => member.user_id === user.id)
-          const isAdmin = currentMember?.role === 'admin'
-          
+          const currentMember = groupData.members?.find((member) => member.user_id === user.id)
+          const isAdmin = currentMember?.role === "admin"
+
           // Set user role
           if (isCreator) {
-            setUserRole('creator')
+            setUserRole("creator")
           } else if (isAdmin) {
-            setUserRole('admin')
+            setUserRole("admin")
           } else {
-            setUserRole('member')
+            setUserRole("member")
           }
-          
-          console.log("User role determination:", { 
-            isCreator, 
+
+          console.log("User role determination:", {
+            isCreator,
             creator_id: groupData.creator_id,
             user_id: user.id,
             creator_id_match: groupData.creator_id === user.id,
-            memberRole: currentMember?.role || 'not-member',
-            determinedRole: isCreator ? 'creator' : (isAdmin ? 'admin' : 'member'),
-            canManageGroup: isCreator || isAdmin
+            memberRole: currentMember?.role || "not-member",
+            determinedRole: isCreator ? "creator" : isAdmin ? "admin" : "member",
+            canManageGroup: isCreator || isAdmin,
           })
         } else {
           console.log("No authenticated user found")
@@ -125,7 +135,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 
   const handleCreatePost = () => {
     // TODO: Implement create post functionality
-    Alert.alert("Create Post", "This feature will be implemented soon!")
+    setShowCreatePostAlert(true)
   }
 
   const handleCloseGroup = () => {
@@ -140,10 +150,12 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
       if (success) {
         setShowSuccessAlert(true)
       } else {
-        Alert.alert("Error", "Failed to close group. Please try again.")
+        setErrorAlertMessage("Failed to close group. Please try again.")
+        setShowErrorAlert(true)
       }
     } catch (error) {
-      Alert.alert("Error", "An unexpected error occurred while closing the group.")
+      setErrorAlertMessage("An unexpected error occurred while closing the group.")
+      setShowErrorAlert(true)
     } finally {
       setDeleting(false)
     }
@@ -152,18 +164,60 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const handleSuccessAlertConfirm = () => {
     setShowSuccessAlert(false)
     // Navigate back to groups screen with refresh flag
-    navigation.navigate('Main', { 
-      screen: 'Groups',
-      params: { refresh: true }
+    navigation.navigate("Main", {
+      screen: "Groups",
+      params: { refresh: true },
     })
   }
 
+  const handleRemoveMember = (member: GroupMember) => {
+    setMemberToRemove(member)
+    setShowRemoveMemberAlert(true)
+  }
+
+  const handleConfirmRemoveMember = async () => {
+    if (!memberToRemove) return
+
+    setShowRemoveMemberAlert(false)
+    setRemovingMember(true)
+
+    try {
+      const { error: removeError } = await GroupService.removeMember(
+        groupId,
+        memberToRemove.user_id,
+      )
+
+      if (removeError) {
+        setErrorAlertMessage("Failed to remove member. Please try again.")
+        setShowErrorAlert(true)
+        console.error("Error removing member:", removeError)
+      } else {
+        // Remove member from local state
+        setMembers((prev) => prev.filter((m) => m.id !== memberToRemove.id))
+        setSuccessAlertMessage("Member has been removed from the group.")
+        setShowMemberSuccessAlert(true)
+      }
+    } catch (error) {
+      setErrorAlertMessage("An unexpected error occurred while removing the member.")
+      setShowErrorAlert(true)
+      console.error("Error removing member:", error)
+    } finally {
+      setRemovingMember(false)
+      setMemberToRemove(null)
+    }
+  }
+
+  const handleCancelRemoveMember = () => {
+    setShowRemoveMemberAlert(false)
+    setMemberToRemove(null)
+  }
+
   // Check if user can manage the group (admin or creator)
-  const canManageGroup = userRole === 'creator' || userRole === 'admin'
+  const canManageGroup = userRole === "creator" || userRole === "admin"
 
   if (loading) {
     return (
-      <Screen style={themed($root)} preset="fixed" safeAreaEdges={['top', 'bottom']}>
+      <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
         <LoadingSpinner text="Loading group details..." />
       </Screen>
     )
@@ -171,11 +225,11 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 
   if (error || !group) {
     return (
-      <Screen style={themed($root)} preset="fixed" safeAreaEdges={['top', 'bottom']}>
+      <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
         <View style={themed($errorContainer)}>
           <Text style={themed($errorText)} text={error || "Group not found"} />
-          <TouchableOpacity 
-            style={themed($retryButton)} 
+          <TouchableOpacity
+            style={themed($retryButton)}
             onPress={loadGroupDetails}
             activeOpacity={0.8}
           >
@@ -187,7 +241,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   }
 
   return (
-    <Screen style={themed($root)} preset="scroll" safeAreaEdges={['top', 'bottom']}>
+    <Screen style={themed($root)} preset="scroll" safeAreaEdges={["top", "bottom"]}>
       <View style={themed($headerRow)}>
         <Button
           LeftAccessory={() => <Icon icon="back" size={22} color={theme.colors.text} />}
@@ -196,9 +250,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           preset="default"
         />
         <Text style={themed($headerTitle)} text={group.name} />
-        <TouchableOpacity 
-          style={themed($headerActionButton)} 
-          onPress={() => Alert.alert("Menu", "Group menu options")}
+        <TouchableOpacity
+          style={themed($headerActionButton)}
+          onPress={() => setShowMenuAlert(true)}
           activeOpacity={0.8}
         >
           <Text style={themed($headerActionText)} text="..." />
@@ -207,20 +261,26 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={themed($groupInfo)}>
-          <Text style={themed($groupDescription)} text={group.description || "No description available"} />
-          <Text style={themed($groupStats)} text={`${group.member_count || 0} members • ${group.post_count || 0} posts`} />
+          <Text
+            style={themed($groupDescription)}
+            text={group.description || "No description available"}
+          />
+          <Text
+            style={themed($groupStats)}
+            text={`${group.member_count || 0} members • ${group.post_count || 0} posts`}
+          />
         </View>
 
         <View style={themed($actionButtons)}>
-          <TouchableOpacity 
-            style={themed($actionButton)} 
+          <TouchableOpacity
+            style={themed($actionButton)}
             onPress={handleInviteMembers}
             activeOpacity={0.8}
           >
             <Text style={themed($actionButtonText)} text="Invite Members" />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={themed($actionButton)} 
+          <TouchableOpacity
+            style={themed($actionButton)}
             onPress={handleCreatePost}
             activeOpacity={0.8}
           >
@@ -228,12 +288,15 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           </TouchableOpacity>
         </View>
 
-        <MembersSection 
+        <MembersSection
           members={members}
           onRetry={loadGroupDetails}
+          canManageMembers={canManageGroup}
+          creatorId={group?.creator_id}
+          onRemoveMember={handleRemoveMember}
         />
 
-        <RecentActivitySection 
+        <RecentActivitySection
           data={{ title: "Recent Activity", description: `${posts.length} recent posts` }}
           onRetry={loadGroupDetails}
         />
@@ -242,16 +305,19 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
       {/* Close Group Button - Only visible to admins and creators */}
       {canManageGroup ? (
         <View style={themed($closeGroupContainer)}>
-          <TouchableOpacity 
-            style={themed($closeGroupButton)} 
+          <TouchableOpacity
+            style={themed($closeGroupButton)}
             onPress={handleCloseGroup}
             disabled={deleting}
             activeOpacity={0.8}
           >
-            <Text style={themed($closeGroupButtonText)} text={deleting ? "Closing..." : "Close Group"} />
+            <Text
+              style={themed($closeGroupButtonText)}
+              text={deleting ? "Closing..." : "Close Group"}
+            />
           </TouchableOpacity>
         </View>
-      ) : userRole === 'member' ? (
+      ) : userRole === "member" ? (
         <View style={themed($infoContainer)}>
           <Text style={themed($infoText)} text="Only group admins and creators can close groups" />
         </View>
@@ -291,42 +357,194 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         confirmText="OK"
         onConfirm={handleSuccessAlertConfirm}
       />
+
+      {/* Remove Member Alert */}
+      <CustomAlert
+        visible={showRemoveMemberAlert}
+        title="Remove Member"
+        message={`Are you sure you want to remove ${memberToRemove?.user?.full_name || "this member"} from the group?`}
+        confirmText={removingMember ? "Removing..." : "Remove"}
+        cancelText="Cancel"
+        onConfirm={handleConfirmRemoveMember}
+        onCancel={handleCancelRemoveMember}
+        confirmStyle="destructive"
+      />
+
+      {/* Create Post Alert */}
+      <CustomAlert
+        visible={showCreatePostAlert}
+        title="Create Post"
+        message="This feature will be implemented soon!"
+        confirmText="OK"
+        onConfirm={() => setShowCreatePostAlert(false)}
+      />
+
+      {/* Menu Alert */}
+      <CustomAlert
+        visible={showMenuAlert}
+        title="Menu"
+        message="Group menu options"
+        confirmText="OK"
+        onConfirm={() => setShowMenuAlert(false)}
+      />
+
+      {/* Error Alert */}
+      <CustomAlert
+        visible={showErrorAlert}
+        title="Error"
+        message={errorAlertMessage}
+        confirmText="OK"
+        confirmStyle="destructive"
+        onConfirm={() => setShowErrorAlert(false)}
+      />
+
+      {/* Member Success Alert */}
+      <CustomAlert
+        visible={showMemberSuccessAlert}
+        title="Success"
+        message={successAlertMessage}
+        confirmText="OK"
+        confirmStyle="success"
+        onConfirm={() => setShowMemberSuccessAlert(false)}
+      />
     </Screen>
   )
 }
 
 // Styles
 const $root = (): ViewStyle => ({ flex: 1, padding: spacing.md })
-const $headerRow = (): ViewStyle => ({ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md })
-const $backButton = ({ colors }: any): ViewStyle => ({ backgroundColor: colors.primary100, borderRadius: 8, paddingVertical: spacing.xs, paddingHorizontal: spacing.md })
-const $backButtonText = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.medium, fontSize: 16, color: colors.tint })
-const $backButtonPlain = ({ spacing }: any): ViewStyle => ({ marginRight: spacing.sm, paddingHorizontal: 0, paddingVertical: 0, backgroundColor: 'transparent', borderWidth: 0, elevation: 0, shadowOpacity: 0 })
-const $headerTitle = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.bold, fontSize: 20, color: colors.text, flex: 1, textAlign: "center" })
-const $headerActionButton = ({ colors }: any): ViewStyle => ({ backgroundColor: colors.primary100, borderRadius: 8, paddingVertical: spacing.xs, paddingHorizontal: spacing.md })
-const $headerActionText = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.medium, fontSize: 16, color: colors.tint })
+const $headerRow = (): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: spacing.md,
+})
+const $backButton = ({ colors }: any): ViewStyle => ({
+  backgroundColor: colors.primary100,
+  borderRadius: 8,
+  paddingVertical: spacing.xs,
+  paddingHorizontal: spacing.md,
+})
+const $backButtonText = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
+  color: colors.tint,
+})
+const $backButtonPlain = ({ spacing }: any): ViewStyle => ({
+  marginRight: spacing.sm,
+  paddingHorizontal: 8,
+  paddingVertical: 8,
+  backgroundColor: "transparent",
+  borderWidth: 0,
+  elevation: 0,
+  shadowOpacity: 0,
+  minWidth: 44,
+  minHeight: 44,
+  justifyContent: "center",
+  alignItems: "center",
+})
+const $headerTitle = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 20,
+  color: colors.text,
+  flex: 1,
+  textAlign: "center",
+})
+const $headerActionButton = ({ colors }: any): ViewStyle => ({
+  backgroundColor: colors.primary100,
+  borderRadius: 8,
+  paddingVertical: spacing.xs,
+  paddingHorizontal: spacing.md,
+})
+const $headerActionText = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
+  color: colors.tint,
+})
 const $groupInfo = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.md })
-const $groupDescription = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.normal, fontSize: 16, color: colors.text, marginBottom: spacing.sm })
-const $groupStats = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.normal, fontSize: 14, color: colors.textDim })
-const $actionButtons = (): ViewStyle => ({ flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.lg })
-const $actionButton = ({ colors, typography }: any): ViewStyle => ({ backgroundColor: colors.primary100, borderRadius: 8, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, overflow: "hidden" as "hidden" })
-const $actionButtonText = ({ colors, typography }: any): TextStyle => ({ color: colors.tint, fontFamily: typography.primary.medium, fontSize: 15, textAlign: "center" })
-const $closeGroupContainer = ({ spacing }: any): ViewStyle => ({ padding: spacing.md, paddingBottom: spacing.lg })
-const $closeGroupButton = ({ colors }: any): ViewStyle => ({ backgroundColor: colors.error, borderRadius: 12, paddingVertical: spacing.md, paddingHorizontal: spacing.lg, alignItems: "center", justifyContent: "center" })
-const $closeGroupButtonText = ({ colors, typography }: any): TextStyle => ({ color: colors.background, fontFamily: typography.primary.bold, fontSize: 16, textAlign: "center" })
-const $errorContainer = ({ spacing }: any): ViewStyle => ({ flex: 1, justifyContent: "center", alignItems: "center", padding: spacing.lg })
-const $errorText = ({ typography, colors, spacing }: any): TextStyle => ({ fontFamily: typography.primary.normal, fontSize: 16, color: colors.error, textAlign: "center", marginBottom: spacing.md })
-const $retryButton = ({ colors, typography }: any): ViewStyle => ({ backgroundColor: colors.primary100, borderRadius: 8, paddingVertical: spacing.sm, paddingHorizontal: spacing.lg, overflow: "hidden" as "hidden" })
-const $retryButtonText = ({ colors, typography }: any): TextStyle => ({ color: colors.tint, fontFamily: typography.primary.medium, fontSize: 15, textAlign: "center" }) 
-
-const $infoContainer = ({ spacing }: any): ViewStyle => ({ 
-  padding: spacing.md, 
+const $groupDescription = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 16,
+  color: colors.text,
+  marginBottom: spacing.sm,
+})
+const $groupStats = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.textDim,
+})
+const $actionButtons = (): ViewStyle => ({
+  flexDirection: "row",
+  justifyContent: "space-between",
+  marginBottom: spacing.lg,
+})
+const $actionButton = ({ colors, typography }: any): ViewStyle => ({
+  backgroundColor: colors.primary100,
+  borderRadius: 8,
+  paddingVertical: spacing.sm,
+  paddingHorizontal: spacing.md,
+  overflow: "hidden" as const,
+})
+const $actionButtonText = ({ colors, typography }: any): TextStyle => ({
+  color: colors.tint,
+  fontFamily: typography.primary.medium,
+  fontSize: 15,
+  textAlign: "center",
+})
+const $closeGroupContainer = ({ spacing }: any): ViewStyle => ({
+  padding: spacing.md,
   paddingBottom: spacing.lg,
-  alignItems: "center" 
+})
+const $closeGroupButton = ({ colors }: any): ViewStyle => ({
+  backgroundColor: colors.error,
+  borderRadius: 12,
+  paddingVertical: spacing.md,
+  paddingHorizontal: spacing.lg,
+  alignItems: "center",
+  justifyContent: "center",
+})
+const $closeGroupButtonText = ({ colors, typography }: any): TextStyle => ({
+  color: colors.background,
+  fontFamily: typography.primary.bold,
+  fontSize: 16,
+  textAlign: "center",
+})
+const $errorContainer = ({ spacing }: any): ViewStyle => ({
+  flex: 1,
+  justifyContent: "center",
+  alignItems: "center",
+  padding: spacing.lg,
+})
+const $errorText = ({ typography, colors, spacing }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 16,
+  color: colors.error,
+  textAlign: "center",
+  marginBottom: spacing.md,
+})
+const $retryButton = ({ colors, typography }: any): ViewStyle => ({
+  backgroundColor: colors.primary100,
+  borderRadius: 8,
+  paddingVertical: spacing.sm,
+  paddingHorizontal: spacing.lg,
+  overflow: "hidden" as const,
+})
+const $retryButtonText = ({ colors, typography }: any): TextStyle => ({
+  color: colors.tint,
+  fontFamily: typography.primary.medium,
+  fontSize: 15,
+  textAlign: "center",
 })
 
-const $infoText = ({ typography, colors }: any): TextStyle => ({ 
-  fontFamily: typography.primary.normal, 
-  fontSize: 14, 
+const $infoContainer = ({ spacing }: any): ViewStyle => ({
+  padding: spacing.md,
+  paddingBottom: spacing.lg,
+  alignItems: "center",
+})
+
+const $infoText = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
   color: colors.textDim,
-  textAlign: "center" 
-}) 
+  textAlign: "center",
+})

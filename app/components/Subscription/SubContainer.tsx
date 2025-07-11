@@ -1,8 +1,9 @@
 import React from "react"
 import { View, Text, StyleProp, ViewStyle, TextStyle, TouchableOpacity } from "react-native"
+
+import { Icon } from "@/components/Icon"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
-import { Icon } from "@/components/Icon"
 // import LinearGradient from "react-native-linear-gradient" // Remove if not installed
 
 export interface SubContainerProps {

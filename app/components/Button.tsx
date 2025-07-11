@@ -7,12 +7,12 @@ import {
   TextStyle,
   ViewStyle,
 } from "react-native"
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
   withTiming,
-  interpolate
+  interpolate,
 } from "react-native-reanimated"
 
 import { useAppTheme } from "@/theme/context"
@@ -147,7 +147,7 @@ export function Button(props: ButtonProps) {
   }, [])
 
   const preset: Presets = props.preset ?? "default"
-  
+
   /**
    * @param {PressableStateCallbackType} root0 - The root object containing the pressed state.
    * @param {boolean} root0.pressed - The pressed state.
@@ -161,7 +161,7 @@ export function Button(props: ButtonProps) {
       !!disabled && $disabledViewStyleOverride,
     ]
   }
-  
+
   /**
    * @param {PressableStateCallbackType} root0 - The root object containing the pressed state.
    * @param {boolean} root0.pressed - The pressed state.
@@ -178,11 +178,8 @@ export function Button(props: ButtonProps) {
 
   // Animated styles
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { translateY: translateY.value }
-    ],
-    opacity: opacity.value
+    transform: [{ scale: scale.value }, { translateY: translateY.value }],
+    opacity: opacity.value,
   }))
 
   const handlePressIn = () => {
@@ -211,7 +208,11 @@ export function Button(props: ButtonProps) {
         {(state) => (
           <>
             {!!LeftAccessory && (
-              <LeftAccessory style={$leftAccessoryStyle} pressableState={state} disabled={disabled} />
+              <LeftAccessory
+                style={$leftAccessoryStyle}
+                pressableState={state}
+                disabled={disabled}
+              />
             )}
 
             <Text tx={tx} text={text} txOptions={txOptions} style={$textStyle(state)}>

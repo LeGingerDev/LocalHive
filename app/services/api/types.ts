@@ -109,24 +109,18 @@ export interface Profile {
   avatar_url?: string
 }
 
-export type GroupCategory = 
-  | 'family'
-  | 'friends'
-  | 'work'
-  | 'community'
-  | 'hobby'
-  | 'travel'
-  | 'other'
+export type GroupCategory =
+  | "family"
+  | "friends"
+  | "work"
+  | "community"
+  | "hobby"
+  | "travel"
+  | "other"
 
-export type MemberRole = 
-  | 'admin'
-  | 'moderator'
-  | 'member'
+export type MemberRole = "admin" | "moderator" | "member"
 
-export type InvitationStatus = 
-  | 'pending'
-  | 'accepted'
-  | 'declined'
+export type InvitationStatus = "pending" | "accepted" | "rejected"
 
 export interface CreateGroupData {
   name: string

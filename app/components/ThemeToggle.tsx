@@ -1,9 +1,10 @@
 import React from "react"
 import { View, StyleProp, ViewStyle, FlexAlignType, TextStyle } from "react-native"
-import { useAppTheme } from "@/theme/context"
+
+import { Icon } from "@/components/Icon"
 import { Text } from "@/components/Text"
 import { Switch } from "@/components/Toggle/Switch"
-import { Icon } from "@/components/Icon"
+import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
 export interface ThemeToggleProps {
@@ -33,7 +34,6 @@ const $iconContainer: ThemedStyle<ViewStyle> = ({ colors }) => ({
   alignItems: "center" as FlexAlignType,
   justifyContent: "center" as ViewStyle["justifyContent"],
   marginRight: 8,
-  
 })
 
 const $label: ThemedStyle<TextStyle> = ({ colors, typography }) => ({

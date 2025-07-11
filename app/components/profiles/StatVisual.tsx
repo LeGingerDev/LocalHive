@@ -1,5 +1,6 @@
 import React from "react"
 import { View, Text, StyleProp, ViewStyle, TextStyle } from "react-native"
+
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 

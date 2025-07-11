@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react"
 import { View, Modal, TouchableOpacity, ViewStyle, TextStyle, Animated } from "react-native"
+
 import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
 
@@ -14,15 +15,15 @@ interface CustomAlertProps {
   confirmStyle?: "default" | "destructive" | "success"
 }
 
-export const CustomAlert = ({ 
-  visible, 
-  title, 
-  message, 
-  confirmText = "OK", 
+export const CustomAlert = ({
+  visible,
+  title,
+  message,
+  confirmText = "OK",
   cancelText = "Cancel",
-  onConfirm, 
+  onConfirm,
   onCancel,
-  confirmStyle = "default"
+  confirmStyle = "default",
 }: CustomAlertProps) => {
   const { themed } = useAppTheme()
   const scaleAnim = useRef(new Animated.Value(0)).current
@@ -62,49 +63,41 @@ export const CustomAlert = ({
   }, [visible, fadeAnim, scaleAnim])
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={onCancel}
-    >
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onCancel}>
       <Animated.View style={[themed($overlay), { opacity: fadeAnim }]}>
-        <Animated.View 
+        <Animated.View
           style={[
-            themed($modalContainer), 
-            { 
+            themed($modalContainer),
+            {
               transform: [{ scale: scaleAnim }],
-              opacity: fadeAnim 
-            }
+              opacity: fadeAnim,
+            },
           ]}
         >
           <View style={themed($contentContainer)}>
             <Text style={themed($title)} text={title} />
             <Text style={themed($message)} text={message} />
-            
+
             <View style={themed($buttonContainer)}>
               {onCancel && (
-                <TouchableOpacity 
-                  style={themed($cancelButton)} 
+                <TouchableOpacity
+                  style={themed($cancelButton)}
                   onPress={onCancel}
                   activeOpacity={0.8}
                 >
                   <Text style={themed($cancelButtonText)} text={cancelText} />
                 </TouchableOpacity>
               )}
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={[
                   themed((theme) => $confirmButton(theme, confirmStyle)),
-                  !onCancel && themed($singleButton)
-                ]} 
+                  !onCancel && themed($singleButton),
+                ]}
                 onPress={onConfirm}
                 activeOpacity={0.8}
               >
-                <Text 
-                  style={themed($confirmButtonText)}
-                  text={confirmText} 
-                />
+                <Text style={themed($confirmButtonText)} text={confirmText} />
               </TouchableOpacity>
             </View>
           </View>
@@ -115,15 +108,15 @@ export const CustomAlert = ({
 }
 
 // Styles
-const $overlay = (): ViewStyle => ({ 
-  flex: 1, 
-  backgroundColor: "rgba(0, 0, 0, 0.6)", 
-  justifyContent: "center", 
+const $overlay = (): ViewStyle => ({
+  flex: 1,
+  backgroundColor: "rgba(0, 0, 0, 0.6)",
+  justifyContent: "center",
   alignItems: "center",
-  padding: 20
+  padding: 20,
 })
 
-const $modalContainer = ({ colors }: any): ViewStyle => ({ 
+const $modalContainer = ({ colors }: any): ViewStyle => ({
   backgroundColor: colors.background,
   borderRadius: 16,
   padding: 0,
@@ -133,50 +126,50 @@ const $modalContainer = ({ colors }: any): ViewStyle => ({
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.25,
   shadowRadius: 12,
-  elevation: 8
+  elevation: 8,
 })
 
-const $contentContainer = ({ spacing }: any): ViewStyle => ({ 
-  padding: 24
+const $contentContainer = ({ spacing }: any): ViewStyle => ({
+  padding: 24,
 })
 
-const $title = ({ typography, colors }: any): TextStyle => ({ 
-  fontFamily: typography.primary.bold, 
-  fontSize: 18, 
-  color: colors.text, 
-  textAlign: "center", 
-  marginBottom: 12 
+const $title = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 18,
+  color: colors.text,
+  textAlign: "center",
+  marginBottom: 12,
 })
 
-const $message = ({ typography, colors }: any): TextStyle => ({ 
-  fontFamily: typography.primary.normal, 
-  fontSize: 16, 
-  color: colors.textDim, 
-  textAlign: "center", 
+const $message = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 16,
+  color: colors.textDim,
+  textAlign: "center",
   marginBottom: 24,
-  lineHeight: 22
+  lineHeight: 22,
 })
 
-const $buttonContainer = (): ViewStyle => ({ 
-  flexDirection: "row", 
-  gap: 12 
+const $buttonContainer = (): ViewStyle => ({
+  flexDirection: "row",
+  gap: 12,
 })
 
-const $cancelButton = ({ colors }: any): ViewStyle => ({ 
+const $cancelButton = ({ colors }: any): ViewStyle => ({
   flex: 1,
-  backgroundColor: colors.primary100, 
-  borderRadius: 12, 
-  paddingVertical: 14, 
+  backgroundColor: colors.primary100,
+  borderRadius: 12,
+  paddingVertical: 14,
   paddingHorizontal: 20,
   alignItems: "center",
-  justifyContent: "center"
+  justifyContent: "center",
 })
 
-const $cancelButtonText = ({ colors, typography }: any): TextStyle => ({ 
-  color: colors.tint, 
-  fontFamily: typography.primary.medium, 
+const $cancelButtonText = ({ colors, typography }: any): TextStyle => ({
+  color: colors.tint,
+  fontFamily: typography.primary.medium,
   fontSize: 16,
-  textAlign: "center"
+  textAlign: "center",
 })
 
 const $confirmButton = ({ colors }: any, confirmStyle: string) => {
@@ -191,7 +184,7 @@ const $confirmButton = ({ colors }: any, confirmStyle: string) => {
     paddingVertical: 14,
     paddingHorizontal: 20,
     alignItems: "center" as const,
-    justifyContent: "center" as const
+    justifyContent: "center" as const,
   }
 }
 
@@ -199,25 +192,25 @@ const $confirmButtonText = ({ typography }: any) => ({
   color: "#fff",
   fontFamily: typography.primary.bold,
   fontSize: 16,
-  textAlign: "center" as const
+  textAlign: "center" as const,
 })
 
-const $destructiveButton = ({ colors }: any): ViewStyle => ({ 
-  backgroundColor: colors.error
+const $destructiveButton = ({ colors }: any): ViewStyle => ({
+  backgroundColor: colors.error,
 })
 
-const $destructiveButtonText = ({ colors }: any): TextStyle => ({ 
-  color: colors.background
+const $destructiveButtonText = ({ colors }: any): TextStyle => ({
+  color: colors.background,
 })
 
-const $successButton = ({ colors }: any): ViewStyle => ({ 
-  backgroundColor: colors.tint
+const $successButton = ({ colors }: any): ViewStyle => ({
+  backgroundColor: colors.tint,
 })
 
-const $successButtonText = ({ colors }: any): TextStyle => ({ 
-  color: colors.background
+const $successButtonText = ({ colors }: any): TextStyle => ({
+  color: colors.background,
 })
 
-const $singleButton = (): ViewStyle => ({ 
-  flex: 1 
-}) 
+const $singleButton = (): ViewStyle => ({
+  flex: 1,
+})

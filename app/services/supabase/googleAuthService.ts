@@ -1,4 +1,7 @@
 // Try to import GoogleSignin, but handle the case where it's not available
+import { AuthService } from "./authService"
+import { supabase } from "./supabase"
+
 let GoogleSignin: any = null
 let statusCodes: any = null
 
@@ -26,9 +29,6 @@ try {
     PLAY_SERVICES_NOT_AVAILABLE: "PLAY_SERVICES_NOT_AVAILABLE",
   }
 }
-
-import { supabase } from "./supabase"
-import { AuthService } from "./authService"
 
 // Types for Google Sign-In responses
 export interface SignInResult {
@@ -60,7 +60,7 @@ class GoogleAuthService {
       console.warn("GoogleSignin not available")
       return
     }
-    
+
     GoogleSignin.configure({
       webClientId: "1059094099801-n0dvupob4kiers1dupmvu8su8io63e4s.apps.googleusercontent.com",
       offlineAccess: true,
@@ -195,7 +195,7 @@ class GoogleAuthService {
     try {
       // First sign out from Supabase to clear the main session
       await supabase.auth.signOut()
-      
+
       // Then sign out from Google Sign-In
       if (GoogleSignin) {
         await GoogleSignin.signOut()
@@ -251,7 +251,9 @@ class GoogleAuthService {
   async checkExistingSignIn(): Promise<CheckSignInResult> {
     try {
       // STEP 1: Check Supabase session first (primary source of truth)
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       console.log("Your Supabase access token:", session?.access_token)
       if (session) {
         // Valid Supabase session - user is authenticated
@@ -275,12 +277,12 @@ class GoogleAuthService {
         if (!currentUser) {
           return { isAuthenticated: false }
         }
-        
+
         const { idToken } = await GoogleSignin.getTokens()
-        
+
         // Attempt to restore Supabase session using Google token
         const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
+          provider: "google",
           token: idToken,
         })
 
@@ -288,17 +290,15 @@ class GoogleAuthService {
           // Successfully restored Supabase session
           return { isAuthenticated: true, user: data.user }
         }
-        
+
         // Failed to restore - clear Google state and return unauthenticated
         await GoogleSignin.signOut()
         return { isAuthenticated: false }
-        
       } catch (error) {
         // Google credentials invalid - clear and return unauthenticated
         await GoogleSignin.signOut()
         return { isAuthenticated: false }
       }
-
     } catch (error) {
       console.error("Error checking authentication:", error)
       return { isAuthenticated: false }
@@ -325,4 +325,3 @@ class GoogleAuthService {
 // Export a singleton instance
 const googleAuthService = new GoogleAuthService()
 export default googleAuthService
-

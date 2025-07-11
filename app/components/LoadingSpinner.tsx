@@ -1,13 +1,14 @@
 import React, { useEffect } from "react"
 import { View, ActivityIndicator, ViewStyle } from "react-native"
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
   withTiming,
   withRepeat,
-  withSequence
+  withSequence,
 } from "react-native-reanimated"
+
 import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
 
@@ -29,25 +30,19 @@ export const LoadingSpinner = ({ size = "large", text, style }: LoadingSpinnerPr
   useEffect(() => {
     scale.value = withSpring(1, { damping: 15, stiffness: 150 })
     opacity.value = withTiming(1, { duration: 400 })
-    
+
     // Subtle pulse animation
     pulseScale.value = withRepeat(
-      withSequence(
-        withTiming(1.05, { duration: 1000 }),
-        withTiming(1, { duration: 1000 })
-      ),
+      withSequence(withTiming(1.05, { duration: 1000 }), withTiming(1, { duration: 1000 })),
       -1,
-      true
+      true,
     )
   }, [])
 
   // Animated styles
   const animatedContainerStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { scale: pulseScale.value }
-    ],
-    opacity: opacity.value
+    transform: [{ scale: scale.value }, { scale: pulseScale.value }],
+    opacity: opacity.value,
   }))
 
   return (
@@ -75,4 +70,4 @@ const $text = ({ typography, colors, spacing }: any) => ({
   color: colors.textDim,
   marginTop: spacing.sm,
   textAlign: "center" as const,
-}) 
+})

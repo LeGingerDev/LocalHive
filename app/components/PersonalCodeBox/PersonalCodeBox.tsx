@@ -1,11 +1,12 @@
 import { FC, useState } from "react"
 import { View, TouchableOpacity, StyleProp, ViewStyle, TextStyle, Clipboard } from "react-native"
-import { useAppTheme } from "@/theme/context"
-import type { ThemedStyle } from "@/theme/types"
+
+import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { Text } from "@/components/Text"
 import { PersonalCodeService } from "@/services/supabase/personalCodeService"
 import { ShareService } from "@/services/supabase/shareService"
-import { CustomAlert } from "@/components/Alert/CustomAlert"
+import { useAppTheme } from "@/theme/context"
+import type { ThemedStyle } from "@/theme/types"
 
 export interface PersonalCodeBoxProps {
   style?: StyleProp<ViewStyle>
@@ -35,11 +36,21 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
   const [alertTitle, setAlertTitle] = useState("")
   const [alertMessage, setAlertMessage] = useState("")
   const [alertConfirmText, setAlertConfirmText] = useState("OK")
-  const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">("default")
-  const [alertOnConfirm, setAlertOnConfirm] = useState<() => void>(() => () => setAlertVisible(false))
+  const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">(
+    "default",
+  )
+  const [alertOnConfirm, setAlertOnConfirm] = useState<() => void>(
+    () => () => setAlertVisible(false),
+  )
 
   // Helper to show a CustomAlert
-  const showCustomAlert = (title: string, message: string, confirmText = "OK", confirmStyle: "default" | "destructive" | "success" = "default", onConfirm?: () => void) => {
+  const showCustomAlert = (
+    title: string,
+    message: string,
+    confirmText = "OK",
+    confirmStyle: "default" | "destructive" | "success" = "default",
+    onConfirm?: () => void,
+  ) => {
     setAlertTitle(title)
     setAlertMessage(message)
     setAlertConfirmText(confirmText)
@@ -53,11 +64,11 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
 
   const handleGenerateCode = async () => {
     if (isGenerating) return
-    
+
     setIsGenerating(true)
     try {
       const result = await PersonalCodeService.generatePersonalCode()
-      
+
       if ("error" in result) {
         // If the error is that user already has a code, try to fetch it from database
         if (result.message?.includes("already has a personal code")) {
@@ -70,8 +81,11 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
             return
           }
         }
-        
-        showCustomAlert("Error", result.message || "Failed to generate personal code. Please try again.")
+
+        showCustomAlert(
+          "Error",
+          result.message || "Failed to generate personal code. Please try again.",
+        )
       } else {
         // Call onRefresh to update the parent component
         onRefresh?.()
@@ -79,7 +93,10 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
         showCustomAlert("Success!", `Your new personal code is: ${result.personal_code}`)
       }
     } catch (error) {
-      showCustomAlert("Error", "Failed to generate personal code. Please check your connection and try again.")
+      showCustomAlert(
+        "Error",
+        "Failed to generate personal code. Please check your connection and try again.",
+      )
     } finally {
       setIsGenerating(false)
     }
@@ -90,7 +107,7 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
       showCustomAlert("No Code", "Generate a personal code first.")
       return
     }
-    
+
     try {
       await Clipboard.setString(code)
       showCustomAlert("Copied!", "Personal code copied to clipboard.")
@@ -104,10 +121,10 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
       showCustomAlert("No Code", "Generate a personal code first.")
       return
     }
-    
+
     try {
       const success = await ShareService.sharePersonalCode(code, userName)
-      
+
       if (!success) {
         showCustomAlert("Sharing Unavailable", "Sharing is not available on this device.")
       }
@@ -120,11 +137,7 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
     <>
       <View style={[themed($container), style]}>
         <View style={themed($header)}>
-          <Text
-            text="Your Personal Code"
-            style={themed($title)}
-            accessibilityRole="header"
-          />
+          <Text text="Your Personal Code" style={themed($title)} accessibilityRole="header" />
           <View style={themed($headerButtons)}>
             <TouchableOpacity
               style={themed($refreshButton)}
@@ -133,7 +146,10 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Generate new code"
             >
-              <Text text={isGenerating ? "Generating..." : "Refresh"} style={themed($refreshText)} />
+              <Text
+                text={isGenerating ? "Generating..." : "Refresh"}
+                style={themed($refreshText)}
+              />
             </TouchableOpacity>
             <TouchableOpacity
               style={themed($shareButton)}
@@ -153,11 +169,7 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
               accessibilityLabel="Loading personal code"
             />
           ) : code ? (
-            <Text
-              text={code}
-              style={themed($code)}
-              accessibilityLabel="Personal code"
-            />
+            <Text text={code} style={themed($code)} accessibilityLabel="Personal code" />
           ) : (
             <Text
               text="No code generated"

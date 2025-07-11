@@ -1,4 +1,4 @@
-import * as Sharing from 'expo-sharing'
+import * as Sharing from "expo-sharing"
 
 export interface ShareOptions {
   title?: string
@@ -14,18 +14,18 @@ export class ShareService {
   static async shareText(text: string, title?: string): Promise<boolean> {
     try {
       if (!(await Sharing.isAvailableAsync())) {
-        console.warn('Sharing is not available on this device')
+        console.warn("Sharing is not available on this device")
         return false
       }
 
       await Sharing.shareAsync(text, {
-        mimeType: 'text/plain',
-        dialogTitle: title || 'Share Code',
+        mimeType: "text/plain",
+        dialogTitle: title || "Share Code",
       })
-      
+
       return true
     } catch (error) {
-      console.error('Error sharing text:', error)
+      console.error("Error sharing text:", error)
       return false
     }
   }
@@ -34,9 +34,9 @@ export class ShareService {
    * Share a personal code with a formatted message
    */
   static async sharePersonalCode(code: string, userName?: string): Promise<boolean> {
-    const message = `Hey! Use my personal code to add me to groups in LocalHive: ${code}${userName ? `\n\n- ${userName}` : ''}`
-    
-    return this.shareText(message, 'Share Personal Code')
+    const message = `Hey! Use my personal code to add me to groups in LocalHive: ${code}${userName ? `\n\n- ${userName}` : ""}`
+
+    return this.shareText(message, "Share Personal Code")
   }
 
   /**
@@ -44,12 +44,12 @@ export class ShareService {
    */
   static async shareGroupInvitation(groupName: string, groupCode?: string): Promise<boolean> {
     let message = `Join my group "${groupName}" on LocalHive!`
-    
+
     if (groupCode) {
       message += `\n\nGroup Code: ${groupCode}`
     }
-    
-    return this.shareText(message, 'Share Group Invitation')
+
+    return this.shareText(message, "Share Group Invitation")
   }
 
   /**
@@ -58,18 +58,18 @@ export class ShareService {
   static async shareUrl(url: string, title?: string, message?: string): Promise<boolean> {
     try {
       if (!(await Sharing.isAvailableAsync())) {
-        console.warn('Sharing is not available on this device')
+        console.warn("Sharing is not available on this device")
         return false
       }
 
       await Sharing.shareAsync(url, {
-        mimeType: 'text/plain',
-        dialogTitle: title || 'Share Link',
+        mimeType: "text/plain",
+        dialogTitle: title || "Share Link",
       })
-      
+
       return true
     } catch (error) {
-      console.error('Error sharing URL:', error)
+      console.error("Error sharing URL:", error)
       return false
     }
   }
@@ -81,8 +81,8 @@ export class ShareService {
     try {
       return await Sharing.isAvailableAsync()
     } catch (error) {
-      console.error('Error checking sharing availability:', error)
+      console.error("Error checking sharing availability:", error)
       return false
     }
   }
-} 
+}

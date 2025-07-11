@@ -115,6 +115,7 @@ export const iconRegistry = {
   caretLeft: require("@assets/icons/caretLeft.png"),
   caretRight: require("@assets/icons/caretRight.png"),
   check: require("@assets/icons/check.png"),
+  checkOutline: require("@assets/icons/check.png"), // Using same icon but will style it as outline
   hidden: require("@assets/icons/hidden.png"),
   ladybug: require("@assets/icons/ladybug.png"),
   lock: require("@assets/icons/lock.png"),
@@ -123,6 +124,7 @@ export const iconRegistry = {
   settings: require("@assets/icons/settings.png"),
   view: require("@assets/icons/view.png"),
   x: require("@assets/icons/x.png"),
+  xOutline: require("@assets/icons/x.png"), // Using same icon but will style it as outline
 }
 
 const $imageStyleBase: ImageStyle = {

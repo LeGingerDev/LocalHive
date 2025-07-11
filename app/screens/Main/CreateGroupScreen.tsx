@@ -1,19 +1,27 @@
 import React, { useState } from "react"
-import { View, ScrollView, ViewStyle, TextStyle, KeyboardAvoidingView, Platform } from "react-native"
+import {
+  View,
+  ScrollView,
+  ViewStyle,
+  TextStyle,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native"
+
+import { Button } from "@/components/Button"
+import { CustomDropdown } from "@/components/CustomDropdown"
+import { CustomGradient } from "@/components/Gradient/CustomGradient"
+import { Icon } from "@/components/Icon"
+import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { TextField } from "@/components/TextField"
-import { Button } from "@/components/Button"
-import { LoadingSpinner } from "@/components/LoadingSpinner"
-import { useAppTheme } from "@/theme/context"
 import { useGroups } from "@/hooks/useGroups"
-import type { GroupCategory } from '@/services/api/types'
-import { CustomGradient } from "@/components/Gradient/CustomGradient"
-import { Icon } from "@/components/Icon"
+import type { GroupCategory } from "@/services/api/types"
+import { useAppTheme } from "@/theme/context"
 // If not installed, run: npm install @react-native-picker/picker
-import { CustomDropdown } from '@/components/CustomDropdown'
 
-const CATEGORY_ICONS: Record<string, keyof typeof import('@/components/Icon').iconRegistry> = {
+const CATEGORY_ICONS: Record<string, keyof typeof import("@/components/Icon").iconRegistry> = {
   family: "more", // fallback, you can add a family icon if you have one
   friends: "bell",
   work: "menu",
@@ -52,7 +60,7 @@ export const CreateGroupScreen = ({ navigation }: any) => {
       }
       const result = await createGroup(groupData)
       if (result) {
-        navigation.navigate('Main', { screen: 'Groups', params: { refresh: true } })
+        navigation.navigate("Main", { screen: "Groups", params: { refresh: true } })
       }
     } catch (e) {
       console.log("[CreateGroupScreen] Error in handleCreateGroup:", e)
@@ -62,7 +70,30 @@ export const CreateGroupScreen = ({ navigation }: any) => {
   }
 
   const groupCategories = [
-    "study", "sports", "hobby", "social", "family", "food", "places", "shopping", "transport", "household", "clothing", "medical", "local_customs", "language", "emergency", "work", "entertainment", "services", "restaurants", "landmarks", "cultural", "daily_life", "travel", "friends"
+    "study",
+    "sports",
+    "hobby",
+    "social",
+    "family",
+    "food",
+    "places",
+    "shopping",
+    "transport",
+    "household",
+    "clothing",
+    "medical",
+    "local_customs",
+    "language",
+    "emergency",
+    "work",
+    "entertainment",
+    "services",
+    "restaurants",
+    "landmarks",
+    "cultural",
+    "daily_life",
+    "travel",
+    "friends",
   ]
 
   if (loading) {
@@ -99,7 +130,7 @@ export const CreateGroupScreen = ({ navigation }: any) => {
           <TextField
             placeholder="Enter group name"
             value={formData.name}
-            onChangeText={text => setFormData(prev => ({ ...prev, name: text }))}
+            onChangeText={(text) => setFormData((prev) => ({ ...prev, name: text }))}
             style={themed($input)}
             containerStyle={themed($inputContainerFlat)}
             autoCapitalize="words"
@@ -109,7 +140,7 @@ export const CreateGroupScreen = ({ navigation }: any) => {
           <TextField
             placeholder="Tell others what this group is about..."
             value={formData.description}
-            onChangeText={text => setFormData(prev => ({ ...prev, description: text }))}
+            onChangeText={(text) => setFormData((prev) => ({ ...prev, description: text }))}
             style={themed($input)}
             containerStyle={themed($inputContainerFlat)}
             multiline
@@ -117,19 +148,24 @@ export const CreateGroupScreen = ({ navigation }: any) => {
           />
           <Text style={themed($label)} text="Category" />
           <CustomDropdown
-            options={groupCategories.map(cat => ({
-              label: cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            options={groupCategories.map((cat) => ({
+              label: cat.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
               value: cat,
             }))}
             value={formData.category}
-            onChange={value => setFormData(prev => ({ ...prev, category: value as GroupCategory }))}
+            onChange={(value) =>
+              setFormData((prev) => ({ ...prev, category: value as GroupCategory }))
+            }
             placeholder="Select category..."
             style={themed($pickerContainer)}
             testID="categoryDropdown"
           />
           <Text style={themed($label)} text="Privacy" />
           <View style={themed($privacyRow)}>
-            {[{ value: true, label: "Public" }, { value: false, label: "Private" }].map(opt => (
+            {[
+              { value: true, label: "Public" },
+              { value: false, label: "Private" },
+            ].map((opt) => (
               <View key={opt.label} style={themed($privacyOption)}>
                 <Button
                   style={[
@@ -140,7 +176,7 @@ export const CreateGroupScreen = ({ navigation }: any) => {
                     themed($privacyRadioText),
                     formData.is_public === opt.value && themed($privacyRadioTextActive),
                   ]}
-                  onPress={() => setFormData(prev => ({ ...prev, is_public: opt.value }))}
+                  onPress={() => setFormData((prev) => ({ ...prev, is_public: opt.value }))}
                   text={opt.label}
                   preset="filled"
                 />
@@ -156,7 +192,7 @@ export const CreateGroupScreen = ({ navigation }: any) => {
           <TextField
             placeholder="e.g. 50"
             value={formData.member_limit}
-            onChangeText={text => setFormData(prev => ({ ...prev, member_limit: text }))}
+            onChangeText={(text) => setFormData((prev) => ({ ...prev, member_limit: text }))}
             keyboardType="numeric"
             style={themed($input)}
             containerStyle={themed($inputContainerFlat)}
@@ -201,8 +237,6 @@ const $input = ({ typography, colors }: any): TextStyle => ({
   paddingVertical: 10,
 })
 
-
-
 const $privacyRow = (): ViewStyle => ({ flexDirection: "row", gap: 12, marginBottom: 0 })
 const $privacyOption = (): ViewStyle => ({ flex: 1, minWidth: 120 })
 const $privacyRadio = ({ colors }: any): ViewStyle => ({
@@ -233,26 +267,75 @@ const $privacyDesc = ({ colors }: any): TextStyle => ({
   fontSize: 13,
   marginLeft: 2,
 })
-const $buttonRow = ({ spacing }: any): ViewStyle => ({ marginTop: spacing.lg, gap: 0})
+const $buttonRow = ({ spacing }: any): ViewStyle => ({ marginTop: spacing.lg, gap: 0 })
 const $gradientButton = (): ViewStyle => ({ borderRadius: 16, overflow: "hidden", marginBottom: 8 })
-const $gradientButtonInner = (): ViewStyle => ({ backgroundColor: "transparent", borderRadius: 16, minHeight: 48 })
+const $gradientButtonInner = (): ViewStyle => ({
+  backgroundColor: "transparent",
+  borderRadius: 16,
+  minHeight: 48,
+})
 
-const $inputContainerFlat = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.sm, paddingHorizontal: 0, backgroundColor: "transparent", borderWidth: 0, elevation: 0, shadowOpacity: 0 })
-const $headerRow = ({ spacing }: any): ViewStyle => ({ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm })
-const $gradientButtonTextWhite = ({ typography }: any): TextStyle => ({ color: '#fff', fontFamily: typography.primary.bold, fontSize: 16 }) 
-const $backButtonPlain = ({ spacing }: any): ViewStyle => ({ marginRight: spacing.sm, paddingHorizontal: 0, paddingVertical: 0, backgroundColor: 'transparent', borderWidth: 0, elevation: 0, shadowOpacity: 0 })
-const $headerTitle = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.bold, fontSize: 20, color: colors.text, flex: 1, textAlign: "center" })
-const $headerSpacer = (): ViewStyle => ({ width: 40 }) // Same width as back button for balance 
-const $formContentWithTopMargin = ({ spacing }: any): ViewStyle => ({ flexGrow: 1, justifyContent: "center", padding: spacing.lg, gap: 6,  paddingBottom: spacing.xl * 2 })
-const $cancelButtonRed = ({ spacing, colors }: any): ViewStyle => ({ backgroundColor: colors.error || '#d32f2f', borderRadius: 16, minHeight: 48, marginTop: spacing.xs })
-const $cancelButtonTextRed = ({ typography, colors }: any): TextStyle => ({ color: '#fff', fontFamily: typography.primary.bold, fontSize: 16 }) 
+const $inputContainerFlat = ({ spacing }: any): ViewStyle => ({
+  marginBottom: spacing.sm,
+  paddingHorizontal: 0,
+  backgroundColor: "transparent",
+  borderWidth: 0,
+  elevation: 0,
+  shadowOpacity: 0,
+})
+const $headerRow = ({ spacing }: any): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: spacing.sm,
+})
+const $gradientButtonTextWhite = ({ typography }: any): TextStyle => ({
+  color: "#fff",
+  fontFamily: typography.primary.bold,
+  fontSize: 16,
+})
+const $backButtonPlain = ({ spacing }: any): ViewStyle => ({
+  marginRight: spacing.sm,
+  paddingHorizontal: 0,
+  paddingVertical: 0,
+  backgroundColor: "transparent",
+  borderWidth: 0,
+  elevation: 0,
+  shadowOpacity: 0,
+})
+const $headerTitle = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 20,
+  color: colors.text,
+  flex: 1,
+  textAlign: "center",
+})
+const $headerSpacer = (): ViewStyle => ({ width: 40 }) // Same width as back button for balance
+const $formContentWithTopMargin = ({ spacing }: any): ViewStyle => ({
+  flexGrow: 1,
+  justifyContent: "center",
+  padding: spacing.lg,
+  gap: 6,
+  paddingBottom: spacing.xl * 2,
+})
+const $cancelButtonRed = ({ spacing, colors }: any): ViewStyle => ({
+  backgroundColor: colors.error || "#d32f2f",
+  borderRadius: 16,
+  minHeight: 48,
+  marginTop: spacing.xs,
+})
+const $cancelButtonTextRed = ({ typography, colors }: any): TextStyle => ({
+  color: "#fff",
+  fontFamily: typography.primary.bold,
+  fontSize: 16,
+})
 const $pickerContainer = ({ spacing, colors }: any): ViewStyle => ({
   marginBottom: spacing.md,
   borderWidth: 1,
   borderColor: colors.border || colors.textDim,
   borderRadius: 12,
   backgroundColor: colors.input || colors.cardColor,
-  overflow: 'hidden',
+  overflow: "hidden",
   height: 56, // slightly taller for better alignment
-  justifyContent: 'center',
-}) 
+  justifyContent: "center",
+})

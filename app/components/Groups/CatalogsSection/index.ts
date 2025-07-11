@@ -1,2 +1,2 @@
-export * from "./CatalogsSection";
-export * from "./CatalogCard"; 
+export * from "./CatalogsSection"
+export * from "./CatalogCard"

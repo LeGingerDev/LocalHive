@@ -1,9 +1,10 @@
 import React from "react"
 import { TouchableOpacity, ViewStyle, StyleProp } from "react-native"
-import { useAppTheme } from "@/theme/context"
+
+import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { Text } from "@/components/Text"
 import { useShare } from "@/hooks/useShare"
-import { CustomAlert } from "@/components/Alert/CustomAlert"
+import { useAppTheme } from "@/theme/context"
 
 interface ShareGroupButtonProps {
   groupName: string
@@ -28,7 +29,7 @@ export const ShareGroupButton: React.FC<ShareGroupButtonProps> = ({
 
     try {
       const success = await shareGroupInvitation(groupName, groupCode)
-      
+
       if (!success) {
         setAlertMessage("Sharing is not available on this device.")
         setAlertVisible(true)
@@ -42,20 +43,13 @@ export const ShareGroupButton: React.FC<ShareGroupButtonProps> = ({
   return (
     <>
       <TouchableOpacity
-        style={[
-          themed($shareButton),
-          disabled && themed($disabledButton),
-          style,
-        ]}
+        style={[themed($shareButton), disabled && themed($disabledButton), style]}
         onPress={handleShare}
         disabled={disabled || isSharing}
         accessibilityRole="button"
         accessibilityLabel="Share group invitation"
       >
-        <Text
-          text={isSharing ? "Sharing..." : "Share Group"}
-          style={themed($shareButtonText)}
-        />
+        <Text text={isSharing ? "Sharing..." : "Share Group"} style={themed($shareButtonText)} />
       </TouchableOpacity>
 
       <CustomAlert
@@ -88,4 +82,4 @@ const $shareButtonText = ({ colors, typography }: any) => ({
   color: "white",
   fontFamily: typography.primary.medium,
   fontSize: 14,
-}) 
+})

@@ -1,7 +1,8 @@
 import React from "react"
 import { TouchableOpacity, View, Text, StyleSheet, ViewStyle, TextStyle } from "react-native"
-import { useAppTheme } from "@/theme/context"
+
 import { Icon, IconTypes } from "@/components/Icon"
+import { useAppTheme } from "@/theme/context"
 
 export interface BottomTabButtonProps {
   icon: IconTypes
@@ -27,15 +28,15 @@ export function BottomTabButton({
         accessibilityLabel={label}
         activeOpacity={0.85}
         onPress={onPress}
-        style={[
-          styles.addButtonContainer,
-          { shadowColor: theme.colors.palette.primary400 },
-        ]}
+        style={[styles.addButtonContainer, { shadowColor: theme.colors.palette.primary400 }]}
       >
         <View
           style={[
             styles.addButton,
-            { backgroundColor: theme.colors.palette.primary400, borderColor: focused ? theme.colors.palette.accent200 : "#fff" },
+            {
+              backgroundColor: theme.colors.palette.primary400,
+              borderColor: focused ? theme.colors.palette.accent200 : "#fff",
+            },
           ]}
         >
           <Icon icon={icon} size={38} color="#fff" />
@@ -53,44 +54,55 @@ export function BottomTabButton({
       onPress={onPress}
       style={styles.buttonContainer}
     >
-      <Icon icon={icon} size={24} color={focused ? theme.colors.palette.primary400 : theme.colors.textDim} />
-      <Text style={[styles.label, { color: focused ? theme.colors.palette.primary400 : theme.colors.textDim }]}>{label}</Text>
+      <Icon
+        icon={icon}
+        size={24}
+        color={focused ? theme.colors.palette.primary400 : theme.colors.textDim}
+      />
+      <Text
+        style={[
+          styles.label,
+          { color: focused ? theme.colors.palette.primary400 : theme.colors.textDim },
+        ]}
+      >
+        {label}
+      </Text>
     </TouchableOpacity>
   )
 }
 
 const styles = StyleSheet.create({
-  buttonContainer: {
-    flex: 1,
+  addButton: {
     alignItems: "center",
+    borderRadius: 32,
+    borderWidth: 4,
+    height: 64,
     justifyContent: "center",
-    paddingVertical: 8,
-  },
-  label: {
-    fontSize: 12,
-    marginTop: 2,
-    fontWeight: "500",
+    width: 64,
   },
   addButtonContainer: {
     alignItems: "center",
     justifyContent: "center",
-    position: "absolute",
-    top: -32,
     left: 0,
+    position: "absolute",
     right: 0,
+    top: -32,
     zIndex: 10,
-  },
-  addButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 32,
-    borderWidth: 4,
-    width: 64,
-    height: 64,
   },
   addLabel: {
     fontSize: 13,
     fontWeight: "600",
     marginTop: 4,
   },
-}) 
+  buttonContainer: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 2,
+  },
+})

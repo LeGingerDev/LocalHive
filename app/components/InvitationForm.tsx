@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from "react"
 import { View, ViewStyle, TextStyle, Alert } from "react-native"
+
+import { Button } from "@/components/Button"
+import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { TextField } from "@/components/TextField"
-import { Button } from "@/components/Button"
-import { LoadingSpinner } from "@/components/LoadingSpinner"
-import { useAppTheme } from "@/theme/context"
 import { useInvitations } from "@/hooks/useInvitations"
+import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 
 interface InvitationFormProps {
@@ -16,7 +17,12 @@ interface InvitationFormProps {
   onCancel?: () => void
 }
 
-export const InvitationForm = ({ groupId, groupName, onSuccess, onCancel }: InvitationFormProps) => {
+export const InvitationForm = ({
+  groupId,
+  groupName,
+  onSuccess,
+  onCancel,
+}: InvitationFormProps) => {
   const { themed } = useAppTheme()
   const { inviteByCode, loading, error } = useInvitations()
   const [personalCode, setPersonalCode] = useState("")
@@ -38,10 +44,13 @@ export const InvitationForm = ({ groupId, groupName, onSuccess, onCancel }: Invi
   }, [personalCode, groupId, inviteByCode, onSuccess, error])
 
   return (
-    <Screen style={themed($root)} preset="scroll" safeAreaEdges={['top', 'bottom']}>
+    <Screen style={themed($root)} preset="scroll" safeAreaEdges={["top", "bottom"]}>
       <View style={themed($header)}>
         <Text style={themed($title)} text="Send Invitation" />
-        <Text style={themed($subtitle)} text={`Invite someone to join "${groupName}" by their invitation code.`} />
+        <Text
+          style={themed($subtitle)}
+          text={`Invite someone to join "${groupName}" by their invitation code.`}
+        />
       </View>
       {error && (
         <View style={themed($errorContainer)}>
@@ -87,15 +96,48 @@ export const InvitationForm = ({ groupId, groupName, onSuccess, onCancel }: Invi
 // Styles
 const $root = (): ViewStyle => ({ flex: 1, padding: spacing.md })
 const $header = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.lg })
-const $title = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.bold, fontSize: 24, color: colors.text, marginBottom: spacing.xs })
-const $subtitle = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.normal, fontSize: 16, color: colors.textDim })
-const $errorContainer = ({ colors, spacing }: any): ViewStyle => ({ backgroundColor: colors.errorBackground, borderRadius: 8, padding: spacing.md, marginBottom: spacing.md })
-const $errorText = ({ typography, colors }: any): TextStyle => ({ fontFamily: typography.primary.normal, fontSize: 14, color: colors.error })
+const $title = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 24,
+  color: colors.text,
+  marginBottom: spacing.xs,
+})
+const $subtitle = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 16,
+  color: colors.textDim,
+})
+const $errorContainer = ({ colors, spacing }: any): ViewStyle => ({
+  backgroundColor: colors.errorBackground,
+  borderRadius: 8,
+  padding: spacing.md,
+  marginBottom: spacing.md,
+})
+const $errorText = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.error,
+})
 const $section = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.lg })
-const $sectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({ fontFamily: typography.primary.bold, fontSize: 18, color: colors.text, marginBottom: spacing.xs })
+const $sectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 18,
+  color: colors.text,
+  marginBottom: spacing.xs,
+})
 const $input = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.md })
 const $sendButton = ({ spacing }: any): ViewStyle => ({ marginTop: spacing.md })
-const $loadingContainer = ({ spacing }: any): ViewStyle => ({ paddingVertical: spacing.xl, alignItems: "center" })
-const $footer = ({ spacing }: any): ViewStyle => ({ marginTop: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.1)" })
-const $cancelButton = ({ colors }: any): ViewStyle => ({ backgroundColor: colors.palette.neutral300 })
+const $loadingContainer = ({ spacing }: any): ViewStyle => ({
+  paddingVertical: spacing.xl,
+  alignItems: "center",
+})
+const $footer = ({ spacing }: any): ViewStyle => ({
+  marginTop: spacing.lg,
+  paddingTop: spacing.md,
+  borderTopWidth: 1,
+  borderTopColor: "rgba(0,0,0,0.1)",
+})
+const $cancelButton = ({ colors }: any): ViewStyle => ({
+  backgroundColor: colors.palette.neutral300,
+})
 const $cancelButtonText = ({ colors }: any): TextStyle => ({ color: colors.text })

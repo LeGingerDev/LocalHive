@@ -1,34 +1,35 @@
 import React, { useState, useEffect } from "react"
 import { View, ViewStyle, TouchableOpacity, ActivityIndicator } from "react-native"
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withTiming
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
 } from "react-native-reanimated"
+
+import { Icon } from "@/components/Icon"
+import { Text } from "@/components/Text"
 import { GroupInvitation } from "@/services/api/types"
 import { useAppTheme } from "@/theme/context"
-import { Text } from "@/components/Text"
-import { Icon } from "@/components/Icon"
 import { spacing } from "@/theme/spacing"
 
 interface InvitationCardProps {
   invite: GroupInvitation
-  onRespond: (id: string, status: 'accepted' | 'declined') => Promise<boolean>
+  onRespond: (id: string, status: "accepted" | "declined") => Promise<boolean>
   index?: number // For staggered animations
 }
 
 export const InvitationCard = ({ invite, onRespond, index = 0 }: InvitationCardProps) => {
   const { themed } = useAppTheme()
   const [isResponding, setIsResponding] = useState(false)
-  
+
   // Animation values
   const scale = useSharedValue(0.8)
   const opacity = useSharedValue(0)
   const translateY = useSharedValue(30)
   const acceptScale = useSharedValue(1)
   const declineScale = useSharedValue(1)
-  
+
   const groupName = invite.group?.name || "Unknown Group"
   const inviterName = invite.inviter?.full_name || "Unknown User"
   const memberCount = invite.group?.member_count || 0
@@ -43,15 +44,40 @@ export const InvitationCard = ({ invite, onRespond, index = 0 }: InvitationCardP
     }, delay)
   }, [])
 
-  const handleRespond = async (status: 'accepted' | 'declined') => {
-    if (isResponding) return
-    
+  const handleRespond = async (status: "accepted" | "declined") => {
+    console.log("🔍 [InvitationCard] handleRespond called with status:", status)
+    console.log("🔍 [InvitationCard] Invitation ID:", invite.id)
+    console.log("🔍 [InvitationCard] Group name:", groupName)
+    console.log("🔍 [InvitationCard] Current isResponding state:", isResponding)
+
+    if (isResponding) {
+      console.log("🔍 [InvitationCard] Already responding, ignoring request")
+      return
+    }
+
+    console.log("🔍 [InvitationCard] Setting isResponding to true")
     setIsResponding(true)
+
     try {
-      await onRespond(invite.id, status)
+      console.log("🔍 [InvitationCard] Calling onRespond with ID:", invite.id, "status:", status)
+      const result = await onRespond(invite.id, status)
+      console.log("🔍 [InvitationCard] onRespond returned:", result)
+
+      if (result) {
+        console.log("🔍 [InvitationCard] Response successful!")
+      } else {
+        console.log("🔍 [InvitationCard] Response failed (returned false)")
+      }
     } catch (error) {
-      console.error('Error responding to invitation:', error)
+      console.error("🔍 [InvitationCard] Error responding to invitation:", error)
+      console.error("🔍 [InvitationCard] Error details:", {
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        invitationId: invite.id,
+        status: status,
+      })
     } finally {
+      console.log("🔍 [InvitationCard] Setting isResponding to false")
       setIsResponding(false)
     }
   }
@@ -82,19 +108,16 @@ export const InvitationCard = ({ invite, onRespond, index = 0 }: InvitationCardP
 
   // Animated styles
   const animatedCardStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { translateY: translateY.value }
-    ],
-    opacity: opacity.value
+    transform: [{ scale: scale.value }, { translateY: translateY.value }],
+    opacity: opacity.value,
   }))
 
   const animatedAcceptStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: acceptScale.value }]
+    transform: [{ scale: acceptScale.value }],
   }))
 
   const animatedDeclineStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: declineScale.value }]
+    transform: [{ scale: declineScale.value }],
   }))
 
   return (
@@ -105,7 +128,10 @@ export const InvitationCard = ({ invite, onRespond, index = 0 }: InvitationCardP
         </View>
         <View style={themed($invitationContent)}>
           <Text style={themed($invitationTitle)} text={groupName} />
-          <Text style={themed($invitationMeta)} text={`Invited by ${inviterName} • ${memberCount} members`} />
+          <Text
+            style={themed($invitationMeta)}
+            text={`Invited by ${inviterName} • ${memberCount} members`}
+          />
         </View>
         <View style={themed($actionButtons)}>
           {isResponding ? (
@@ -115,25 +141,25 @@ export const InvitationCard = ({ invite, onRespond, index = 0 }: InvitationCardP
               <Animated.View style={animatedAcceptStyle}>
                 <TouchableOpacity
                   style={themed($acceptButton)}
-                  onPress={() => handleRespond('accepted')}
+                  onPress={() => handleRespond("accepted")}
                   onPressIn={handleAcceptPressIn}
                   onPressOut={handleAcceptPressOut}
                   activeOpacity={1}
                   disabled={isResponding}
                 >
-                  <Icon icon="check" size={16} color={themed($acceptIconColor).color} />
+                  <Icon icon="checkOutline" size={16} color={themed($acceptIconColor).color} />
                 </TouchableOpacity>
               </Animated.View>
               <Animated.View style={animatedDeclineStyle}>
                 <TouchableOpacity
                   style={themed($declineButton)}
-                  onPress={() => handleRespond('declined')}
+                  onPress={() => handleRespond("declined")}
                   onPressIn={handleDeclinePressIn}
                   onPressOut={handleDeclinePressOut}
                   activeOpacity={1}
                   disabled={isResponding}
                 >
-                  <Icon icon="x" size={16} color={themed($declineIconColor).color} />
+                  <Icon icon="xOutline" size={16} color={themed($declineIconColor).color} />
                 </TouchableOpacity>
               </Animated.View>
             </>
@@ -145,88 +171,92 @@ export const InvitationCard = ({ invite, onRespond, index = 0 }: InvitationCardP
 }
 
 // Styles
-const $invitationCard = ({ colors, spacing }: any): ViewStyle => ({ 
-  backgroundColor: colors.background, 
-  borderRadius: 12, 
-  padding: spacing.md, 
-  marginBottom: spacing.sm, 
-  shadowColor: colors.palette.neutral800, 
-  shadowOpacity: 0.04, 
-  shadowRadius: 8, 
-  shadowOffset: { width: 0, height: 2 }, 
-  elevation: 1 
+const $invitationCard = ({ colors, spacing }: any): ViewStyle => ({
+  backgroundColor: colors.background,
+  borderRadius: 12,
+  padding: spacing.md,
+  marginBottom: spacing.sm,
+  shadowColor: colors.palette.neutral800,
+  shadowOpacity: 0.04,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 1,
 })
 
-const $invitationInfo = (): ViewStyle => ({ 
-  flexDirection: "row", 
-  alignItems: "center" 
+const $invitationInfo = (): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
 })
 
-const $avatar = ({ colors }: any): ViewStyle => ({ 
-  width: 36, 
-  height: 36, 
-  borderRadius: 18, 
-  backgroundColor: colors.primary300, 
-  alignItems: "center", 
-  justifyContent: "center", 
-  marginRight: spacing.sm 
+const $avatar = ({ colors }: any): ViewStyle => ({
+  width: 36,
+  height: 36,
+  borderRadius: 18,
+  backgroundColor: colors.primary300,
+  alignItems: "center",
+  justifyContent: "center",
+  marginRight: spacing.sm,
 })
 
-const $avatarInitial = ({ colors, typography }: any) => ({ 
-  color: colors.palette.neutral100, 
-  fontFamily: typography.primary.medium, 
-  fontSize: 16 
+const $avatarInitial = ({ colors, typography }: any) => ({
+  color: colors.palette.neutral100,
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
 })
 
-const $invitationContent = (): ViewStyle => ({ 
-  flex: 1 
+const $invitationContent = (): ViewStyle => ({
+  flex: 1,
 })
 
-const $invitationTitle = ({ typography, colors }: any) => ({ 
-  fontFamily: typography.primary.medium, 
-  fontSize: 15, 
-  color: colors.text 
+const $invitationTitle = ({ typography, colors }: any) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 15,
+  color: colors.text,
 })
 
-const $invitationMeta = ({ typography, colors }: any) => ({ 
-  fontFamily: typography.primary.normal, 
-  fontSize: 12, 
-  color: colors.textDim, 
-  marginTop: 2 
+const $invitationMeta = ({ typography, colors }: any) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 12,
+  color: colors.textDim,
+  marginTop: 2,
 })
 
-const $actionButtons = (): ViewStyle => ({ 
-  flexDirection: "row", 
-  alignItems: "center", 
-  gap: spacing.xs 
+const $actionButtons = (): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: spacing.xs,
 })
 
-const $acceptButton = ({ colors }: any): ViewStyle => ({ 
-  width: 32, 
-  height: 32, 
-  borderRadius: 16, 
-  backgroundColor: colors.success, 
-  alignItems: "center", 
-  justifyContent: "center" 
+const $acceptButton = ({ colors }: any): ViewStyle => ({
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  backgroundColor: "transparent",
+  borderWidth: 2,
+  borderColor: colors.success,
+  alignItems: "center",
+  justifyContent: "center",
 })
 
-const $declineButton = ({ colors }: any): ViewStyle => ({ 
-  width: 32, 
-  height: 32, 
-  borderRadius: 16, 
-  backgroundColor: colors.error, 
-  alignItems: "center", 
-  justifyContent: "center" 
+const $declineButton = ({ colors }: any): ViewStyle => ({
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  backgroundColor: "transparent",
+  borderWidth: 2,
+  borderColor: colors.error,
+  alignItems: "center",
+  justifyContent: "center",
 })
 
-const $acceptIconColor = ({ colors }: any) => ({ 
-  color: colors.palette.neutral100 
+const $acceptIconColor = ({ colors }: any) => ({
+  color: colors.success,
 })
 
-const $declineIconColor = ({ colors }: any) => ({ 
-  color: colors.palette.neutral100 
+const $declineIconColor = ({ colors }: any) => ({
+  color: colors.error,
 })
 
-const $loadingColor = ({ colors }: any) => ({ 
-  color: colors.textDim 
-}) 
+const $loadingColor = ({ colors }: any) => ({
+  color: colors.textDim,
+})

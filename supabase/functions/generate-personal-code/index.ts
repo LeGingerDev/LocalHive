@@ -29,7 +29,10 @@ serve(async (req) => {
     })
   }
   const jwt = authHeader.replace("Bearer ", "")
-  const { data: { user }, error: userError } = await supabase.auth.getUser(jwt)
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser(jwt)
   if (userError || !user) {
     return new Response(JSON.stringify({ error: "Invalid user" }), {
       status: 401,

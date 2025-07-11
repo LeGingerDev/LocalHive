@@ -1,2 +1,2 @@
-export * from "./RecentActivitySection";
-export * from "./ActivityItem"; 
+export * from "./RecentActivitySection"
+export * from "./ActivityItem"

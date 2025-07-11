@@ -1,9 +1,11 @@
 import React, { FC, memo, useCallback, useMemo, useEffect } from "react"
 import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator } from "react-native"
-import { useAppTheme } from "@/theme/context"
-import type { ThemedStyle } from "@/theme/types"
+
 import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
+import { useAppTheme } from "@/theme/context"
+import type { ThemedStyle } from "@/theme/types"
+
 import ProfileStat from "./ProfileStat"
 
 // #region Types & Interfaces
@@ -12,32 +14,32 @@ export interface ProfileBoxProps {
    * An optional style override useful for padding & margin.
    */
   style?: StyleProp<ViewStyle>
-  
+
   /**
    * The main data for this component
    */
   data?: ProfileBoxData | null
-  
+
   /**
    * Loading state indicator
    */
   isLoading?: boolean
-  
+
   /**
    * Error state for the component
    */
   error?: string | null
-  
+
   /**
    * Optional callback when component is pressed
    */
   onPress?: () => void
-  
+
   /**
    * Optional callback for retry action
    */
   onRetry?: () => void
-  
+
   /**
    * Test ID for testing purposes
    */
@@ -56,7 +58,7 @@ interface ProfileBoxData {
 
 // #region Private Helper Functions
 const _isValidData = (data: ProfileBoxData | null | undefined): data is ProfileBoxData => {
-  return data != null && typeof data === 'object'
+  return data != null && typeof data === "object"
 }
 
 const _getDisplayName = (data: ProfileBoxData | null | undefined): string => {
@@ -84,10 +86,10 @@ const _getAvatarInitial = (data: ProfileBoxData | null | undefined): string => {
 // #region Component
 /**
  * ProfileBox - A defensive component with proper error handling and loading states
- * 
+ *
  * Features:
  * - Loading state support
- * - Error state handling  
+ * - Error state handling
  * - Null safety checks
  * - Memoized for performance
  * - Follows SOLID principles
@@ -102,7 +104,7 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
     error = null,
     onPress,
     onRetry,
-    testID = "profileBoxComponent"
+    testID = "profileBoxComponent",
   } = props
   // #endregion
 
@@ -118,15 +120,12 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
       user: user ? { id: user.id, email: user.email } : null,
       googleUser: googleUser ? { id: googleUser.user?.id, email: googleUser.user?.email } : null,
       userProfile: userProfile,
-      isLoading: authLoading
+      isLoading: authLoading,
     })
   }, [user, googleUser, userProfile, authLoading])
 
   // #region Memoized Values
-  const _containerStyles = useMemo(() => [
-    themed($container),
-    style
-  ], [themed, style])
+  const _containerStyles = useMemo(() => [themed($container), style], [themed, style])
 
   // Use provided data or fall back to auth context data
   const _userData = useMemo((): ProfileBoxData | null => {
@@ -135,7 +134,7 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
       console.log("🔍 [ProfileBox] Using provided data:", data)
       return data
     }
-    
+
     // First priority: use the user profile from the database
     if (userProfile) {
       console.log("🔍 [ProfileBox] Using userProfile data:", userProfile)
@@ -143,28 +142,28 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
         id: userProfile.id,
         email: userProfile.email,
         name: userProfile.full_name,
-        displayName: userProfile.full_name || userProfile.email?.split('@')[0],
+        displayName: userProfile.full_name || userProfile.email?.split("@")[0],
         avatarUrl: userProfile.avatar_url,
-        bio: userProfile.bio
+        bio: userProfile.bio,
       }
     }
-    
+
     // Second priority: use Supabase user data
     if (user) {
-      console.log("🔍 [ProfileBox] Using Supabase user data:", { 
-        id: user.id, 
+      console.log("🔍 [ProfileBox] Using Supabase user data:", {
+        id: user.id,
         email: user.email,
-        metadata: user.user_metadata 
+        metadata: user.user_metadata,
       })
       return {
         id: user.id,
         email: user.email,
         name: user.user_metadata?.full_name,
-        displayName: user.user_metadata?.full_name || user.email?.split('@')[0],
-        avatarUrl: user.user_metadata?.avatar_url
+        displayName: user.user_metadata?.full_name || user.email?.split("@")[0],
+        avatarUrl: user.user_metadata?.avatar_url,
       }
     }
-    
+
     // Third priority: use Google user data
     if (googleUser) {
       console.log("🔍 [ProfileBox] Using Google user data:", googleUser.user)
@@ -172,11 +171,11 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
         id: googleUser.id,
         email: googleUser.email,
         name: googleUser.name,
-        displayName: googleUser.name || googleUser.email?.split('@')[0],
-        avatarUrl: googleUser.picture
+        displayName: googleUser.name || googleUser.email?.split("@")[0],
+        avatarUrl: googleUser.picture,
       }
     }
-    
+
     console.log("🔍 [ProfileBox] No user data available")
     return null
   }, [data, user, googleUser, userProfile])
@@ -186,31 +185,31 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
     console.log("🔍 [ProfileBox] Display name:", name)
     return name
   }, [_userData])
-  
+
   const _displayEmail = useMemo(() => {
     const email = _getDisplayEmail(_userData)
     console.log("🔍 [ProfileBox] Display email:", email)
     return email
   }, [_userData])
-  
+
   const _displayBio = useMemo(() => {
     const bio = _getDisplayBio(_userData)
     console.log("🔍 [ProfileBox] Display bio:", bio)
     return bio
   }, [_userData])
-  
+
   const _avatarInitial = useMemo(() => {
     const initial = _getAvatarInitial(_userData)
     console.log("🔍 [ProfileBox] Avatar initial:", initial)
     return initial
   }, [_userData])
-  
+
   const _hasValidData = useMemo(() => {
     const isValid = _isValidData(_userData)
     console.log("🔍 [ProfileBox] Has valid data:", isValid)
     return isValid
   }, [_userData])
-  
+
   const _isLoading = useMemo(() => {
     const loading = isLoading || authLoading
     console.log("🔍 [ProfileBox] Is loading:", loading)
@@ -235,13 +234,13 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
   // #region Render Helpers
   const _renderLoadingState = (): React.ReactElement => (
     <View style={_containerStyles} testID={`${testID}_loading`}>
-      <ActivityIndicator 
-        size="small" 
+      <ActivityIndicator
+        size="small"
         color={themed($activityIndicatorColor).color}
         style={themed($loadingIndicator)}
       />
-      <Text 
-        style={themed($loadingText)} 
+      <Text
+        style={themed($loadingText)}
         text="Loading profile..."
         testID={`${testID}_loadingText`}
       />
@@ -250,14 +249,14 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
 
   const _renderErrorState = (): React.ReactElement => (
     <View style={_containerStyles} testID={`${testID}_error`}>
-      <Text 
-        style={themed($errorText)} 
+      <Text
+        style={themed($errorText)}
         text={error ?? "Failed to load profile"}
         testID={`${testID}_errorText`}
       />
       {onRetry && (
-        <Text 
-          style={themed($retryButton)} 
+        <Text
+          style={themed($retryButton)}
           text="Retry"
           onPress={_handleRetry}
           testID={`${testID}_retryButton`}
@@ -272,7 +271,7 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
     return {
       accessible: true,
       accessibilityRole: "button" as const,
-      onPress: _handlePress
+      onPress: _handlePress,
     }
   }, [onPress, _handlePress])
   // #endregion
@@ -280,35 +279,19 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
   const _renderContent = (): React.ReactElement => {
     console.log("🔍 [ProfileBox] Rendering content with data:", _userData)
     return (
-      <View 
-        style={_containerStyles} 
-        testID={testID}
-        {..._getPressableProps()}
-      >
+      <View style={_containerStyles} testID={testID} {..._getPressableProps()}>
         <View style={themed($contentContainer)}>
           {/* Avatar */}
           <View style={themed($avatar)}>
             <Text style={themed($avatarInitial)}>{_avatarInitial}</Text>
           </View>
           {/* User Name */}
-          <Text 
-            style={themed($name)} 
-            text={_displayName}
-            testID={`${testID}_name`}
-          />
+          <Text style={themed($name)} text={_displayName} testID={`${testID}_name`} />
           {/* User Email */}
-          <Text 
-            style={themed($email)} 
-            text={_displayEmail}
-            testID={`${testID}_email`}
-          />
+          <Text style={themed($email)} text={_displayEmail} testID={`${testID}_email`} />
           {/* User Bio - only show if there is bio content */}
           {_displayBio ? (
-            <Text 
-              style={themed($bio)} 
-              text={_displayBio}
-              testID={`${testID}_bio`}
-            />
+            <Text style={themed($bio)} text={_displayBio} testID={`${testID}_bio`} />
           ) : null}
         </View>
         {/* Separator line */}
@@ -321,8 +304,8 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
 
   const _renderEmptyState = (): React.ReactElement => (
     <View style={_containerStyles} testID={`${testID}_empty`}>
-      <Text 
-        style={themed($emptyText)} 
+      <Text
+        style={themed($emptyText)}
         text="No profile data available"
         testID={`${testID}_emptyText`}
       />

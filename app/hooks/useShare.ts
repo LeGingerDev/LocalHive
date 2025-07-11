@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { ShareService } from '@/services/supabase/shareService'
+import { useState } from "react"
+
+import { ShareService } from "@/services/supabase/shareService"
 
 export const useShare = () => {
   const [isSharing, setIsSharing] = useState(false)
@@ -10,7 +11,7 @@ export const useShare = () => {
       const success = await ShareService.sharePersonalCode(code, userName)
       return success
     } catch (error) {
-      console.error('Error sharing personal code:', error)
+      console.error("Error sharing personal code:", error)
       return false
     } finally {
       setIsSharing(false)
@@ -23,7 +24,7 @@ export const useShare = () => {
       const success = await ShareService.shareGroupInvitation(groupName, groupCode)
       return success
     } catch (error) {
-      console.error('Error sharing group invitation:', error)
+      console.error("Error sharing group invitation:", error)
       return false
     } finally {
       setIsSharing(false)
@@ -36,7 +37,7 @@ export const useShare = () => {
       const success = await ShareService.shareText(text, title)
       return success
     } catch (error) {
-      console.error('Error sharing text:', error)
+      console.error("Error sharing text:", error)
       return false
     } finally {
       setIsSharing(false)
@@ -49,7 +50,7 @@ export const useShare = () => {
       const success = await ShareService.shareUrl(url, title, message)
       return success
     } catch (error) {
-      console.error('Error sharing URL:', error)
+      console.error("Error sharing URL:", error)
       return false
     } finally {
       setIsSharing(false)
@@ -60,7 +61,7 @@ export const useShare = () => {
     try {
       return await ShareService.isSharingAvailable()
     } catch (error) {
-      console.error('Error checking sharing availability:', error)
+      console.error("Error checking sharing availability:", error)
       return false
     }
   }
@@ -73,4 +74,4 @@ export const useShare = () => {
     shareUrl,
     checkSharingAvailability,
   }
-} 
+}

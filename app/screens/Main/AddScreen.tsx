@@ -1,8 +1,9 @@
 import React, { FC, useState, useEffect, useCallback } from "react"
 import { ViewStyle, TextStyle, ActivityIndicator } from "react-native"
-import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
+
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
+import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 // import { useNavigation } from "@react-navigation/native"
@@ -25,14 +26,14 @@ interface AddError {
 // #region Screen Component
 /**
  * AddScreen - A defensive screen with proper error handling and loading states
- * 
+ *
  * Features:
  * - Loading state support
- * - Error state handling  
+ * - Error state handling
  * - Pull-to-refresh functionality
  * - Null safety checks
  * - Follows SOLID principles
- * 
+ *
  * Note: This screen should be wrapped in an error boundary at the app level
  * for comprehensive error handling.
  */
@@ -55,18 +56,18 @@ export const AddScreen: FC<AddScreenProps> = () => {
       setError(null)
       // TODO: Replace with your actual API call
       // const response = await YourApiService.getData()
-      
+
       // TEMPORARY: Simulate API call for development/testing
       // REMOVE THIS SECTION when implementing real API calls
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
       // TEMPORARY: Mock data for development/testing
       // REMOVE THIS SECTION when implementing real API calls
       const mockData: AddData = {
         id: "1",
-        name: "add data"
+        name: "add data",
       }
-      
+
       setData(mockData)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
@@ -93,15 +94,15 @@ export const AddScreen: FC<AddScreenProps> = () => {
   // #region Lifecycle Effects
   useEffect(() => {
     let isMounted = true
-    
+
     const loadData = async () => {
       if (isMounted) {
         await _fetchData()
       }
     }
-    
+
     loadData()
-    
+
     // Cleanup function to prevent state updates on unmounted component
     return () => {
       isMounted = false
@@ -121,27 +122,20 @@ export const AddScreen: FC<AddScreenProps> = () => {
     <Screen style={themed($errorContainer)} preset="fixed">
       <Text style={themed($errorTitle)} text="Oops! Something went wrong" />
       <Text style={themed($errorMessage)} text={_error?.message ?? "Unknown error"} />
-      <Text 
-        style={themed($retryButton)} 
-        text="Tap to retry"
-        onPress={_handleRetry}
-      />
+      <Text style={themed($retryButton)} text="Tap to retry" onPress={_handleRetry} />
     </Screen>
   )
 
   const _renderContent = (): React.JSX.Element => (
-    <Screen 
-      style={themed($root)} 
-      preset="scroll"
-    >
+    <Screen style={themed($root)} preset="scroll">
       <Text style={themed($title)} text="Add" />
       {_data && (
         <>
-          <Text style={themed($dataText)} text={`ID: ${_data.id ?? 'N/A'}`} />
-          <Text style={themed($dataText)} text={`Name: ${_data.name ?? 'N/A'}`} />
+          <Text style={themed($dataText)} text={`ID: ${_data.id ?? "N/A"}`} />
+          <Text style={themed($dataText)} text={`Name: ${_data.name ?? "N/A"}`} />
         </>
       )}
-      
+
       {/* TODO: Add your actual content here */}
     </Screen>
   )

@@ -1,1 +1,1 @@
-export * from "./BottomTabButton" 
+export * from "./BottomTabButton"

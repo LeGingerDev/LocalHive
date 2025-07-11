@@ -1,1 +1,1 @@
-export * from "./PersonalCodeBox" 
+export * from "./PersonalCodeBox"

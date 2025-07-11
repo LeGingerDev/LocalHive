@@ -1,2 +1,2 @@
 export * from "./MemberCard"
-export * from "./MembersSection" 
+export * from "./MembersSection"

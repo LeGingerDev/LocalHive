@@ -1,9 +1,11 @@
 import React from "react"
 import { View, ViewStyle, TextStyle } from "react-native"
+
 import { Text } from "@/components/Text"
-import { MemberCard } from "./MemberCard"
+import { GroupMember, MemberRole } from "@/services/api/types"
 import { useAppTheme } from "@/theme/context"
-import { GroupMember } from "@/services/api/types"
+
+import { MemberCard } from "./MemberCard"
 
 export interface MembersSectionProps {
   members?: GroupMember[]
@@ -11,6 +13,9 @@ export interface MembersSectionProps {
   error?: string | null
   onRetry?: () => void
   onMemberPress?: (member: GroupMember) => void
+  onRemoveMember?: (member: GroupMember) => void
+  canManageMembers?: boolean
+  creatorId?: string
   style?: ViewStyle
   testID?: string
 }
@@ -21,8 +26,11 @@ export const MembersSection = ({
   error = null,
   onRetry,
   onMemberPress,
+  onRemoveMember,
+  canManageMembers = false,
+  creatorId,
   style,
-  testID = "membersSection"
+  testID = "membersSection",
 }: MembersSectionProps) => {
   const { themed } = useAppTheme()
 
@@ -55,6 +63,8 @@ export const MembersSection = ({
             key={member.id}
             data={member}
             onPress={() => onMemberPress?.(member)}
+            canRemove={canManageMembers && member.role !== "admin" && member.user_id !== creatorId}
+            onRemove={() => onRemoveMember?.(member)}
             testID={`${testID}_member_${member.id}`}
           />
         ))
@@ -65,16 +75,16 @@ export const MembersSection = ({
 
 // Styles
 const $container = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.xl })
-const $sectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({ 
-  fontFamily: typography.primary.medium, 
-  fontSize: 18, 
-  color: colors.text, 
-  marginBottom: spacing.md 
+const $sectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 18,
+  color: colors.text,
+  marginBottom: spacing.md,
 })
-const $emptyText = ({ typography, colors }: any): TextStyle => ({ 
-  fontFamily: typography.primary.normal, 
-  fontSize: 14, 
-  color: colors.textDim, 
-  textAlign: "center" as const, 
-  fontStyle: "italic" as const 
+const $emptyText = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.textDim,
+  textAlign: "center" as const,
+  fontStyle: "italic" as const,
 })

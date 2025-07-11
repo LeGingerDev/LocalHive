@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import { InvitationService } from "@/services/supabase/invitationService"
+
+import { useAuth } from "@/context/AuthContext"
 import { GroupInvitation } from "@/services/api/types"
 import { CacheService } from "@/services/cache/cacheService"
-import { useAuth } from "@/context/AuthContext"
+import { InvitationService } from "@/services/supabase/invitationService"
 
 export const useInvitations = () => {
   const { user } = useAuth()
@@ -14,59 +15,73 @@ export const useInvitations = () => {
   const lastFetchRef = useRef<{ pending: GroupInvitation[]; sent: GroupInvitation[] } | null>(null)
 
   // Load pending invitations
-  const loadPendingInvitations = useCallback(async (forceRefresh = false) => {
-    try {
-      if (!forceRefresh && pendingInvitations.length === 0) {
-        const cachedData = CacheService.getCachedInvitations(user?.id)
-        if (cachedData && cachedData.pending.length >= 0) {
-          setPendingInvitations(cachedData.pending)
+  const loadPendingInvitations = useCallback(
+    async (forceRefresh = false) => {
+      try {
+        if (!forceRefresh && pendingInvitations.length === 0) {
+          const cachedData = CacheService.getCachedInvitations(user?.id)
+          if (cachedData && cachedData.pending.length >= 0) {
+            setPendingInvitations(cachedData.pending)
+            return
+          }
+        }
+        setLoading(true)
+        setError(null)
+        const { data, error } = await InvitationService.getPendingInvitations()
+        if (error) {
+          setError(error.message)
           return
         }
+        const invitationsData = data || []
+        const hasChanged = CacheService.hasInvitationsChanged(
+          invitationsData,
+          sentInvitations,
+          user?.id,
+        )
+        if (hasChanged || forceRefresh) {
+          setPendingInvitations(invitationsData)
+          CacheService.saveInvitationsCache(invitationsData, sentInvitations, user?.id)
+          lastFetchRef.current = { pending: invitationsData, sent: sentInvitations }
+        }
+      } catch (err) {
+        setError("Failed to load invitations")
+      } finally {
+        setLoading(false)
       }
-      setLoading(true)
-      setError(null)
-      const { data, error } = await InvitationService.getPendingInvitations()
-      if (error) {
-        setError(error.message)
-        return
-      }
-      const invitationsData = data || []
-      const hasChanged = CacheService.hasInvitationsChanged(invitationsData, sentInvitations, user?.id)
-      if (hasChanged || forceRefresh) {
-        setPendingInvitations(invitationsData)
-        CacheService.saveInvitationsCache(invitationsData, sentInvitations, user?.id)
-        lastFetchRef.current = { pending: invitationsData, sent: sentInvitations }
-      }
-    } catch (err) {
-      setError("Failed to load invitations")
-    } finally {
-      setLoading(false)
-    }
-  }, [pendingInvitations.length, sentInvitations, user?.id])
+    },
+    [pendingInvitations.length, sentInvitations, user?.id],
+  )
 
   // Load sent invitations
-  const loadSentInvitations = useCallback(async (forceRefresh = false) => {
-    try {
-      if (!forceRefresh && sentInvitations.length === 0) {
-        const cachedData = CacheService.getCachedInvitations(user?.id)
-        if (cachedData && cachedData.sent.length >= 0) {
-          setSentInvitations(cachedData.sent)
+  const loadSentInvitations = useCallback(
+    async (forceRefresh = false) => {
+      try {
+        if (!forceRefresh && sentInvitations.length === 0) {
+          const cachedData = CacheService.getCachedInvitations(user?.id)
+          if (cachedData && cachedData.sent.length >= 0) {
+            setSentInvitations(cachedData.sent)
+            return
+          }
+        }
+        const { data, error } = await InvitationService.getSentInvitations()
+        if (error) {
           return
         }
-      }
-      const { data, error } = await InvitationService.getSentInvitations()
-      if (error) {
-        return
-      }
-      const invitationsData = data || []
-      const hasChanged = CacheService.hasInvitationsChanged(pendingInvitations, invitationsData, user?.id)
-      if (hasChanged || forceRefresh) {
-        setSentInvitations(invitationsData)
-        CacheService.saveInvitationsCache(pendingInvitations, invitationsData, user?.id)
-        lastFetchRef.current = { pending: pendingInvitations, sent: invitationsData }
-      }
-    } catch (err) {}
-  }, [pendingInvitations, sentInvitations.length, user?.id])
+        const invitationsData = data || []
+        const hasChanged = CacheService.hasInvitationsChanged(
+          pendingInvitations,
+          invitationsData,
+          user?.id,
+        )
+        if (hasChanged || forceRefresh) {
+          setSentInvitations(invitationsData)
+          CacheService.saveInvitationsCache(pendingInvitations, invitationsData, user?.id)
+          lastFetchRef.current = { pending: pendingInvitations, sent: invitationsData }
+        }
+      } catch (err) {}
+    },
+    [pendingInvitations, sentInvitations.length, user?.id],
+  )
 
   // Invite by code
   const inviteByCode = useCallback(async (groupId: string, personalCode: string) => {
@@ -81,35 +96,43 @@ export const useInvitations = () => {
   }, [])
 
   // Respond to an invitation
-  const respondToInvitation = useCallback(async (invitationId: string, status: 'accepted' | 'declined') => {
-    try {
-      const { data, error } = await InvitationService.respondToInvitation(invitationId, status)
-      if (error) {
+  const respondToInvitation = useCallback(
+    async (invitationId: string, status: "accepted" | "declined") => {
+      try {
+        const { data, error } = await InvitationService.respondToInvitation(invitationId, status)
+        if (error) {
+          return false
+        }
+        setPendingInvitations((prev) => prev.filter((inv) => inv.id !== invitationId))
+        if (data) {
+          setSentInvitations((prev) =>
+            prev.map((inv) => (inv.id === invitationId ? { ...inv, status: data.status } : inv)),
+          )
+        }
+        return true
+      } catch (err) {
         return false
       }
-      setPendingInvitations(prev => prev.filter(inv => inv.id !== invitationId))
-      if (data) {
-        setSentInvitations(prev => prev.map(inv => inv.id === invitationId ? { ...inv, status: data.status } : inv))
-      }
-      return true
-    } catch (err) {
-      return false
-    }
-  }, [])
+    },
+    [],
+  )
 
   // Cancel an invitation
-  const cancelInvitation = useCallback(async (invitationId: string) => {
-    try {
-      const { error } = await InvitationService.cancelInvitation(invitationId)
-      if (error) {
+  const cancelInvitation = useCallback(
+    async (invitationId: string) => {
+      try {
+        const { error } = await InvitationService.cancelInvitation(invitationId)
+        if (error) {
+          return false
+        }
+        setSentInvitations((prev) => prev.filter((inv) => inv.id !== invitationId))
+        return true
+      } catch (err) {
         return false
       }
-      setSentInvitations(prev => prev.filter(inv => inv.id !== invitationId))
-      return true
-    } catch (err) {
-      return false
-    }
-  }, [pendingInvitations])
+    },
+    [pendingInvitations],
+  )
 
   // Get invitation stats for a group
   const getGroupInvitationStats = useCallback(async (groupId: string) => {
@@ -185,4 +208,4 @@ export const useInvitations = () => {
     cancelInvitation,
     getGroupInvitationStats,
   }
-} 
+}

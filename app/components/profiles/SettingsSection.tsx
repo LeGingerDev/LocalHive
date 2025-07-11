@@ -7,9 +7,5 @@ export interface SettingsSectionProps {
 }
 
 export const SettingsSection: React.FC<SettingsSectionProps> = ({ children, style }) => {
-  return (
-    <View style={style}>
-      {children}
-    </View>
-  )
+  return <View style={style}>{children}</View>
 }
