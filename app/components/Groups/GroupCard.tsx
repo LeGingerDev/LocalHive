@@ -1,5 +1,13 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { View, ViewStyle, TouchableOpacity, TextStyle, Image, ImageStyle } from "react-native"
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  withTiming, 
+  interpolate,
+  runOnJS
+} from "react-native-reanimated"
 import { Group } from "@/services/api/types"
 import { useAppTheme } from "@/theme/context"
 import { Text } from "@/components/Text"
@@ -9,10 +17,17 @@ import { Icon } from "@/components/Icon"
 interface GroupCardProps {
   group: Group
   navigation: any
+  index?: number // For staggered animations
 }
 
-export const GroupCard = ({ group, navigation }: GroupCardProps) => {
+export const GroupCard = ({ group, navigation, index = 0 }: GroupCardProps) => {
   const { themed, theme } = useAppTheme()
+  
+  // Animation values
+  const scale = useSharedValue(0.8)
+  const opacity = useSharedValue(0)
+  const translateY = useSharedValue(50)
+  const buttonScale = useSharedValue(1)
   
   // Calculate member display text
   const memberCount = group.member_count || 0
@@ -21,60 +36,107 @@ export const GroupCard = ({ group, navigation }: GroupCardProps) => {
   // Determine privacy label
   const privacyLabel = group.is_public ? "Public" : "Private"
 
+  // Entrance animation
+  useEffect(() => {
+    const delay = index * 100 // Staggered entrance
+    setTimeout(() => {
+      scale.value = withSpring(1, { damping: 15, stiffness: 150 })
+      opacity.value = withTiming(1, { duration: 400 })
+      translateY.value = withSpring(0, { damping: 15, stiffness: 150 })
+    }, delay)
+  }, [])
+
   const handleViewGroup = () => {
     navigation.navigate('GroupDetail', { groupId: group.id })
   }
 
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, { damping: 15, stiffness: 300 })
+  }
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 })
+  }
+
+  const handleButtonPressIn = () => {
+    buttonScale.value = withSpring(0.9, { damping: 15, stiffness: 300 })
+  }
+
+  const handleButtonPressOut = () => {
+    buttonScale.value = withSpring(1, { damping: 15, stiffness: 300 })
+  }
+
+  // Animated styles
+  const animatedCardStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: scale.value },
+      { translateY: translateY.value }
+    ],
+    opacity: opacity.value
+  }))
+
+  const animatedButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }]
+  }))
+
   return (
-    <TouchableOpacity 
-      style={themed($groupCard)}
-      onPress={handleViewGroup}
-      activeOpacity={0.8}
-    >
-      <View style={themed($contentContainer)}>
-        <View style={themed($textContainer)}>
-          <View style={themed($nameRow)}>
-            {/* Privacy indicator */}
-            <View style={[
-              themed($privacyIndicator), 
-              { backgroundColor: group.is_public ? theme.colors.success : theme.colors.error }
-            ]} />
+    <Animated.View style={[themed($groupCard), animatedCardStyle]}>
+      <TouchableOpacity 
+        style={themed($touchableContainer)}
+        onPress={handleViewGroup}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+      >
+        <View style={themed($contentContainer)}>
+          <View style={themed($textContainer)}>
+            <View style={themed($nameRow)}>
+              {/* Privacy indicator with pulse animation */}
+              <Animated.View style={[
+                themed($privacyIndicator), 
+                { backgroundColor: group.is_public ? theme.colors.success : theme.colors.error }
+              ]} />
+              
+              <Text style={themed($groupName)} text={group.name} numberOfLines={1} ellipsizeMode="tail" />
+              
+              {/* Privacy label - only show in development */}
+              {__DEV__ && (
+                <Text style={themed($privacyLabel)} text={privacyLabel} />
+              )}
+            </View>
             
-            <Text style={themed($groupName)} text={group.name} numberOfLines={1} ellipsizeMode="tail" />
-            
-            {/* Privacy label - only show in development */}
-            {__DEV__ && (
-              <Text style={themed($privacyLabel)} text={privacyLabel} />
-            )}
+            <View style={themed($metaRow)}>
+              <Icon 
+                icon="menu" 
+                size={14} 
+                color={theme.colors.textDim} 
+                containerStyle={themed($memberIconContainer)}
+              />
+              <Text style={themed($memberCount)} text="Members: " />
+              <Text style={themed($memberCountValue)} text={memberText} />
+            </View>
           </View>
           
-          <View style={themed($metaRow)}>
-            <Icon 
-              icon="menu" 
-              size={14} 
-              color={theme.colors.textDim} 
-              containerStyle={themed($memberIconContainer)}
-            />
-            <Text style={themed($memberCount)} text="Members: " />
-            <Text style={themed($memberCountValue)} text={memberText} />
-          </View>
+          <Animated.View style={animatedButtonStyle}>
+            <TouchableOpacity 
+              style={themed($viewButton)} 
+              onPress={handleViewGroup}
+              onPressIn={handleButtonPressIn}
+              onPressOut={handleButtonPressOut}
+              activeOpacity={1}
+            >
+              <Text style={themed($viewButtonText)} text="View" />
+              <Icon 
+                icon="caretRight" 
+                size={12} 
+                color="#000000" 
+                containerStyle={themed($buttonIconContainer)}
+              />
+            </TouchableOpacity>
+          </Animated.View>
         </View>
-        
-        <TouchableOpacity 
-          style={themed($viewButton)} 
-          onPress={handleViewGroup}
-          activeOpacity={0.7}
-        >
-          <Text style={themed($viewButtonText)} text="View" />
-          <Icon 
-            icon="caretRight" 
-            size={12} 
-            color="#000000" 
-            containerStyle={themed($buttonIconContainer)}
-          />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   )
 }
 
@@ -92,6 +154,10 @@ const $groupCard = ({ colors, spacing }: any): ViewStyle => ({
   elevation: 2,
   borderWidth: 1,
   borderColor: colors.border
+})
+
+const $touchableContainer = (): ViewStyle => ({
+  flex: 1
 })
 
 const $contentContainer = (): ViewStyle => ({ 

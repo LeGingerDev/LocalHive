@@ -1,5 +1,13 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { View, ViewStyle, TouchableOpacity } from "react-native"
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  withTiming,
+  withRepeat,
+  withSequence
+} from "react-native-reanimated"
 import { useAppTheme } from "@/theme/context"
 import { Text } from "@/components/Text"
 
@@ -9,19 +17,73 @@ interface StartGroupCardProps {
 
 export const StartGroupCard = ({ onPress }: StartGroupCardProps) => {
   const { themed } = useAppTheme()
+  
+  // Animation values
+  const scale = useSharedValue(0.8)
+  const opacity = useSharedValue(0)
+  const translateY = useSharedValue(30)
+  const buttonScale = useSharedValue(1)
+  const floatY = useSharedValue(0)
+
+  // Entrance animation
+  useEffect(() => {
+    setTimeout(() => {
+      scale.value = withSpring(1, { damping: 15, stiffness: 150 })
+      opacity.value = withTiming(1, { duration: 500 })
+      translateY.value = withSpring(0, { damping: 15, stiffness: 150 })
+    }, 300) // Delay after group cards
+    
+    // Subtle floating animation
+    floatY.value = withRepeat(
+      withSequence(
+        withTiming(-3, { duration: 2000 }),
+        withTiming(3, { duration: 2000 })
+      ),
+      -1,
+      true
+    )
+  }, [])
+
+  const handlePressIn = () => {
+    buttonScale.value = withSpring(0.95, { damping: 15, stiffness: 300 })
+  }
+
+  const handlePressOut = () => {
+    buttonScale.value = withSpring(1, { damping: 15, stiffness: 300 })
+  }
+
+  // Animated styles
+  const animatedCardStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: scale.value },
+      { translateY: translateY.value + floatY.value }
+    ],
+    opacity: opacity.value
+  }))
+
+  const animatedButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }]
+  }))
+
   return (
-    <View style={themed($startGroupCard)}>
-      <View style={themed($plusIcon)}><Text text="+" style={themed($plusIconText)} /></View>
+    <Animated.View style={[themed($startGroupCard), animatedCardStyle]}>
+      <View style={themed($plusIcon)}>
+        <Text text="+" style={themed($plusIconText)} />
+      </View>
       <Text style={themed($startTitle)} text="Start Your Own Group" />
       <Text style={themed($startDesc)} text="Invite friends and family to build local knowledge together" />
-      <TouchableOpacity 
-        style={themed($createGroupButton)} 
-        onPress={onPress}
-        activeOpacity={0.8}
-      >
-        <Text style={themed($createGroupButtonText)} text="Create Group" />
-      </TouchableOpacity>
-    </View>
+      <Animated.View style={animatedButtonStyle}>
+        <TouchableOpacity 
+          style={themed($createGroupButton)} 
+          onPress={onPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          activeOpacity={1}
+        >
+          <Text style={themed($createGroupButtonText)} text="Create Group" />
+        </TouchableOpacity>
+      </Animated.View>
+    </Animated.View>
   )
 }
 

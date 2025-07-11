@@ -1,5 +1,11 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { View, ViewStyle, TouchableOpacity, ActivityIndicator } from "react-native"
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  withTiming
+} from "react-native-reanimated"
 import { GroupInvitation } from "@/services/api/types"
 import { useAppTheme } from "@/theme/context"
 import { Text } from "@/components/Text"
@@ -9,15 +15,33 @@ import { spacing } from "@/theme/spacing"
 interface InvitationCardProps {
   invite: GroupInvitation
   onRespond: (id: string, status: 'accepted' | 'declined') => Promise<boolean>
+  index?: number // For staggered animations
 }
 
-export const InvitationCard = ({ invite, onRespond }: InvitationCardProps) => {
+export const InvitationCard = ({ invite, onRespond, index = 0 }: InvitationCardProps) => {
   const { themed } = useAppTheme()
   const [isResponding, setIsResponding] = useState(false)
+  
+  // Animation values
+  const scale = useSharedValue(0.8)
+  const opacity = useSharedValue(0)
+  const translateY = useSharedValue(30)
+  const acceptScale = useSharedValue(1)
+  const declineScale = useSharedValue(1)
   
   const groupName = invite.group?.name || "Unknown Group"
   const inviterName = invite.inviter?.full_name || "Unknown User"
   const memberCount = invite.group?.member_count || 0
+
+  // Entrance animation
+  useEffect(() => {
+    const delay = index * 50 // Staggered entrance for invitations
+    setTimeout(() => {
+      scale.value = withSpring(1, { damping: 15, stiffness: 150 })
+      opacity.value = withTiming(1, { duration: 400 })
+      translateY.value = withSpring(0, { damping: 15, stiffness: 150 })
+    }, delay)
+  }, [])
 
   const handleRespond = async (status: 'accepted' | 'declined') => {
     if (isResponding) return
@@ -32,8 +56,49 @@ export const InvitationCard = ({ invite, onRespond }: InvitationCardProps) => {
     }
   }
 
+  const handleAcceptPressIn = () => {
+    if (!isResponding) {
+      acceptScale.value = withSpring(0.9, { damping: 15, stiffness: 300 })
+    }
+  }
+
+  const handleAcceptPressOut = () => {
+    if (!isResponding) {
+      acceptScale.value = withSpring(1, { damping: 15, stiffness: 300 })
+    }
+  }
+
+  const handleDeclinePressIn = () => {
+    if (!isResponding) {
+      declineScale.value = withSpring(0.9, { damping: 15, stiffness: 300 })
+    }
+  }
+
+  const handleDeclinePressOut = () => {
+    if (!isResponding) {
+      declineScale.value = withSpring(1, { damping: 15, stiffness: 300 })
+    }
+  }
+
+  // Animated styles
+  const animatedCardStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: scale.value },
+      { translateY: translateY.value }
+    ],
+    opacity: opacity.value
+  }))
+
+  const animatedAcceptStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: acceptScale.value }]
+  }))
+
+  const animatedDeclineStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: declineScale.value }]
+  }))
+
   return (
-    <View style={themed($invitationCard)}>
+    <Animated.View style={[themed($invitationCard), animatedCardStyle]}>
       <View style={themed($invitationInfo)}>
         <View style={themed($avatar)}>
           <Text style={themed($avatarInitial)} text={groupName[0]} />
@@ -47,27 +112,35 @@ export const InvitationCard = ({ invite, onRespond }: InvitationCardProps) => {
             <ActivityIndicator size="small" color={themed($loadingColor).color} />
           ) : (
             <>
-              <TouchableOpacity
-                style={themed($acceptButton)}
-                onPress={() => handleRespond('accepted')}
-                activeOpacity={0.7}
-                disabled={isResponding}
-              >
-                <Icon icon="check" size={16} color={themed($acceptIconColor).color} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={themed($declineButton)}
-                onPress={() => handleRespond('declined')}
-                activeOpacity={0.7}
-                disabled={isResponding}
-              >
-                <Icon icon="x" size={16} color={themed($declineIconColor).color} />
-              </TouchableOpacity>
+              <Animated.View style={animatedAcceptStyle}>
+                <TouchableOpacity
+                  style={themed($acceptButton)}
+                  onPress={() => handleRespond('accepted')}
+                  onPressIn={handleAcceptPressIn}
+                  onPressOut={handleAcceptPressOut}
+                  activeOpacity={1}
+                  disabled={isResponding}
+                >
+                  <Icon icon="check" size={16} color={themed($acceptIconColor).color} />
+                </TouchableOpacity>
+              </Animated.View>
+              <Animated.View style={animatedDeclineStyle}>
+                <TouchableOpacity
+                  style={themed($declineButton)}
+                  onPress={() => handleRespond('declined')}
+                  onPressIn={handleDeclinePressIn}
+                  onPressOut={handleDeclinePressOut}
+                  activeOpacity={1}
+                  disabled={isResponding}
+                >
+                  <Icon icon="x" size={16} color={themed($declineIconColor).color} />
+                </TouchableOpacity>
+              </Animated.View>
             </>
           )}
         </View>
       </View>
-    </View>
+    </Animated.View>
   )
 }
 

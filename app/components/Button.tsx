@@ -1,4 +1,4 @@
-import { ComponentType } from "react"
+import { ComponentType, useEffect } from "react"
 import {
   Pressable,
   PressableProps,
@@ -7,6 +7,13 @@ import {
   TextStyle,
   ViewStyle,
 } from "react-native"
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  withTiming,
+  interpolate
+} from "react-native-reanimated"
 
 import { useAppTheme } from "@/theme/context"
 import { $styles } from "@/theme/styles"
@@ -83,6 +90,10 @@ export interface ButtonProps extends PressableProps {
    * An optional style override for the disabled state
    */
   disabledStyle?: StyleProp<ViewStyle>
+  /**
+   * Animation delay for staggered entrance animations
+   */
+  animationDelay?: number
 }
 
 /**
@@ -114,12 +125,29 @@ export function Button(props: ButtonProps) {
     LeftAccessory,
     disabled,
     disabledStyle: $disabledViewStyleOverride,
+    animationDelay = 0,
     ...rest
   } = props
 
   const { themed } = useAppTheme()
 
+  // Animation values
+  const scale = useSharedValue(0.9)
+  const opacity = useSharedValue(0)
+  const translateY = useSharedValue(20)
+
+  // Entrance animation
+  useEffect(() => {
+    const delay = animationDelay
+    setTimeout(() => {
+      scale.value = withSpring(1, { damping: 15, stiffness: 150 })
+      opacity.value = withTiming(1, { duration: 300 })
+      translateY.value = withSpring(0, { damping: 15, stiffness: 150 })
+    }, delay)
+  }, [])
+
   const preset: Presets = props.preset ?? "default"
+  
   /**
    * @param {PressableStateCallbackType} root0 - The root object containing the pressed state.
    * @param {boolean} root0.pressed - The pressed state.
@@ -133,6 +161,7 @@ export function Button(props: ButtonProps) {
       !!disabled && $disabledViewStyleOverride,
     ]
   }
+  
   /**
    * @param {PressableStateCallbackType} root0 - The root object containing the pressed state.
    * @param {boolean} root0.pressed - The pressed state.
@@ -147,34 +176,59 @@ export function Button(props: ButtonProps) {
     ]
   }
 
+  // Animated styles
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: scale.value },
+      { translateY: translateY.value }
+    ],
+    opacity: opacity.value
+  }))
+
+  const handlePressIn = () => {
+    if (!disabled) {
+      scale.value = withSpring(0.95, { damping: 15, stiffness: 300 })
+    }
+  }
+
+  const handlePressOut = () => {
+    if (!disabled) {
+      scale.value = withSpring(1, { damping: 15, stiffness: 300 })
+    }
+  }
+
   return (
-    <Pressable
-      style={$viewStyle}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: !!disabled }}
-      {...rest}
-      disabled={disabled}
-    >
-      {(state) => (
-        <>
-          {!!LeftAccessory && (
-            <LeftAccessory style={$leftAccessoryStyle} pressableState={state} disabled={disabled} />
-          )}
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        style={$viewStyle}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !!disabled }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        {...rest}
+        disabled={disabled}
+      >
+        {(state) => (
+          <>
+            {!!LeftAccessory && (
+              <LeftAccessory style={$leftAccessoryStyle} pressableState={state} disabled={disabled} />
+            )}
 
-          <Text tx={tx} text={text} txOptions={txOptions} style={$textStyle(state)}>
-            {children}
-          </Text>
+            <Text tx={tx} text={text} txOptions={txOptions} style={$textStyle(state)}>
+              {children}
+            </Text>
 
-          {!!RightAccessory && (
-            <RightAccessory
-              style={$rightAccessoryStyle}
-              pressableState={state}
-              disabled={disabled}
-            />
-          )}
-        </>
-      )}
-    </Pressable>
+            {!!RightAccessory && (
+              <RightAccessory
+                style={$rightAccessoryStyle}
+                pressableState={state}
+                disabled={disabled}
+              />
+            )}
+          </>
+        )}
+      </Pressable>
+    </Animated.View>
   )
 }
 

@@ -226,19 +226,20 @@ export const GroupsScreen = ({ navigation, route }: any) => {
             <Text style={themed($emptyStateText)} text="Create your first group to get started" />
           </View>
         ) : (
-          user && groups.map((group: Group) => (
-            <GroupCard key={group.id} group={group} navigation={navigation} />
+          user && groups.map((group: Group, index: number) => (
+            <GroupCard key={group.id} group={group} navigation={navigation} index={index} />
           ))
         )}
         
         {!loading && user && invitations.length > 0 && (
           <>
             <Text style={themed($sectionTitle)} text="Invitations" />
-            {invitations.map((invite: GroupInvitation) => (
+            {invitations.map((invite: GroupInvitation, index: number) => (
               <InvitationCard 
                 key={invite.id} 
                 invite={invite} 
                 onRespond={handleInvitationResponse}
+                index={index}
               />
             ))}
           </>
