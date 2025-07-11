@@ -14,11 +14,25 @@ export interface GroupsCache {
   lastSync: number
 }
 
+export interface InvitationsCache {
+  pending: CacheEntry<GroupInvitation[]>
+  sent: CacheEntry<GroupInvitation[]>
+  lastSync: number
+}
+
 export class CacheService {
   private static readonly CACHE_VERSION = "1.0.0"
   private static readonly GROUPS_CACHE_KEY = "groups_cache"
+  private static readonly INVITATIONS_CACHE_KEY = "invitations_cache"
   private static readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes in milliseconds
   private static readonly MAX_CACHE_AGE = 30 * 60 * 1000 // 30 minutes in milliseconds
+
+  /**
+   * Get user-specific cache key
+   */
+  private static getUserCacheKey(baseKey: string, userId?: string): string {
+    return userId ? `${baseKey}_${userId}` : baseKey
+  }
 
   /**
    * Generate a hash for data to detect changes
@@ -67,8 +81,9 @@ export class CacheService {
   /**
    * Save groups data to cache
    */
-  static saveGroupsCache(groups: Group[], invitations: GroupInvitation[]): void {
+  static saveGroupsCache(groups: Group[], invitations: GroupInvitation[], userId?: string): void {
     const now = Date.now()
+    const cacheKey = this.getUserCacheKey(this.GROUPS_CACHE_KEY, userId)
     
     const groupsEntry: CacheEntry<Group[]> = {
       data: groups,
@@ -90,14 +105,15 @@ export class CacheService {
       lastSync: now
     }
     
-    save(this.GROUPS_CACHE_KEY, cache)
+    save(cacheKey, cache)
   }
 
   /**
    * Load groups data from cache
    */
-  static loadGroupsCache(): GroupsCache | null {
-    const cache = load<GroupsCache>(this.GROUPS_CACHE_KEY)
+  static loadGroupsCache(userId?: string): GroupsCache | null {
+    const cacheKey = this.getUserCacheKey(this.GROUPS_CACHE_KEY, userId)
+    const cache = load<GroupsCache>(cacheKey)
     
     if (!cache) return null
     
@@ -112,8 +128,8 @@ export class CacheService {
   /**
    * Check if groups data has changed since last cache
    */
-  static hasGroupsChanged(groups: Group[], invitations: GroupInvitation[]): boolean {
-    const cache = this.loadGroupsCache()
+  static hasGroupsChanged(groups: Group[], invitations: GroupInvitation[], userId?: string): boolean {
+    const cache = this.loadGroupsCache(userId)
     
     if (!cache) return true
     
@@ -126,8 +142,8 @@ export class CacheService {
   /**
    * Check if cache needs refresh (for background sync)
    */
-  static shouldRefreshGroups(): boolean {
-    const cache = this.loadGroupsCache()
+  static shouldRefreshGroups(userId?: string): boolean {
+    const cache = this.loadGroupsCache(userId)
     
     if (!cache) return true
     
@@ -137,8 +153,8 @@ export class CacheService {
   /**
    * Get cached groups data if available and valid
    */
-  static getCachedGroups(): { groups: Group[]; invitations: GroupInvitation[] } | null {
-    const cache = this.loadGroupsCache()
+  static getCachedGroups(userId?: string): { groups: Group[]; invitations: GroupInvitation[] } | null {
+    const cache = this.loadGroupsCache(userId)
     
     if (!cache) return null
     
@@ -151,20 +167,31 @@ export class CacheService {
   /**
    * Clear groups cache
    */
-  static clearGroupsCache(): void {
+  static clearGroupsCache(userId?: string): void {
+    const cacheKey = this.getUserCacheKey(this.GROUPS_CACHE_KEY, userId)
+    remove(cacheKey)
+  }
+
+  /**
+   * Clear all groups caches (for all users)
+   */
+  static clearAllGroupsCaches(): void {
+    // Clear both user-specific and general cache
     remove(this.GROUPS_CACHE_KEY)
+    // Note: We can't easily clear all user-specific keys without knowing them
+    // This is a limitation, but the general cache clear should be sufficient
   }
 
   /**
    * Get cache statistics for debugging
    */
-  static getCacheStats(): {
+  static getCacheStats(userId?: string): {
     hasCache: boolean
     age: number | null
     needsRefresh: boolean
     isValid: boolean
   } {
-    const cache = this.loadGroupsCache()
+    const cache = this.loadGroupsCache(userId)
     
     if (!cache) {
       return {
@@ -184,5 +211,117 @@ export class CacheService {
       needsRefresh: this.needsRefresh(cache.groups),
       isValid: this.isCacheValid(cache.groups)
     }
+  }
+
+  // ===== INVITATIONS CACHE METHODS =====
+
+  /**
+   * Save invitations data to cache
+   */
+  static saveInvitationsCache(pending: GroupInvitation[], sent: GroupInvitation[], userId?: string): void {
+    const now = Date.now()
+    const cacheKey = this.getUserCacheKey(this.INVITATIONS_CACHE_KEY, userId)
+    
+    const pendingEntry: CacheEntry<GroupInvitation[]> = {
+      data: pending,
+      timestamp: now,
+      hash: this.generateHash(pending),
+      version: this.CACHE_VERSION
+    }
+    
+    const sentEntry: CacheEntry<GroupInvitation[]> = {
+      data: sent,
+      timestamp: now,
+      hash: this.generateHash(sent),
+      version: this.CACHE_VERSION
+    }
+    
+    const cache: InvitationsCache = {
+      pending: pendingEntry,
+      sent: sentEntry,
+      lastSync: now
+    }
+    
+    save(cacheKey, cache)
+  }
+
+  /**
+   * Load invitations data from cache
+   */
+  static loadInvitationsCache(userId?: string): InvitationsCache | null {
+    const cacheKey = this.getUserCacheKey(this.INVITATIONS_CACHE_KEY, userId)
+    const cache = load<InvitationsCache>(cacheKey)
+    
+    if (!cache) return null
+    
+    // Validate cache entries
+    if (!this.isCacheValid(cache.pending) || !this.isCacheValid(cache.sent)) {
+      return null
+    }
+    
+    return cache
+  }
+
+  /**
+   * Check if invitations data has changed since last cache
+   */
+  static hasInvitationsChanged(pending: GroupInvitation[], sent: GroupInvitation[], userId?: string): boolean {
+    const cache = this.loadInvitationsCache(userId)
+    
+    if (!cache) return true
+    
+    const pendingHash = this.generateHash(pending)
+    const sentHash = this.generateHash(sent)
+    
+    return pendingHash !== cache.pending.hash || sentHash !== cache.sent.hash
+  }
+
+  /**
+   * Check if invitations cache needs refresh
+   */
+  static shouldRefreshInvitations(userId?: string): boolean {
+    const cache = this.loadInvitationsCache(userId)
+    
+    if (!cache) return true
+    
+    return this.needsRefresh(cache.pending) || this.needsRefresh(cache.sent)
+  }
+
+  /**
+   * Get cached invitations data if available and valid
+   */
+  static getCachedInvitations(userId?: string): { pending: GroupInvitation[]; sent: GroupInvitation[] } | null {
+    const cache = this.loadInvitationsCache(userId)
+    
+    if (!cache) return null
+    
+    return {
+      pending: cache.pending.data,
+      sent: cache.sent.data
+    }
+  }
+
+  /**
+   * Clear invitations cache
+   */
+  static clearInvitationsCache(userId?: string): void {
+    const cacheKey = this.getUserCacheKey(this.INVITATIONS_CACHE_KEY, userId)
+    remove(cacheKey)
+  }
+
+  /**
+   * Clear all invitations caches (for all users)
+   */
+  static clearAllInvitationsCaches(): void {
+    // Clear both user-specific and general cache
+    remove(this.INVITATIONS_CACHE_KEY)
+  }
+
+  /**
+   * Clear all caches (groups and invitations)
+   */
+  static clearAllCaches(): void {
+    this.clearAllGroupsCaches()
+    this.clearAllInvitationsCaches()
   }
 } 

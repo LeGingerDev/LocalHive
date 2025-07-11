@@ -1,3 +1,4 @@
 export * from "./api"
 export * from "./supabase"
 export * from "./cache"
+export * from "./supabase/shareService"

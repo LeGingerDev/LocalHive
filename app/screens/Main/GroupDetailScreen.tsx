@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { View, ScrollView, ViewStyle, TextStyle, Alert, TouchableOpacity } from "react-native"
+import { View, ScrollView, ViewStyle, TextStyle, Alert, TouchableOpacity, Modal } from "react-native"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
@@ -10,9 +10,11 @@ import { MembersSection } from "@/components/Groups/MembersSection"
 import { RecentActivitySection } from "@/components/Groups/RecentActivitySection"
 import { useGroups } from "@/hooks/useGroups"
 import { CustomAlert } from "@/components/Alert"
+import { InvitationForm } from "@/components/InvitationForm"
 import { spacing } from "@/theme/spacing"
 import { Button } from "@/components/Button"
 import { Icon } from "@/components/Icon"
+import { useAuth } from "@/context/AuthContext"
 
 interface GroupDetailScreenProps {
   route: { params: { groupId: string } }
@@ -22,6 +24,7 @@ interface GroupDetailScreenProps {
 export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps) => {
   const { themed, theme } = useAppTheme()
   const { deleteGroup } = useGroups()
+  const { user } = useAuth()
   const { groupId } = route.params
   const [group, setGroup] = useState<Group | null>(null)
   const [members, setMembers] = useState<GroupMember[]>([])
@@ -31,6 +34,8 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [deleting, setDeleting] = useState(false)
   const [showCloseAlert, setShowCloseAlert] = useState(false)
   const [showSuccessAlert, setShowSuccessAlert] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
 
   useEffect(() => {
     loadGroupDetails()
@@ -48,9 +53,53 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         return
       }
       if (groupData) {
+        console.log("Group details loaded:", { 
+          id: groupData.id, 
+          name: groupData.name,
+          creator_id: groupData.creator_id,
+          members_count: groupData.members?.length || 0
+        })
+        
         setGroup(groupData)
         setMembers(groupData.members || [])
         setPosts(groupData.recent_posts || [])
+        
+        // Determine user's role in the group
+        if (user) {
+          console.log("Current user:", { 
+            id: user.id, 
+            email: user.email
+          })
+          
+          // Check if user is the creator
+          const isCreator = groupData.creator_id === user.id
+          
+          // Check if user is an admin
+          const currentMember = groupData.members?.find(member => member.user_id === user.id)
+          const isAdmin = currentMember?.role === 'admin'
+          
+          // Set user role
+          if (isCreator) {
+            setUserRole('creator')
+          } else if (isAdmin) {
+            setUserRole('admin')
+          } else {
+            setUserRole('member')
+          }
+          
+          console.log("User role determination:", { 
+            isCreator, 
+            creator_id: groupData.creator_id,
+            user_id: user.id,
+            creator_id_match: groupData.creator_id === user.id,
+            memberRole: currentMember?.role || 'not-member',
+            determinedRole: isCreator ? 'creator' : (isAdmin ? 'admin' : 'member'),
+            canManageGroup: isCreator || isAdmin
+          })
+        } else {
+          console.log("No authenticated user found")
+          setUserRole(null)
+        }
       }
     } catch (err) {
       setError("Failed to load group details")
@@ -61,8 +110,17 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   }
 
   const handleInviteMembers = () => {
-    // TODO: Implement invite members functionality
-    Alert.alert("Invite Members", "This feature will be implemented soon!")
+    setShowInviteModal(true)
+  }
+
+  const handleInviteSuccess = () => {
+    setShowInviteModal(false)
+    // Refresh group details to show updated member count
+    loadGroupDetails()
+  }
+
+  const handleInviteCancel = () => {
+    setShowInviteModal(false)
   }
 
   const handleCreatePost = () => {
@@ -99,6 +157,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
       params: { refresh: true }
     })
   }
+
+  // Check if user can manage the group (admin or creator)
+  const canManageGroup = userRole === 'creator' || userRole === 'admin'
 
   if (loading) {
     return (
@@ -178,17 +239,38 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         />
       </ScrollView>
 
-      {/* Close Group Button */}
-      <View style={themed($closeGroupContainer)}>
-        <TouchableOpacity 
-          style={themed($closeGroupButton)} 
-          onPress={handleCloseGroup}
-          disabled={deleting}
-          activeOpacity={0.8}
-        >
-          <Text style={themed($closeGroupButtonText)} text={deleting ? "Closing..." : "Close Group"} />
-        </TouchableOpacity>
-      </View>
+      {/* Close Group Button - Only visible to admins and creators */}
+      {canManageGroup ? (
+        <View style={themed($closeGroupContainer)}>
+          <TouchableOpacity 
+            style={themed($closeGroupButton)} 
+            onPress={handleCloseGroup}
+            disabled={deleting}
+            activeOpacity={0.8}
+          >
+            <Text style={themed($closeGroupButtonText)} text={deleting ? "Closing..." : "Close Group"} />
+          </TouchableOpacity>
+        </View>
+      ) : userRole === 'member' ? (
+        <View style={themed($infoContainer)}>
+          <Text style={themed($infoText)} text="Only group admins and creators can close groups" />
+        </View>
+      ) : null}
+
+      {/* Invitation Modal */}
+      <Modal
+        visible={showInviteModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleInviteCancel}
+      >
+        <InvitationForm
+          groupId={groupId}
+          groupName={group.name}
+          onSuccess={handleInviteSuccess}
+          onCancel={handleInviteCancel}
+        />
+      </Modal>
 
       {/* Custom Alerts */}
       <CustomAlert
@@ -204,10 +286,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 
       <CustomAlert
         visible={showSuccessAlert}
-        title="Success"
-        message="Group has been closed successfully."
+        title="Group Closed"
+        message={`"${group?.name}" has been successfully closed.`}
         confirmText="OK"
-        confirmStyle="success"
         onConfirm={handleSuccessAlertConfirm}
       />
     </Screen>
@@ -236,3 +317,16 @@ const $errorContainer = ({ spacing }: any): ViewStyle => ({ flex: 1, justifyCont
 const $errorText = ({ typography, colors, spacing }: any): TextStyle => ({ fontFamily: typography.primary.normal, fontSize: 16, color: colors.error, textAlign: "center", marginBottom: spacing.md })
 const $retryButton = ({ colors, typography }: any): ViewStyle => ({ backgroundColor: colors.primary100, borderRadius: 8, paddingVertical: spacing.sm, paddingHorizontal: spacing.lg, overflow: "hidden" as "hidden" })
 const $retryButtonText = ({ colors, typography }: any): TextStyle => ({ color: colors.tint, fontFamily: typography.primary.medium, fontSize: 15, textAlign: "center" }) 
+
+const $infoContainer = ({ spacing }: any): ViewStyle => ({ 
+  padding: spacing.md, 
+  paddingBottom: spacing.lg,
+  alignItems: "center" 
+})
+
+const $infoText = ({ typography, colors }: any): TextStyle => ({ 
+  fontFamily: typography.primary.normal, 
+  fontSize: 14, 
+  color: colors.textDim,
+  textAlign: "center" 
+}) 

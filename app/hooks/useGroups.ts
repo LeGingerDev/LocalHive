@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { GroupService } from "@/services/supabase/groupService"
-import { Group, GroupInvitation, CreateGroupData, CreateInvitationData } from "@/services/api/types"
+import { Group, GroupInvitation, CreateGroupData } from "@/services/api/types"
 import { CacheService } from "@/services/cache/cacheService"
+import { useAuth } from "@/context/AuthContext"
 
 export const useGroups = () => {
+  const { user } = useAuth()
   const [groups, setGroups] = useState<Group[]>([])
   const [invitations, setInvitations] = useState<GroupInvitation[]>([])
   const [loading, setLoading] = useState(true)
@@ -24,7 +26,7 @@ export const useGroups = () => {
       // Only check cache if we're not forcing refresh and we have no current groups
       if (!forceRefresh && groups.length === 0) {
         console.log("useGroups: No groups loaded, checking cache for data")
-        const cachedData = CacheService.getCachedGroups()
+        const cachedData = CacheService.getCachedGroups(user?.id)
         console.log("useGroups: Cache check result:", { 
           hasCachedData: !!cachedData,
           cachedGroupsCount: cachedData?.groups?.length || 0,
@@ -69,12 +71,12 @@ export const useGroups = () => {
       const currentInvitations = invitations
       
       // Check if data has actually changed
-      const hasChanged = CacheService.hasGroupsChanged(groupsData, currentInvitations)
+      const hasChanged = CacheService.hasGroupsChanged(groupsData, currentInvitations, user?.id)
       
       if (hasChanged || forceRefresh) {
         console.log("useGroups: Data has changed, updating state and cache")
         setGroups(groupsData)
-        CacheService.saveGroupsCache(groupsData, currentInvitations)
+        CacheService.saveGroupsCache(groupsData, currentInvitations, user?.id)
         lastFetchRef.current = { groups: groupsData, invitations: currentInvitations }
       } else {
         console.log("useGroups: No changes detected, keeping current data")
@@ -88,7 +90,7 @@ export const useGroups = () => {
       setLoading(false)
       console.log("useGroups: Loading finished")
     }
-  }, [])
+  }, [user?.id])
 
   const loadInvitations = useCallback(async (forceRefresh = false) => {
     try {
@@ -97,7 +99,7 @@ export const useGroups = () => {
       // Only check cache if we're not forcing refresh and we have no current invitations
       if (!forceRefresh && invitations.length === 0) {
         console.log("useGroups: No invitations loaded, checking cache for data")
-        const cachedData = CacheService.getCachedGroups()
+        const cachedData = CacheService.getCachedGroups(user?.id)
         console.log("useGroups: Cache check for invitations:", { 
           hasCachedData: !!cachedData,
           cachedInvitationsCount: cachedData?.invitations?.length || 0
@@ -127,12 +129,12 @@ export const useGroups = () => {
       const currentGroups = groups
       
       // Check if data has actually changed
-      const hasChanged = CacheService.hasGroupsChanged(currentGroups, invitationsData)
+      const hasChanged = CacheService.hasGroupsChanged(currentGroups, invitationsData, user?.id)
       
       if (hasChanged || forceRefresh) {
         console.log("useGroups: Invitations have changed, updating state and cache")
         setInvitations(invitationsData)
-        CacheService.saveGroupsCache(currentGroups, invitationsData)
+        CacheService.saveGroupsCache(currentGroups, invitationsData, user?.id)
         lastFetchRef.current = { groups: currentGroups, invitations: invitationsData }
       } else {
         console.log("useGroups: No invitation changes detected, keeping current data")
@@ -142,7 +144,7 @@ export const useGroups = () => {
     } catch (err) {
       console.error("useGroups: Exception loading invitations:", err)
     }
-  }, [])
+  }, [user?.id])
 
   const createGroup = useCallback(async (groupData: CreateGroupData) => {
     try {
@@ -170,7 +172,7 @@ export const useGroups = () => {
           })
           
           // Update cache with new data immediately
-          CacheService.saveGroupsCache(newGroups, invitations)
+          CacheService.saveGroupsCache(newGroups, invitations, user?.id)
           console.log("useGroups: Cache updated with new group")
           
           return newGroups
@@ -189,23 +191,9 @@ export const useGroups = () => {
       console.error("Error creating group:", err)
       return null
     }
-  }, [])
+  }, [user?.id])
 
-  const createInvitation = useCallback(async (invitationData: CreateInvitationData) => {
-    try {
-      const { data, error } = await GroupService.createInvitation(invitationData)
-      
-      if (error) {
-        console.error("Error creating invitation:", error)
-        return null
-      }
-      
-      return data
-    } catch (err) {
-      console.error("Error creating invitation:", err)
-      return null
-    }
-  }, [])
+
 
   const respondToInvitation = useCallback(async (invitationId: string, status: 'accepted' | 'declined') => {
     try {
@@ -230,7 +218,7 @@ export const useGroups = () => {
           })
           
           // Update cache with new data
-          CacheService.saveGroupsCache(newGroups, invitations.filter(inv => inv.id !== invitationId))
+          CacheService.saveGroupsCache(newGroups, invitations.filter(inv => inv.id !== invitationId), user?.id)
           console.log("useGroups: Cache updated after accepting invitation")
           
           return newGroups
@@ -275,7 +263,7 @@ export const useGroups = () => {
         })
         
         // Update cache with new data
-        CacheService.saveGroupsCache(updatedGroups, invitations)
+        CacheService.saveGroupsCache(updatedGroups, invitations, user?.id)
         console.log("useGroups: Cache updated after group deletion")
         
         return updatedGroups
@@ -286,7 +274,7 @@ export const useGroups = () => {
       console.error("Error deleting group:", err)
       return false
     }
-  }, [])
+  }, [user?.id])
 
   useEffect(() => {
     console.log("useGroups: useEffect triggered, calling loadGroups and loadInvitations")
@@ -300,6 +288,21 @@ export const useGroups = () => {
     loadInvitations()
   }, []) // Empty dependency array since loadGroups and loadInvitations are now stable
 
+  // Clear caches when user changes
+  useEffect(() => {
+    if (user?.id) {
+      console.log("useGroups: User changed, clearing caches and reloading data")
+      // Clear caches for the new user to ensure fresh data
+      CacheService.clearGroupsCache(user.id)
+      // Reset state
+      setGroups([])
+      setInvitations([])
+      setError(null)
+      // Load fresh data
+      loadGroups(true)
+      loadInvitations(true)
+    }
+  }, [user?.id])
 
 
   // Smart refresh function that only fetches if needed
@@ -309,7 +312,7 @@ export const useGroups = () => {
     
     try {
       // Check if we need to refresh based on cache TTL
-      if (CacheService.shouldRefreshGroups()) {
+      if (CacheService.shouldRefreshGroups(user?.id)) {
         console.log("useGroups: Cache TTL expired, fetching fresh data")
         await loadGroups(true)
         await loadInvitations(true)
@@ -319,7 +322,7 @@ export const useGroups = () => {
     } finally {
       setIsRefreshing(false)
     }
-  }, [loadGroups, loadInvitations])
+  }, [loadGroups, loadInvitations, user?.id])
 
   // Force refresh function that bypasses cache completely
   const forceRefreshGroups = useCallback(async () => {
@@ -328,14 +331,14 @@ export const useGroups = () => {
     
     try {
       // Clear cache and fetch fresh data
-      CacheService.clearGroupsCache()
+      CacheService.clearGroupsCache(user?.id)
       console.log("useGroups: Cache cleared, fetching fresh data")
       await loadGroups(true)
       await loadInvitations(true)
     } finally {
       setIsRefreshing(false)
     }
-  }, [loadGroups, loadInvitations])
+  }, [loadGroups, loadInvitations, user?.id])
 
   return {
     groups,
@@ -348,7 +351,6 @@ export const useGroups = () => {
     refreshGroups,
     forceRefreshGroups,
     createGroup,
-    createInvitation,
     respondToInvitation,
     deleteGroup,
   }

@@ -2,7 +2,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User } from "@supabase/supabase-js"
 import googleAuthService from "@/services/supabase/googleAuthService"
 import { AuthService } from "@/services/supabase/authService"
+import { PersonalCodeService } from "@/services/supabase/personalCodeService"
 import { createSupabaseClient } from "@/services/supabase/supabase"
+import { CacheService } from "@/services/cache/cacheService"
 
 interface UserProfile {
   id: string
@@ -14,6 +16,7 @@ interface UserProfile {
   updated_at?: string
   theme_preference?: string
   use_system_theme?: boolean
+  personal_code?: string
 }
 
 interface AuthContextType {
@@ -36,6 +39,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [googleUser, setGoogleUser] = useState<any | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  const generatePersonalCodeForUser = async (userId: string): Promise<string | null> => {
+    try {
+      const result = await PersonalCodeService.generatePersonalCode()
+      
+      if ("error" in result) {
+        console.error("Failed to generate personal code:", result.error, result.message)
+        return null
+      }
+      
+      return result.personal_code
+    } catch (error) {
+      console.error("Error generating personal code:", error)
+      return null
+    }
+  }
 
   const refreshUser = async () => {
     try {
@@ -63,7 +82,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             })
             
             if (newProfile) {
-              setUserProfile(newProfile as UserProfile)
+              // Generate personal code for new profile
+              const personalCode = await generatePersonalCodeForUser(supabaseUser.id)
+              if (personalCode) {
+                // Update profile with personal code
+                const { data: updatedProfile } = await AuthService.createOrUpdateProfile(supabaseUser.id, {
+                  personal_code: personalCode,
+                })
+                if (updatedProfile) {
+                  setUserProfile(updatedProfile as UserProfile)
+                } else {
+                  setUserProfile(newProfile as UserProfile)
+                }
+              } else {
+                setUserProfile(newProfile as UserProfile)
+              }
             } else {
               console.error("Failed to create profile:", createError)
             }
@@ -84,6 +117,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     try {
       setIsLoading(true)
+      
+      // Clear all caches before signing out
+      CacheService.clearAllCaches()
       
       // Sign out from Google service (this handles both Google and Supabase)
       await googleAuthService.signOut()
@@ -117,6 +153,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       async (event, session) => {
         if (mounted) {
           if (event === 'SIGNED_IN' && session?.user) {
+            // Clear all caches when a new user signs in to prevent showing stale data
+            CacheService.clearAllCaches()
+            
             setUser(session.user)
             // Also check for Google user
             const googleUserData = await googleAuthService.getCurrentUser()
@@ -136,7 +175,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 })
                 
                 if (newProfile) {
-                  setUserProfile(newProfile as UserProfile)
+                  // Generate personal code for new profile
+                  const personalCode = await generatePersonalCodeForUser(session.user.id)
+                  if (personalCode) {
+                    // Update profile with personal code
+                    const { data: updatedProfile } = await AuthService.createOrUpdateProfile(session.user.id, {
+                      personal_code: personalCode,
+                    })
+                    if (updatedProfile) {
+                      setUserProfile(updatedProfile as UserProfile)
+                    } else {
+                      setUserProfile(newProfile as UserProfile)
+                    }
+                  } else {
+                    setUserProfile(newProfile as UserProfile)
+                  }
                 } else {
                   console.error("Failed to create profile after sign-in:", createError)
                 }
@@ -145,6 +198,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               }
             }
           } else if (event === 'SIGNED_OUT') {
+            // Clear all caches when user signs out
+            CacheService.clearAllCaches()
+            
             setUser(null)
             setGoogleUser(null)
             setUserProfile(null)

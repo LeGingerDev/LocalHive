@@ -13,6 +13,7 @@ import { InvitationCard } from "@/components/Groups/InvitationCard"
 import { StartGroupCard } from "@/components/Groups/StartGroupCard"
 import { CacheDebugger, CacheService } from "@/services/cache"
 import { spacing } from "@/theme/spacing"
+import { InvitationForm } from "@/components/InvitationForm"
 
 const ErrorView = ({ error, onRetry }: { error: string; onRetry: () => void }) => {
   const { themed } = useAppTheme()
@@ -116,7 +117,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
     }, [user, loading, refreshGroups, groups.length, route.params?.refresh])
   )
 
-  const handleInvitationResponse = async (invitationId: string, status: 'accepted' | 'declined') => {
+  const handleInvitationResponse = async (invitationId: string, status: 'accepted' | 'declined'): Promise<boolean> => {
     const success = await respondToInvitation(invitationId, status)
     if (success) {
       Alert.alert(
@@ -128,6 +129,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
     } else {
       Alert.alert('Error', 'Failed to respond to invitation. Please try again.')
     }
+    return success
   }
 
   const handleCreateGroup = () => {

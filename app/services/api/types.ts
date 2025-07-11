@@ -146,11 +146,6 @@ export interface UpdateGroupData {
   image_url?: string
 }
 
-export interface CreateInvitationData {
-  group_id: string
-  invitee_email: string
-}
-
 export interface GroupWithDetails extends Group {
   members: GroupMember[]
   recent_posts: GroupPost[]

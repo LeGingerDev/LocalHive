@@ -252,7 +252,7 @@ class GoogleAuthService {
     try {
       // STEP 1: Check Supabase session first (primary source of truth)
       const { data: { session } } = await supabase.auth.getSession()
-      
+      console.log("Your Supabase access token:", session?.access_token)
       if (session) {
         // Valid Supabase session - user is authenticated
         return { isAuthenticated: true, user: session.user }

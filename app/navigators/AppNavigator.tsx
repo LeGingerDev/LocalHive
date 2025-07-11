@@ -14,6 +14,7 @@ import { LandingScreen } from "@/screens/Auth/LandingScreen"
 import { SplashScreen } from "@/screens/Auth/SplashScreen"
 import { CreateGroupScreen } from "@/screens/Main/CreateGroupScreen"
 import { GroupDetailScreen } from "@/screens/Main/GroupDetailScreen"
+import { InvitationsScreen } from "@/screens/InvitationsScreen"
 import { useAppTheme } from "@/theme/context"
 import { BottomTabNavigator } from "./BottomTabNavigator"
 
@@ -35,7 +36,8 @@ export type AppStackParamList = {
   CreateGroup: undefined
   GroupDetail: { groupId: string }
   // 🔥 Your screens go here
-  // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
+  Invitations: undefined
+	// IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
 
 /**
@@ -76,6 +78,7 @@ const AppStack = () => {
       <Stack.Screen name="Main" component={BottomTabNavigator} />
       <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
+      <Stack.Screen name="Invitations" component={InvitationsScreen} />
       {/** 🔥 Your screens go here */}
       {/* IGNITE_GENERATOR_ANCHOR_APP_STACK_SCREENS */}
     </Stack.Navigator>

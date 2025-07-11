@@ -153,6 +153,7 @@ export class AuthService {
     bio?: string;
     theme_preference?: string;
     use_system_theme?: boolean;
+    personal_code?: string;
     updated_at?: string;
   }) {
     try {

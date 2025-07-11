@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import { StatusBar, View, StyleSheet } from "react-native"
 import { useAppTheme } from "@/theme/context"
 import { useNavigation } from "@react-navigation/native"
@@ -9,14 +9,27 @@ import { Screen } from "@/components/Screen"
 import { useAuth } from "@/context/AuthContext"
 import googleAuthService from "@/services/supabase/googleAuthService"
 import { PersonalCodeBox } from "@/components/PersonalCodeBox"
+import { PersonalCodeService } from "@/services/supabase/personalCodeService"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import SubContainer from "@/components/Subscription/SubContainer"
 import { spacing } from "@/theme/spacing"
+import { Button } from "@/components/Button"
+import { supabase } from "@/services/supabase/supabase"
 
 const ProfileScreen = () => {
   const { theme, themeContext } = useAppTheme()
   const navigation = useNavigation<any>()
   const { refreshUser, userProfile, user, googleUser } = useAuth()
+  const [isLoadingCode, setIsLoadingCode] = useState(false)
+
+  const handleRefreshPersonalCode = async () => {
+    setIsLoadingCode(true)
+    try {
+      await refreshUser()
+    } finally {
+      setIsLoadingCode(false)
+    }
+  }
 
   // Refresh user data when the screen loads
   useEffect(() => {
@@ -75,9 +88,22 @@ const ProfileScreen = () => {
       />
       <View style={styles.profileBoxContainer}>
         <ProfileBox style={styles.profileBox} />
-        <PersonalCodeBox style={styles.personalCodeBox} />
+        <PersonalCodeBox 
+          style={styles.personalCodeBox}
+          code={userProfile?.personal_code}
+          isLoading={isLoadingCode}
+          onRefresh={handleRefreshPersonalCode}
+        />
         <SubContainer style={styles.subContainer} />
       </View>
+      <Button
+        text="Print Access Token"
+        onPress={async () => {
+          const { data: { session } } = await supabase.auth.getSession();
+          console.log("[DEBUG] Supabase access token:", session?.access_token);
+        }}
+        style={{ marginBottom: 16 }}
+      />
       <SettingsSection style={styles.settingsSection}>
         <ThemeToggle />
         <SettingsItem icon="notifications-outline" label="Notifications" />

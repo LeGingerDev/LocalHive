@@ -95,20 +95,14 @@ export const CustomAlert = ({
               
               <TouchableOpacity 
                 style={[
-                  themed($confirmButton),
-                  confirmStyle === "destructive" && themed($destructiveButton),
-                  confirmStyle === "success" && themed($successButton),
+                  themed((theme) => $confirmButton(theme, confirmStyle)),
                   !onCancel && themed($singleButton)
                 ]} 
                 onPress={onConfirm}
                 activeOpacity={0.8}
               >
                 <Text 
-                  style={[
-                    themed($confirmButtonText),
-                    confirmStyle === "destructive" && themed($destructiveButtonText),
-                    confirmStyle === "success" && themed($successButtonText)
-                  ]} 
+                  style={themed($confirmButtonText)}
                   text={confirmText} 
                 />
               </TouchableOpacity>
@@ -185,21 +179,27 @@ const $cancelButtonText = ({ colors, typography }: any): TextStyle => ({
   textAlign: "center"
 })
 
-const $confirmButton = ({ colors }: any): ViewStyle => ({ 
-  flex: 1,
-  backgroundColor: colors.primary400, 
-  borderRadius: 12, 
-  paddingVertical: 14, 
-  paddingHorizontal: 20,
-  alignItems: "center",
-  justifyContent: "center"
-})
+const $confirmButton = ({ colors }: any, confirmStyle: string) => {
+  let backgroundColor = colors.primary400
+  if (confirmStyle === "destructive") backgroundColor = colors.error
+  else if (confirmStyle === "success") backgroundColor = colors.tint
+  else if (confirmStyle === "default") backgroundColor = colors.tint
+  return {
+    flex: 1,
+    backgroundColor,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    alignItems: "center" as const,
+    justifyContent: "center" as const
+  }
+}
 
-const $confirmButtonText = ({ colors, typography }: any): TextStyle => ({ 
-  color: colors.background, 
-  fontFamily: typography.primary.bold, 
+const $confirmButtonText = ({ typography }: any) => ({
+  color: "#fff",
+  fontFamily: typography.primary.bold,
   fontSize: 16,
-  textAlign: "center"
+  textAlign: "center" as const
 })
 
 const $destructiveButton = ({ colors }: any): ViewStyle => ({ 
