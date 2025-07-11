@@ -1,4 +1,4 @@
-package com.legingerdev.localhiveproject
+package com.legingerdev.visu
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

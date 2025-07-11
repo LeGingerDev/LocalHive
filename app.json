@@ -1,7 +1,7 @@
 {
-  "name": "LocalHiveProject",
+  "name": "Visu",
   "slug": "LocalHiveProject",
-  "scheme": "localhiveproject",
+  "scheme": "visu",
   "version": "1.0.0",
   "orientation": "portrait",
   "userInterfaceStyle": "automatic",
@@ -16,7 +16,7 @@
   ],
   "android": {
     "icon": "./assets/images/app-icon-android-legacy.png",
-    "package": "com.legingerdev.localhiveproject",
+    "package": "com.legingerdev.visu",
     "adaptiveIcon": {
       "foregroundImage": "./assets/images/app-icon-android-adaptive-foreground.png",
       "backgroundImage": "./assets/images/app-icon-android-adaptive-background.png"
@@ -30,7 +30,7 @@
   "ios": {
     "icon": "./assets/images/app-icon-ios.png",
     "supportsTablet": true,
-    "bundleIdentifier": "com.legingerdev.localhiveproject"
+    "bundleIdentifier": "com.legingerdev.visu"
   },
   "web": {
     "favicon": "./assets/images/app-icon-web-favicon.png",
@@ -70,5 +70,6 @@
     "eas": {
       "projectId": "de71a7ec-f6cf-4f88-ad5b-39fd0aeecd1e"
     }
-  }
+  },
+  "owner": "legingerdev"
 }

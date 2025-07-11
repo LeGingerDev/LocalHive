@@ -1,4 +1,4 @@
-package com.legingerdev.localhiveproject
+package com.legingerdev.visu
 
 import android.app.Application
 import android.content.res.Configuration

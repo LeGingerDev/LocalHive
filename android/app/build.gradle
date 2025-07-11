@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.legingerdev.localhiveproject'
+    namespace 'com.legingerdev.visu'
     defaultConfig {
-        applicationId 'com.legingerdev.localhiveproject'
+        applicationId 'com.legingerdev.visu'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

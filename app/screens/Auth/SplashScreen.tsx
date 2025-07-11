@@ -215,8 +215,8 @@ export const SplashScreen = () => {
               <View style={styles.logoInner} />
             </View>
           </View>
-          <Text style={styles.title}>GroupHub</Text>
-          <Text style={styles.subtitle}>Connect • Share • Grow</Text>
+          <Text style={styles.title}>Visu</Text>
+          <Text style={styles.subtitle}>See what you need, share what you know.</Text>
           <Text style={styles.description}>Building communities together</Text>
         </Animated.View>
 
