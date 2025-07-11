@@ -1,13 +1,16 @@
-import React, { useRef, useCallback, useState, useEffect } from "react"
-import { View, StyleSheet } from "react-native"
-import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler"
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native"
+import React, { useCallback, useState, useEffect } from "react"
+import { View, StyleSheet, Dimensions } from "react-native"
+import { Gesture, GestureDetector } from "react-native-gesture-handler"
+import { useNavigation, useFocusEffect } from "@react-navigation/native"
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs"
-import { runOnJS } from "react-native-reanimated"
+import { runOnJS, useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated"
+import Animated from "react-native-reanimated"
 
 import { BottomTabNavigator } from "@/navigators/BottomTabNavigator"
 import type { BottomTabParamList } from "@/navigators/BottomTabNavigator"
 import { useAppTheme } from "@/theme/context"
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 type BottomTabNavigation = BottomTabNavigationProp<BottomTabParamList>
 
@@ -35,34 +38,43 @@ export const SwipeableTabNavigator: React.FC<SwipeableTabNavigatorProps> = () =>
   // Track current tab index
   const [currentTabIndex, setCurrentTabIndex] = useState(0)
   
-  // Debug logging on mount
-  useEffect(() => {
-    console.log('SwipeableTabNavigator mounted with TAB_ROUTES:', TAB_ROUTES);
-    console.log('Initial currentTabIndex:', currentTabIndex);
-  }, []);
+  // Animation values - simplified to prevent crashes
+  const slideOffset = useSharedValue(0)
+  const isAnimating = useSharedValue(false)
   
   // Configuration for swipe behavior
-  const SWIPE_THRESHOLD = 30 // Minimum distance to trigger navigation (lowered from 50)
-  const SWIPE_VELOCITY_THRESHOLD = 200 // Minimum velocity to trigger navigation (lowered from 500)
-  const SWIPE_ANGLE_THRESHOLD = 45 // Maximum angle deviation from horizontal (increased from 30)
+  const SWIPE_THRESHOLD = 80 // Increased threshold to prevent accidental swipes
+  const SWIPE_VELOCITY_THRESHOLD = 400 // Increased velocity threshold
+
+  // Simplified animated style
+  const animatedContainerStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateX: slideOffset.value * SCREEN_WIDTH * 0.3 // Increased from 0.1 to 0.3 for more movement
+        }
+      ]
+    }
+  })
 
   // Update current tab index when route changes
   useFocusEffect(
     useCallback(() => {
       const unsubscribe = navigation.addListener('state', (e) => {
-        // Get the bottom tab navigator state from the nested structure
-        const stackState = e.data.state
-        const mainRoute = stackState?.routes?.find(route => (route.name as string) === 'Main')
-        const bottomTabState = mainRoute?.state
-        
-        if (bottomTabState && bottomTabState.routes && bottomTabState.routes.length > 0 && bottomTabState.index !== undefined) {
-          const currentRoute = bottomTabState.routes[bottomTabState.index]
-          console.log('Bottom tab state changed, current route:', currentRoute.name);
-          const tabIndex = TAB_ROUTES.indexOf(currentRoute.name as keyof BottomTabParamList)
-          if (tabIndex !== -1) {
-            console.log('Setting currentTabIndex to:', tabIndex);
-            setCurrentTabIndex(tabIndex)
+        try {
+          const stackState = e.data.state
+          const mainRoute = stackState?.routes?.find(route => (route.name as string) === 'Main')
+          const bottomTabState = mainRoute?.state
+          
+          if (bottomTabState && bottomTabState.routes && bottomTabState.routes.length > 0 && bottomTabState.index !== undefined) {
+            const currentRoute = bottomTabState.routes[bottomTabState.index]
+            const tabIndex = TAB_ROUTES.indexOf(currentRoute.name as keyof BottomTabParamList)
+            if (tabIndex !== -1) {
+              setCurrentTabIndex(tabIndex)
+            }
           }
+        } catch (error) {
+          console.error('Error updating tab index:', error)
         }
       })
       
@@ -72,84 +84,77 @@ export const SwipeableTabNavigator: React.FC<SwipeableTabNavigatorProps> = () =>
 
   // Also update on mount to get initial state
   useEffect(() => {
-    const stackState = navigation.getState()
-    const mainRoute = stackState?.routes?.find(route => (route.name as string) === 'Main')
-    const bottomTabState = mainRoute?.state
-    
-    if (bottomTabState && bottomTabState.routes && bottomTabState.routes.length > 0 && bottomTabState.index !== undefined) {
-      const currentRoute = bottomTabState.routes[bottomTabState.index]
-      console.log('Initial bottom tab route on mount:', currentRoute.name);
-      const tabIndex = TAB_ROUTES.indexOf(currentRoute.name as keyof BottomTabParamList)
-      if (tabIndex !== -1) {
-        console.log('Setting initial currentTabIndex to:', tabIndex);
-        setCurrentTabIndex(tabIndex)
+    try {
+      const stackState = navigation.getState()
+      const mainRoute = stackState?.routes?.find(route => (route.name as string) === 'Main')
+      const bottomTabState = mainRoute?.state
+      
+      if (bottomTabState && bottomTabState.routes && bottomTabState.routes.length > 0 && bottomTabState.index !== undefined) {
+        const currentRoute = bottomTabState.routes[bottomTabState.index]
+        const tabIndex = TAB_ROUTES.indexOf(currentRoute.name as keyof BottomTabParamList)
+        if (tabIndex !== -1) {
+          setCurrentTabIndex(tabIndex)
+        }
       }
+    } catch (error) {
+      console.error('Error getting initial tab index:', error)
     }
   }, [navigation])
 
-  // Get current tab index and available routes
-  const getCurrentTabIndex = useCallback((): number => {
-    return currentTabIndex
-  }, [currentTabIndex])
-
-  const getTabRoutes = useCallback((): string[] => {
-    console.log('getTabRoutes called, returning:', TAB_ROUTES);
-    return TAB_ROUTES
-  }, [])
-
   const navigateToTab = useCallback((direction: 'left' | 'right') => {
-    console.log('navigateToTab called with direction:', direction);
-    
-    const currentIndex = getCurrentTabIndex()
-    const routes = getTabRoutes()
-    
-    console.log('Current state:', { currentIndex, routes });
-    
-    let targetIndex: number
-    
-    if (direction === 'left') {
-      // Swipe left = go to next tab (higher index)
-      targetIndex = Math.min(currentIndex + 1, routes.length - 1)
-    } else {
-      // Swipe right = go to previous tab (lower index)
-      targetIndex = Math.max(currentIndex - 1, 0)
+    try {
+      const currentIndex = currentTabIndex
+      let targetIndex: number
+      
+      if (direction === 'left') {
+        targetIndex = Math.min(currentIndex + 1, TAB_ROUTES.length - 1)
+      } else {
+        targetIndex = Math.max(currentIndex - 1, 0)
+      }
+      
+      // Only navigate if we're actually changing tabs
+      if (targetIndex !== currentIndex) {
+        const targetRoute = TAB_ROUTES[targetIndex]
+        
+        // Simple navigation without complex animation
+        runOnJS(() => {
+          try {
+            ;(navigation as any).navigate('Main', { screen: targetRoute })
+          } catch (error) {
+            console.error('Navigation error:', error)
+          }
+        })()
+      }
+    } catch (error) {
+      console.error('Error in navigateToTab:', error)
     }
-    
-    console.log('Target index:', targetIndex);
-    
-    // Only navigate if we're actually changing tabs
-    if (targetIndex !== currentIndex) {
-      const targetRoute = routes[targetIndex]
-      console.log('Navigating to route:', targetRoute);
-      // Use nested navigator syntax for bottom tabs
-      ;(navigation as any).navigate('Main', { screen: targetRoute })
-    } else {
-      console.log('No navigation needed - already at target index');
-    }
-  }, [navigation, getCurrentTabIndex, getTabRoutes])
+  }, [navigation, currentTabIndex])
 
-  // Create the swipe gesture
+  // Simplified swipe gesture
   const swipeGesture = Gesture.Pan()
-    .onBegin((event) => {
+    .onBegin(() => {
       'worklet';
-      console.log('Swipe gesture began');
     })
     .onUpdate((event) => {
       'worklet';
-      // Optional: Add visual feedback during swipe
+      // Don't allow gesture during animation
+      if (isAnimating.value) return;
+      
+      // More responsive feedback - increased intensity
+      const progress = Math.min(Math.abs(event.translationX) / SCREEN_WIDTH, 1.0); // Increased from 0.5 to 1.0
+      slideOffset.value = event.translationX > 0 ? progress : -progress;
     })
     .onEnd((event) => {
       'worklet';
-      const { translationX, velocityX, translationY, velocityY } = event
+      // Don't process if animating
+      if (isAnimating.value) return;
       
-      console.log('Swipe ended:', { translationX, velocityX, translationY, velocityY });
+      const { translationX, velocityX, translationY } = event
       
-      // Simplified logic: just check if it's a horizontal swipe with enough distance
-      const isHorizontalSwipe = Math.abs(translationY) < Math.abs(translationX) * 0.5
+      // Check if it's a horizontal swipe with enough distance
+      const isHorizontalSwipe = Math.abs(translationY) < Math.abs(translationX) * 0.3
       const meetsDistanceThreshold = Math.abs(translationX) > SWIPE_THRESHOLD
       const meetsVelocityThreshold = Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD
-      
-      console.log('Swipe conditions:', { isHorizontalSwipe, meetsDistanceThreshold, meetsVelocityThreshold });
       
       // Determine swipe direction
       const isLeftSwipe = translationX < 0
@@ -157,33 +162,35 @@ export const SwipeableTabNavigator: React.FC<SwipeableTabNavigatorProps> = () =>
       
       // Trigger navigation if conditions are met
       if (isHorizontalSwipe && (meetsDistanceThreshold || meetsVelocityThreshold)) {
-        console.log('Triggering navigation:', isLeftSwipe ? 'left' : 'right');
         if (isLeftSwipe) {
           runOnJS(navigateToTab)('left')
         } else if (isRightSwipe) {
           runOnJS(navigateToTab)('right')
         }
       }
+      
+      // Always reset slide
+      slideOffset.value = withTiming(0, { duration: 200 });
     })
-    .activeOffsetX([-5, 5]) // Only activate for horizontal movements (lowered from 10)
-    .failOffsetY([-20, 20]) // Fail if vertical movement exceeds threshold (increased from 10)
+    .activeOffsetX([-15, 15]) // Increased activation threshold
+    .failOffsetY([-30, 30]) // Increased fail threshold
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <GestureDetector gesture={swipeGesture}>
-        <View style={[styles.content, { backgroundColor: theme.colors.background }]}>
+    <GestureDetector gesture={swipeGesture}>
+      <View style={[styles.content, { backgroundColor: theme.colors.background }]}>
+        <Animated.View style={[styles.animatedContainer, animatedContainerStyle]}>
           <BottomTabNavigator />
-        </View>
-      </GestureDetector>
-    </GestureHandlerRootView>
+        </Animated.View>
+      </View>
+    </GestureDetector>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  content: {
     flex: 1,
   },
-  content: {
+  animatedContainer: {
     flex: 1,
   },
 }) 

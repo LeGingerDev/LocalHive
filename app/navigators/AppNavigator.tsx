@@ -65,7 +65,6 @@ const AppStack = () => {
       initialRouteName="Splash"
       screenOptions={{
         headerShown: false,
-        navigationBarColor: colors.background,
         contentStyle: {
           backgroundColor: colors.background,
         },
