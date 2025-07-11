@@ -1,6 +1,6 @@
 {
   "name": "Visu",
-  "slug": "LocalHiveProject",
+  "slug": "Visu",
   "scheme": "visu",
   "version": "1.0.0",
   "orientation": "portrait",
@@ -68,7 +68,7 @@
       "version": "11.0.0"
     },
     "eas": {
-      "projectId": "de71a7ec-f6cf-4f88-ad5b-39fd0aeecd1e"
+      "projectId": "aeb32659-7b8c-4496-9d94-875ce535b7da"
     }
   },
   "owner": "legingerdev"

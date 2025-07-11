@@ -34,7 +34,7 @@ export class ShareService {
    * Share a personal code with a formatted message
    */
   static async sharePersonalCode(code: string, userName?: string): Promise<boolean> {
-    const message = `Hey! Use my personal code to add me to groups in LocalHive: ${code}${userName ? `\n\n- ${userName}` : ""}`
+    const message = `Hey! Use my personal code to add me to groups in Visu: ${code}${userName ? `\n\n- ${userName}` : ""}`
 
     return this.shareText(message, "Share Personal Code")
   }
@@ -43,7 +43,7 @@ export class ShareService {
    * Share a group invitation
    */
   static async shareGroupInvitation(groupName: string, groupCode?: string): Promise<boolean> {
-    let message = `Join my group "${groupName}" on LocalHive!`
+    let message = `Join my group "${groupName}" on Visu!`
 
     if (groupCode) {
       message += `\n\nGroup Code: ${groupCode}`

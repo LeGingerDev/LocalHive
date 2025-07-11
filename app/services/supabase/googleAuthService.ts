@@ -62,7 +62,11 @@ class GoogleAuthService {
     }
 
     GoogleSignin.configure({
-      webClientId: "1059094099801-n0dvupob4kiers1dupmvu8su8io63e4s.apps.googleusercontent.com",
+      // TODO: Update this webClientId with the new OAuth 2.0 Client ID for com.legingerdev.visu
+      // Go to https://console.cloud.google.com/ and create a new OAuth 2.0 Client ID
+      // Package name: com.legingerdev.visu
+      // SHA-1: Get this from your debug keystore or production keystore
+      webClientId: "1059094099801-n0dvupob4kiers1dupmvu8su8io63e4s.apps.googleusercontent.com", // OLD - needs updating
       offlineAccess: true,
       hostedDomain: "",
       forceCodeForRefreshToken: true,

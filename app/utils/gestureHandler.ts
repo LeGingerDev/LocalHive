@@ -4,3 +4,8 @@
 // This however is needed at the moment
 // https://github.com/software-mansion/react-native-gesture-handler/issues/2402
 import "setimmediate"
+
+// Import gesture handler for native platforms
+if (typeof window === "undefined") {
+  require("react-native-gesture-handler")
+}

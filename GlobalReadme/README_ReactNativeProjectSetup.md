@@ -9,12 +9,12 @@ This is a simplified setup and theory reference based on your current developmen
 You created your project using the following command:
 
 ```bash
-npx ignite-cli new LocalHiveProject \
-  --bundle=com.legingerdev.localhiveproject \
+npx ignite-cli new Visu \
+  --bundle=com.legingerdev.visu \
   --git=false \
   --install-deps=false \
   --packager=npm \
-  --target-path=C:\Users\Jordan\Documents\ReactNative\LocalHiveProject \
+  --target-path=C:\Users\Jordan\Documents\ReactNative\Visu \
   --remove-demo \
   --workflow=manual \
   --no-timeout=false

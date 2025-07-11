@@ -8,6 +8,7 @@ import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
+import com.swmansion.gesturehandler.react.RNGestureHandlerEnabledRootView
 
 import expo.modules.ReactActivityDelegateWrapper
 
@@ -41,7 +42,11 @@ class MainActivity : ReactActivity() {
               this,
               mainComponentName,
               fabricEnabled
-          ){})
+          ){
+            override fun createRootView(): RNGestureHandlerEnabledRootView {
+              return RNGestureHandlerEnabledRootView(this@MainActivity)
+            }
+          })
   }
 
   /**

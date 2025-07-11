@@ -18,6 +18,7 @@ import { GroupDetailScreen } from "@/screens/Main/GroupDetailScreen"
 import { useAppTheme } from "@/theme/context"
 
 import { BottomTabNavigator } from "./BottomTabNavigator"
+import { SwipeableTabNavigator } from "@/components/SwipeableTabNavigator"
 import { navigationRef, useBackButtonHandler } from "./navigationUtilities"
 
 /**
@@ -75,7 +76,7 @@ const AppStack = () => {
     >
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Landing" component={LandingScreen} />
-      <Stack.Screen name="Main" component={BottomTabNavigator} />
+      <Stack.Screen name="Main" component={SwipeableTabNavigator} />
       <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
       <Stack.Screen name="Invitations" component={InvitationsScreen} />

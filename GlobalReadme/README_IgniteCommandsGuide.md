@@ -23,8 +23,8 @@ This document outlines the most commonly used Ignite CLI commands in this projec
 You created your project using:
 
 ```bash
-npx ignite-cli new LocalHiveProject \
-  --bundle=com.legingerdev.localhiveproject \
+npx ignite-cli new Visu \
+  --bundle=com.legingerdev.visu \
   --git=false \
   --install-deps=false \
   --packager=npm \

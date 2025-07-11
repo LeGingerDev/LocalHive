@@ -1,6 +1,6 @@
 # Groups Caching System
 
-This directory contains the smart caching system for the groups functionality in the LocalHive app.
+This directory contains the smart caching system for the groups functionality in the Visu app.
 
 ## Overview
 
