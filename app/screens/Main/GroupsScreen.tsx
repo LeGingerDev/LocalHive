@@ -6,6 +6,7 @@ import {
   TextStyle,
   TouchableOpacity,
   RefreshControl,
+  Dimensions,
 } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 
@@ -23,6 +24,10 @@ import { Group, GroupInvitation } from "@/services/api/types"
 import { CacheDebugger, CacheService } from "@/services/cache"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
+
+const windowHeight = Dimensions.get('window').height
+const estimatedContentHeight = 300 // Adjust this estimate as needed
+const verticalPadding = Math.max((windowHeight - estimatedContentHeight) / 2, 0)
 
 const ErrorView = ({ error, onRetry }: { error: string; onRetry: () => void }) => {
   const { themed } = useAppTheme()
@@ -276,6 +281,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
         </View>
       )}
 
+      {/* Main content area below header */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -286,10 +292,19 @@ export const GroupsScreen = ({ navigation, route }: any) => {
           />
         }
       >
-        {!loading && user && groups.length === 0 ? (
-          <View style={themed($emptyState)}>
-            <Text style={themed($emptyStateTitle)} text="No Groups Yet" />
-            <Text style={themed($emptyStateText)} text="Create your first group to get started" />
+        {!loading && user && groups.length === 0 && invitations.length === 0 ? (
+          <View style={themed($emptyStateContainer)}>
+            <View style={themed($emptyState)}>
+              <Text style={themed($emptyStateTitle)} text="No Groups Yet" />
+              <Text style={themed($emptyStateText)} text="Create your first group to get started" />
+              <TouchableOpacity
+                style={themed($createFirstGroupButton)}
+                onPress={handleCreateGroup}
+                activeOpacity={0.8}
+              >
+                <Text style={themed($createFirstGroupButtonText)} text="Create Your First Group" />
+              </TouchableOpacity>
+            </View>
           </View>
         ) : (
           user &&
@@ -321,8 +336,6 @@ export const GroupsScreen = ({ navigation, route }: any) => {
             />
           </View>
         )}
-
-        <StartGroupCard onPress={handleCreateGroup} />
       </ScrollView>
 
       <CustomAlert
@@ -406,6 +419,14 @@ const $sectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({
   marginTop: spacing.lg,
   marginBottom: spacing.sm,
 })
+const $emptyStateContainer = (): ViewStyle => ({
+  flex: 1,
+  justifyContent: 'flex-start',
+  alignItems: 'center',
+  paddingTop: verticalPadding,
+  paddingBottom: verticalPadding,
+})
+
 const $emptyState = ({ spacing }: any): ViewStyle => ({
   alignItems: "center",
   justifyContent: "center",
@@ -421,6 +442,19 @@ const $emptyStateText = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.normal,
   fontSize: 14,
   color: colors.textDim,
+  textAlign: "center",
+  marginBottom: spacing.md,
+})
+const $createFirstGroupButton = ({ colors, typography }: any): ViewStyle => ({
+  backgroundColor: colors.primary100,
+  borderRadius: 8,
+  paddingVertical: spacing.sm,
+  paddingHorizontal: spacing.lg,
+})
+const $createFirstGroupButtonText = ({ colors, typography }: any): TextStyle => ({
+  color: colors.tint,
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
   textAlign: "center",
 })
 const $errorContainer = ({ spacing }: any): ViewStyle => ({

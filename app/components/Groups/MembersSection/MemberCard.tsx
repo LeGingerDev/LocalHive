@@ -30,7 +30,7 @@ export interface MemberCardProps {
 // #endregion
 
 // #region Component
-export const MemberCard: FC<MemberCardProps> = memo((props) => {
+export const MemberCard: FC<MemberCardProps> = memo(function MemberCard(props) {
   const {
     style,
     data = null,

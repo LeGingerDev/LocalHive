@@ -9,6 +9,7 @@ import Animated, {
   runOnJS,
   withSequence,
   withDelay,
+  withRepeat,
 } from "react-native-reanimated"
 import Ionicons from "react-native-vector-icons/Ionicons"
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"
@@ -72,6 +73,7 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
     const iconScale = useSharedValue(1)
     const labelOpacity = useSharedValue(0.8)
     const glowOpacity = useSharedValue(0)
+    const floatY = useSharedValue(0)
 
     // Entrance animation with staggered delay
     useEffect(() => {
@@ -90,15 +92,35 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
         )
         labelOpacity.value = withTiming(1, { duration: 200 })
         glowOpacity.value = withTiming(0.3, { duration: 300 })
+        
+        // Start floating animation for Add button
+        if (tab.name === "Add") {
+          floatY.value = withRepeat(
+            withSequence(
+              withTiming(-3, { duration: 1000 }),
+              withTiming(0, { duration: 1000 })
+            ),
+            -1,
+            true
+          )
+        }
       } else {
         scale.value = withSpring(1, { damping: 15, stiffness: 150 })
         labelOpacity.value = withTiming(0.8, { duration: 200 })
         glowOpacity.value = withTiming(0, { duration: 200 })
+        
+        // Stop floating animation
+        if (tab.name === "Add") {
+          floatY.value = withTiming(0, { duration: 300 })
+        }
       }
     }, [isFocused])
 
     const animatedContainerStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }, { translateY: translateY.value }],
+      transform: [
+        { scale: scale.value }, 
+        { translateY: translateY.value + floatY.value }
+      ],
       opacity: opacity.value,
     }))
 
@@ -139,14 +161,21 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
     if (tab.name === "Add") {
       return (
         <AnimatedView key={tab.name} style={[styles.addButtonContainer, animatedContainerStyle]}>
-          <AnimatedView style={[styles.addButtonGlow, animatedGlowStyle]} />
+          <AnimatedView
+            style={[
+              styles.addButtonGlow,
+              animatedGlowStyle,
+              { backgroundColor: isFocused ? theme.colors.palette.primary200 : "transparent" },
+            ]}
+          />
           <AnimatedTouchable
             onPress={onPress}
             style={[
               styles.addButton,
               {
-                backgroundColor: theme.colors.palette.primary400,
-                borderColor: isFocused ? theme.colors.palette.accent400 : "#fff",
+                backgroundColor: isFocused ? theme.colors.palette.primary500 : theme.colors.palette.primary400,
+                borderColor: isFocused ? theme.colors.palette.accent400 : theme.colors.background,
+                shadowColor: theme.colors.palette.neutral800,
               },
             ]}
             activeOpacity={0.9}
@@ -155,18 +184,28 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
               <IconComponent name={tab.icon} size={tab.iconSize} color="#fff" />
             </AnimatedView>
           </AnimatedTouchable>
-          <AnimatedText style={[styles.addButtonLabel, animatedLabelStyle]}>
+          <AnimatedText
+            style={[
+              styles.addButtonLabel,
+              animatedLabelStyle,
+              { color: isFocused ? theme.colors.palette.primary400 : theme.colors.textDim },
+            ]}
+          >
             {tab.label}
           </AnimatedText>
         </AnimatedView>
       )
     }
 
+    // Add extra margin for Search and Groups buttons to create more space around Add button
+    const extraMargin = tab.name === "Search" ? { marginRight: 20 } : 
+                       tab.name === "Groups" ? { marginLeft: 20 } : {}
+
     return (
       <AnimatedTouchable
         key={tab.name}
         onPress={onPress}
-        style={[styles.tabItem, animatedContainerStyle]}
+        style={[styles.tabItem, animatedContainerStyle, extraMargin]}
         activeOpacity={0.8}
       >
         <AnimatedView style={[styles.iconContainer, animatedIconStyle]}>
@@ -175,7 +214,7 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
             size={tab.iconSize}
             color={isFocused ? theme.colors.palette.primary400 : theme.colors.textDim}
           />
-          {isFocused && (
+          {isFocused && tab.name !== "Add" && (
             <AnimatedView
               style={[styles.activeIndicator, { backgroundColor: theme.colors.palette.primary400 }]}
             />
@@ -196,7 +235,15 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
 
   return (
     <AnimatedView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <AnimatedView style={[styles.tabBar, { backgroundColor: theme.colors.background }]}>
+      <AnimatedView
+        style={[
+          styles.tabBar,
+          {
+            backgroundColor: theme.colors.background,
+            shadowColor: theme.colors.palette.neutral800,
+          },
+        ]}
+      >
         {tabs.map((tab, index) => renderTab(tab, index))}
       </AnimatedView>
     </AnimatedView>
@@ -220,7 +267,6 @@ const styles = StyleSheet.create({
     elevation: 10,
     height: 64,
     justifyContent: "center",
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -234,7 +280,7 @@ const styles = StyleSheet.create({
     top: -32,
   },
   addButtonGlow: {
-    backgroundColor: "#FFD45C",
+    backgroundColor: "transparent",
     borderRadius: 40,
     height: 80,
     opacity: 0.3,
@@ -250,7 +296,7 @@ const styles = StyleSheet.create({
   container: {
     bottom: 0,
     left: 0,
-    paddingBottom: Platform.OS === "ios" ? 20 : 10,
+    paddingBottom: 0,
     position: "absolute",
     right: 0,
   },
@@ -268,14 +314,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     height: 80,
     justifyContent: "space-around",
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
   },
   tabItem: {
     alignItems: "center",
-    flex: 0.8,
+    flex: 1.2,
     justifyContent: "center",
     paddingVertical: 8,
   },

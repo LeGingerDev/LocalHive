@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react"
 import { View, ScrollView, ViewStyle, TextStyle, TouchableOpacity, Modal } from "react-native"
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withDelay,
+} from "react-native-reanimated"
 
 import { CustomAlert } from "@/components/Alert"
 import { Button } from "@/components/Button"
@@ -46,6 +53,20 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [showMemberSuccessAlert, setShowMemberSuccessAlert] = useState(false)
   const [errorAlertMessage, setErrorAlertMessage] = useState("")
   const [successAlertMessage, setSuccessAlertMessage] = useState("")
+
+  // Animation values
+  const headerOpacity = useSharedValue(0)
+  const headerTranslateY = useSharedValue(-20)
+  const groupInfoOpacity = useSharedValue(0)
+  const groupInfoTranslateY = useSharedValue(20)
+  const actionButtonsOpacity = useSharedValue(0)
+  const actionButtonsScale = useSharedValue(0.8)
+  const membersSectionOpacity = useSharedValue(0)
+  const membersSectionTranslateY = useSharedValue(30)
+  const activitySectionOpacity = useSharedValue(0)
+  const activitySectionTranslateY = useSharedValue(30)
+  const closeButtonOpacity = useSharedValue(0)
+  const closeButtonScale = useSharedValue(0.8)
 
   useEffect(() => {
     loadGroupDetails()
@@ -215,6 +236,91 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   // Check if user can manage the group (admin or creator)
   const canManageGroup = userRole === "creator" || userRole === "admin"
 
+  // Reset animation values when groupId changes
+  useEffect(() => {
+    // Reset all animation values to initial state
+    headerOpacity.value = 0
+    headerTranslateY.value = -20
+    groupInfoOpacity.value = 0
+    groupInfoTranslateY.value = 20
+    actionButtonsOpacity.value = 0
+    actionButtonsScale.value = 0.8
+    membersSectionOpacity.value = 0
+    membersSectionTranslateY.value = 30
+    activitySectionOpacity.value = 0
+    activitySectionTranslateY.value = 30
+    closeButtonOpacity.value = 0
+    closeButtonScale.value = 0.8
+  }, [groupId])
+
+  // Trigger animations when screen loads
+  useEffect(() => {
+    if (!loading && group) {
+      // Header animation
+      headerOpacity.value = withTiming(1, { duration: 600 })
+      headerTranslateY.value = withSpring(0, { damping: 15, stiffness: 300 })
+
+      // Group info animation
+      groupInfoOpacity.value = withDelay(200, withTiming(1, { duration: 600 }))
+      groupInfoTranslateY.value = withDelay(200, withSpring(0, { damping: 15, stiffness: 300 }))
+
+      // Action buttons animation
+      actionButtonsOpacity.value = withDelay(400, withTiming(1, { duration: 600 }))
+      actionButtonsScale.value = withDelay(400, withSpring(1, { damping: 15, stiffness: 300 }))
+
+      // Members section animation
+      membersSectionOpacity.value = withDelay(600, withTiming(1, { duration: 600 }))
+      membersSectionTranslateY.value = withDelay(
+        600,
+        withSpring(0, { damping: 15, stiffness: 300 }),
+      )
+
+      // Activity section animation
+      activitySectionOpacity.value = withDelay(800, withTiming(1, { duration: 600 }))
+      activitySectionTranslateY.value = withDelay(
+        800,
+        withSpring(0, { damping: 15, stiffness: 300 }),
+      )
+
+      // Close button animation (if visible)
+      if (canManageGroup) {
+        closeButtonOpacity.value = withDelay(1000, withTiming(1, { duration: 600 }))
+        closeButtonScale.value = withDelay(1000, withSpring(1, { damping: 15, stiffness: 300 }))
+      }
+    }
+  }, [loading, group, canManageGroup])
+
+  // Animated styles
+  const headerAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: headerOpacity.value,
+    transform: [{ translateY: headerTranslateY.value }],
+  }))
+
+  const groupInfoAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: groupInfoOpacity.value,
+    transform: [{ translateY: groupInfoTranslateY.value }],
+  }))
+
+  const actionButtonsAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: actionButtonsOpacity.value,
+    transform: [{ scale: actionButtonsScale.value }],
+  }))
+
+  const membersSectionAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: membersSectionOpacity.value,
+    transform: [{ translateY: membersSectionTranslateY.value }],
+  }))
+
+  const activitySectionAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: activitySectionOpacity.value,
+    transform: [{ translateY: activitySectionTranslateY.value }],
+  }))
+
+  const closeButtonAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: closeButtonOpacity.value,
+    transform: [{ scale: closeButtonScale.value }],
+  }))
+
   if (loading) {
     return (
       <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
@@ -242,7 +348,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 
   return (
     <Screen style={themed($root)} preset="scroll" safeAreaEdges={["top", "bottom"]}>
-      <View style={themed($headerRow)}>
+      <Animated.View style={[themed($headerRow), headerAnimatedStyle]}>
         <Button
           LeftAccessory={() => <Icon icon="back" size={22} color={theme.colors.text} />}
           style={themed($backButtonPlain)}
@@ -257,10 +363,10 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         >
           <Text style={themed($headerActionText)} text="..." />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={themed($groupInfo)}>
+        <Animated.View style={[themed($groupInfo), groupInfoAnimatedStyle]}>
           <Text
             style={themed($groupDescription)}
             text={group.description || "No description available"}
@@ -269,9 +375,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             style={themed($groupStats)}
             text={`${group.member_count || 0} members • ${group.post_count || 0} posts`}
           />
-        </View>
+        </Animated.View>
 
-        <View style={themed($actionButtons)}>
+        <Animated.View style={[themed($actionButtons), actionButtonsAnimatedStyle]}>
           <TouchableOpacity
             style={themed($actionButton)}
             onPress={handleInviteMembers}
@@ -286,25 +392,29 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           >
             <Text style={themed($actionButtonText)} text="Create Post" />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
-        <MembersSection
-          members={members}
-          onRetry={loadGroupDetails}
-          canManageMembers={canManageGroup}
-          creatorId={group?.creator_id}
-          onRemoveMember={handleRemoveMember}
-        />
+        <Animated.View style={membersSectionAnimatedStyle}>
+          <MembersSection
+            members={members}
+            onRetry={loadGroupDetails}
+            canManageMembers={canManageGroup}
+            creatorId={group?.creator_id}
+            onRemoveMember={handleRemoveMember}
+          />
+        </Animated.View>
 
-        <RecentActivitySection
-          data={{ title: "Recent Activity", description: `${posts.length} recent posts` }}
-          onRetry={loadGroupDetails}
-        />
+        <Animated.View style={activitySectionAnimatedStyle}>
+          <RecentActivitySection
+            data={{ title: "Recent Activity", description: `${posts.length} recent posts` }}
+            onRetry={loadGroupDetails}
+          />
+        </Animated.View>
       </ScrollView>
 
       {/* Close Group Button - Only visible to admins and creators */}
       {canManageGroup ? (
-        <View style={themed($closeGroupContainer)}>
+        <Animated.View style={[themed($closeGroupContainer), closeButtonAnimatedStyle]}>
           <TouchableOpacity
             style={themed($closeGroupButton)}
             onPress={handleCloseGroup}
@@ -316,7 +426,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
               text={deleting ? "Closing..." : "Close Group"}
             />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       ) : userRole === "member" ? (
         <View style={themed($infoContainer)}>
           <Text style={themed($infoText)} text="Only group admins and creators can close groups" />
