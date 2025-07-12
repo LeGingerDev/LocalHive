@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react"
+import { useCallback } from "react"
 import {
   View,
   ScrollView,
@@ -55,7 +55,7 @@ const EmptyState = ({ title, message }: { title: string; message: string }) => {
   )
 }
 
-export const InvitationsScreen = ({ navigation, route }: any) => {
+export const InvitationsScreen = () => {
   const { themed } = useAppTheme()
   const { user, isLoading: authLoading } = useAuth()
   const {
@@ -72,23 +72,10 @@ export const InvitationsScreen = ({ navigation, route }: any) => {
     cancelInvitation,
   } = useInvitations()
 
-  // Debug logging
-  useEffect(() => {
-    console.log("InvitationsScreen Debug:", {
-      authLoading,
-      user: user ? { id: user.id, email: user.email } : null,
-      loading,
-      error,
-      pendingCount: pendingInvitations.length,
-      sentCount: sentInvitations.length,
-    })
-  }, [authLoading, user, loading, error, pendingInvitations, sentInvitations])
-
   // Smart refresh when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       if (user && !loading) {
-        console.log("InvitationsScreen: Screen focused, refreshing invitations")
         refreshInvitations()
       }
     }, [user, loading, refreshInvitations]),

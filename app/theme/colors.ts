@@ -121,4 +121,5 @@ export const colors = {
   gradientOrange: ["#FF9F1A", "#E68500"],
   cardColor: palette.primary100,
   sectionBorderColor: palette.neutral300,
+  headerBackground: palette.neutral300,
 } as const

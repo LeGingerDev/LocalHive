@@ -144,12 +144,6 @@ export const GroupCard = ({ group, navigation, index = 0 }: GroupCardProps) => {
                 activeOpacity={1}
               >
                 <Text style={themed($viewButtonText)} text="View" />
-                <Icon
-                  icon="caretRight"
-                  size={12}
-                  color="#ffffff"
-                  containerStyle={themed($buttonIconContainer)}
-                />
               </TouchableOpacity>
             </CustomGradient>
           </Animated.View>
@@ -173,6 +167,7 @@ const $groupCard = ({ colors, spacing }: any): ViewStyle => ({
   elevation: 2,
   borderWidth: 1,
   borderColor: colors.border,
+  height: 70
 })
 
 const $touchableContainer = (): ViewStyle => ({
@@ -264,22 +259,25 @@ const $viewButton = ({ colors }: any): ViewStyle => ({
   borderRadius: 8,
   overflow: "hidden",
   alignSelf: "center",
+  // Remove flex: 1 if inherited from CustomGradient
+  flex: undefined,
 })
-const $viewButtonInner = ({ colors }: any): ViewStyle => ({
+const $viewButtonInner = ({ colors, spacing }: any): ViewStyle => ({
   backgroundColor: "transparent",
   borderRadius: 8,
-  paddingVertical: spacing.xs,
+  paddingVertical: spacing.sm, // Increased for better vertical centering
   paddingHorizontal: spacing.md,
   flexDirection: "row",
   alignItems: "center",
+  justifyContent: "center",
 })
 
 const $viewButtonText = ({ colors, typography }: any): TextStyle => ({
   color: "#ffffff",
   fontFamily: typography.primary.medium,
   fontSize: 14,
-  textAlignVertical: "center",
-  includeFontPadding: false,
+  lineHeight: 16, // Match or slightly exceed fontSize for centering
+  textAlign: "center",
 })
 
 const $buttonIconContainer = (): ViewStyle => ({

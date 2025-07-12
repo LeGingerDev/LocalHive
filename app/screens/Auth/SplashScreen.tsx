@@ -137,7 +137,7 @@ export const SplashScreen = () => {
               easing: Easing.in(Easing.ease),
             }),
             Animated.timing(logoTranslateYAnim, {
-              toValue: -20, // Move up slightly as it fades out
+              toValue: -20,
               duration: 500,
               useNativeDriver: true,
               easing: Easing.in(Easing.ease),
@@ -269,13 +269,13 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   logo: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#7727c3", // Updated to new primary color
-    borderRadius: 8,
-    justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#7727c3",
+    borderRadius: 8,
+    height: 40,
+    justifyContent: "center",
     transform: [{ rotate: "45deg" }],
+    width: 40,
   },
   logoBox: {
     alignItems: "center",
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#003161",
     borderRadius: 5,
     height: 10,
-    width: 10, // Updated to new secondary color
+    width: 10,
   },
   subtitle: {
     color: "white",

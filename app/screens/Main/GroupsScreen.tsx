@@ -12,9 +12,8 @@ import { useFocusEffect } from "@react-navigation/native"
 
 import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { GroupCard } from "@/components/Groups/GroupCard"
+import { Header } from "@/components/Header"
 import { InvitationCard } from "@/components/Groups/InvitationCard"
-import { StartGroupCard } from "@/components/Groups/StartGroupCard"
-import { InvitationForm } from "@/components/InvitationForm"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
@@ -81,34 +80,14 @@ export const GroupsScreen = ({ navigation, route }: any) => {
   // Track if we should force refresh when coming back from CreateGroup
   const [shouldForceRefresh, setShouldForceRefresh] = useState(false)
 
-  // Debug logging
-  useEffect(() => {
-    console.log("GroupsScreen Debug:", {
-      authLoading,
-      user: user ? { id: user.id, email: user.email } : null,
-      loading,
-      error,
-      groupsCount: groups.length,
-      invitationsCount: invitations.length,
-    })
-
-    // Log cache statistics in development
-    if (__DEV__) {
-      CacheDebugger.logPerformanceMetrics()
-    }
-  }, [authLoading, user, loading, error, groups, invitations])
+  // Removed debug logging to improve performance
 
   // Smart refresh when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       if (user && !loading) {
-        console.log("GroupsScreen: Screen focused, checking for smart refresh")
-        console.log("GroupsScreen: Current groups count:", groups.length)
-        console.log("GroupsScreen: Current invitations count:", invitations.length)
-
         // Check if we need to force refresh (e.g., after creating a group)
         if (route.params?.refresh) {
-          console.log("GroupsScreen: Force refresh requested from navigation params")
           forceRefreshGroups()
           // Clear the refresh flag
           navigation.setParams({ refresh: undefined })
@@ -117,7 +96,6 @@ export const GroupsScreen = ({ navigation, route }: any) => {
 
         // Force refresh when coming back from CreateGroup
         if (shouldForceRefresh) {
-          console.log("GroupsScreen: Force refresh after creating group")
           forceRefreshGroups()
           setShouldForceRefresh(false)
           return
@@ -126,36 +104,22 @@ export const GroupsScreen = ({ navigation, route }: any) => {
         // Always check for new invitations when screen comes into focus
         // This ensures users see new invitations immediately
         if (CacheService.shouldRefreshGroupsInvitations(user?.id)) {
-          console.log("GroupsScreen: Refreshing invitations on screen focus")
           refreshGroups()
-        } else {
-          console.log("GroupsScreen: Invitations recently checked, skipping refresh")
         }
 
         // For groups, use the existing logic but be more aggressive
         if (CacheService.shouldRefreshGroups()) {
           if (groups.length === 0) {
-            console.log("GroupsScreen: No groups loaded and cache is stale, refreshing")
             refreshGroups()
           } else {
-            console.log("GroupsScreen: Groups already loaded, checking if cache needs refresh")
             // Refresh groups if cache is stale (more than 5 minutes instead of 10)
             const cacheStats = CacheService.getCacheStats(user?.id)
             if (cacheStats.age && cacheStats.age > 5 * 60 * 1000) {
               // 5 minutes
-              console.log("GroupsScreen: Cache is stale, refreshing")
               refreshGroups()
-            } else {
-              console.log("GroupsScreen: Cache is reasonably fresh, keeping current data")
             }
           }
-        } else {
-          console.log("GroupsScreen: Cache is fresh, skipping refresh")
         }
-      } else if (user && loading) {
-        console.log("GroupsScreen: Screen focused but still loading, skipping refresh")
-      } else if (!user) {
-        console.log("GroupsScreen: Screen focused but no user, skipping refresh")
       }
     }, [user, loading, refreshGroups, groups.length, invitations.length, route.params?.refresh]),
   )
@@ -207,21 +171,18 @@ export const GroupsScreen = ({ navigation, route }: any) => {
 
   const handleRefresh = useCallback(async () => {
     if (user) {
-      console.log("GroupsScreen: Manual refresh triggered")
       await refreshGroups()
     }
   }, [refreshGroups, user])
 
   const handleForceRefresh = useCallback(async () => {
     if (user) {
-      console.log("GroupsScreen: Force refresh triggered")
       await forceRefreshGroups()
     }
   }, [forceRefreshGroups, user])
 
   const handleInvitationRefresh = useCallback(async () => {
     if (user) {
-      console.log("GroupsScreen: Invitation refresh triggered")
       // Force refresh invitations specifically
       await forceRefreshGroups()
     }
@@ -246,57 +207,11 @@ export const GroupsScreen = ({ navigation, route }: any) => {
   }
 
   return (
-    <Screen style={themed($root)} preset="scroll" safeAreaEdges={["top", "bottom"]}>
-      <View style={themed($headerRow)}>
-        <Text style={themed($headerTitle)} text="Groups" />
-        <View style={themed($headerActions)}>
-          <View style={themed($invitationIndicatorContainer)}>
-            <TouchableOpacity
-              style={themed($invitationIndicatorButton)}
-              onPress={handleRefresh}
-              activeOpacity={0.8}
-              disabled={isRefreshing}
-            >
-              <Text style={themed($invitationIndicatorText)} text="📬" />
-            </TouchableOpacity>
-            {invitations.length > 0 && (
-              <View style={themed($notificationBadge)}>
-                <Text style={themed($notificationBadgeText)} text={invitations.length.toString()} />
-              </View>
-            )}
-          </View>
-          <TouchableOpacity
-            style={themed($refreshHeaderButton)}
-            onPress={handleForceRefresh}
-            activeOpacity={0.8}
-            disabled={isRefreshing}
-          >
-            <Text
-              style={themed($refreshHeaderButtonText)}
-              text={isRefreshing ? "Refreshing..." : "Refresh"}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={themed($headerActionButton)}
-            onPress={handleNewGroup}
-            activeOpacity={0.8}
-          >
-            <Text style={themed($headerActionText)} text="+ New" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {!user && <AuthPrompt />}
-
-      {loading && user && (
-        <View style={themed($loadingContainer)}>
-          <LoadingSpinner text="Loading groups..." />
-        </View>
-      )}
-
-      {/* Main content area below header */}
+    <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
+      <Header title="Groups" rightAction={{ text: "+ New", onPress: handleNewGroup }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.xl * 2 }}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -305,6 +220,15 @@ export const GroupsScreen = ({ navigation, route }: any) => {
           />
         }
       >
+        {!user && <AuthPrompt />}
+
+        {loading && user && (
+          <View style={themed($loadingContainer)}>
+            <LoadingSpinner text="Loading groups..." />
+          </View>
+        )}
+
+        {/* Main content area below header */}
         {!loading && user && groups.length === 0 && invitations.length === 0 ? (
           <View style={themed($emptyStateContainer)}>
             <View style={themed($emptyState)}>
@@ -364,7 +288,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
 }
 
 // Styles
-const $root = (): ViewStyle => ({ flex: 1, padding: spacing.md })
+const $root = ({ colors }: any): ViewStyle => ({ flex: 1, backgroundColor: colors.background })
 const $headerRow = (): ViewStyle => ({
   flexDirection: "row",
   alignItems: "center",

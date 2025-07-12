@@ -1,18 +1,18 @@
 import React, { FC, useState, useEffect, useCallback } from "react"
-import { ViewStyle, TextStyle, ActivityIndicator } from "react-native"
+import { ViewStyle, TextStyle, ActivityIndicator, ScrollView } from "react-native"
 
+import { Header } from "@/components/Header"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
-// import { useNavigation } from "@react-navigation/native"
+import { spacing } from "@/theme/spacing"
 
 // #region Types & Interfaces
 interface HomeScreenProps extends BottomTabScreenProps<"Home"> {}
 
 interface HomeData {
-  // TODO: Define your data structure here
   id?: string
   name?: string
 }
@@ -39,19 +39,17 @@ interface HomeError {
  */
 export const HomeScreen: FC<HomeScreenProps> = () => {
   // #region Private State Variables
-  const [_isLoading, setIsLoading] = useState<boolean>(true)
-  const [_data, setData] = useState<HomeData | null>(null)
-  const [_error, setError] = useState<HomeError | null>(null)
-  const [_isRefreshing, setIsRefreshing] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [data, setData] = useState<HomeData | null>(null)
+  const [error, setError] = useState<HomeError | null>(null)
   // #endregion
 
   // #region Hooks & Context
   const { themed } = useAppTheme()
-  // const navigation = useNavigation<AppStackNavigationProp<"Home">>()
   // #endregion
 
   // #region Data Fetching Functions
-  const _fetchData = useCallback(async (): Promise<void> => {
+  const fetchData = useCallback(async (): Promise<void> => {
     try {
       setError(null)
       // TODO: Replace with your actual API call
@@ -75,20 +73,14 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
       console.error("[HomeScreen] Error fetching data:", error)
     } finally {
       setIsLoading(false)
-      setIsRefreshing(false)
     }
   }, [])
 
-  const _handleRefresh = useCallback(async (): Promise<void> => {
-    setIsRefreshing(true)
-    await _fetchData()
-  }, [_fetchData])
-
-  const _handleRetry = useCallback((): void => {
+  const handleRetry = useCallback((): void => {
     setIsLoading(true)
     setError(null)
-    _fetchData()
-  }, [_fetchData])
+    fetchData()
+  }, [fetchData])
   // #endregion
 
   // #region Lifecycle Effects
@@ -97,7 +89,7 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
 
     const loadData = async () => {
       if (isMounted) {
-        await _fetchData()
+        await fetchData()
       }
     }
 
@@ -107,58 +99,59 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
     return () => {
       isMounted = false
     }
-  }, [_fetchData])
+  }, [fetchData])
   // #endregion
 
   // #region Render Helpers
-  const _renderLoadingState = (): React.JSX.Element => (
+  const renderLoadingState = (): React.JSX.Element => (
     <Screen style={themed($loadingContainer)} preset="fixed">
       <ActivityIndicator size="large" color={themed($activityIndicator).color} />
       <Text style={themed($loadingText)} text="Loading..." />
     </Screen>
   )
 
-  const _renderErrorState = (): React.JSX.Element => (
+  const renderErrorState = (): React.JSX.Element => (
     <Screen style={themed($errorContainer)} preset="fixed">
       <Text style={themed($errorTitle)} text="Oops! Something went wrong" />
-      <Text style={themed($errorMessage)} text={_error?.message ?? "Unknown error"} />
-      <Text style={themed($retryButton)} text="Tap to retry" onPress={_handleRetry} />
+      <Text style={themed($errorMessage)} text={error?.message ?? "Unknown error"} />
+      <Text style={themed($retryButton)} text="Tap to retry" onPress={handleRetry} />
     </Screen>
   )
 
-  const _renderContent = (): React.JSX.Element => (
-    <Screen style={themed($root)} preset="scroll">
-      <Text style={themed($title)} text="Home" />
-      {_data && (
-        <>
-          <Text style={themed($dataText)} text={`ID: ${_data.id ?? "N/A"}`} />
-          <Text style={themed($dataText)} text={`Name: ${_data.name ?? "N/A"}`} />
-        </>
-      )}
-
-      {/* TODO: Add your actual content here */}
+  const renderContent = (): React.JSX.Element => (
+    <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
+      <Header title="Home" />
+      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg }}>
+        {data && (
+          <>
+            <Text style={themed($dataText)} text={`ID: ${data.id ?? "N/A"}`} />
+            <Text style={themed($dataText)} text={`Name: ${data.name ?? "N/A"}`} />
+          </>
+        )}
+        {/* TODO: Add your actual content here */}
+      </ScrollView>
     </Screen>
   )
   // #endregion
 
   // #region Main Render
-  if (_isLoading && !_data) {
-    return _renderLoadingState()
+  if (isLoading && !data) {
+    return renderLoadingState()
   }
 
-  if (_error && !_data) {
-    return _renderErrorState()
+  if (error && !data) {
+    return renderErrorState()
   }
 
-  return _renderContent()
+  return renderContent()
   // #endregion
 }
 // #endregion
 
 // #region Styles
-const $root: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $root: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   flex: 1,
-  padding: spacing.md,
+  backgroundColor: colors.background,
 })
 
 const $loadingContainer: ThemedStyle<ViewStyle> = () => ({

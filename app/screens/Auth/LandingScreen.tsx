@@ -1,14 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  Easing,
-  Image,
-  Dimensions,
-  Alert,
-} from "react-native"
+import { View, StyleSheet, Animated, Easing, Image, Dimensions, Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
 
@@ -63,22 +54,19 @@ export const LandingScreen = () => {
   }, [fadeAnim, translateYAnim])
 
   const handleGoogleSignIn = async () => {
-    if (isGoogleSigningIn) return // Prevent multiple sign-in attempts
+    if (isGoogleSigningIn) return
 
     setIsGoogleSigningIn(true)
     try {
       const result = await googleAuthService.signInWithGoogle()
 
       if (result.success) {
-        // Navigate to main app with bottom tabs on successful authentication
         navigation.reset({
           index: 0,
           routes: [{ name: "Main" }],
         })
       } else {
-        // Handle different error cases
         if (result.error === "CANCELLED") {
-          // User cancelled the sign-in, no need to show error
           return
         } else if (result.error === "PLAY_SERVICES_NOT_AVAILABLE") {
           Alert.alert(
@@ -203,7 +191,7 @@ export const LandingScreen = () => {
 
 const styles = StyleSheet.create({
   authButton: {
-    paddingLeft: 45, // Add space for the icon
+    paddingLeft: 45,
   },
   authContainer: {
     marginBottom: 16,
@@ -228,14 +216,14 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   featureIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.1)", // Lighter background for outline icons
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: "center",
+    width: 32,
   },
   featureIconContainer: {
     marginRight: 12,
@@ -252,17 +240,17 @@ const styles = StyleSheet.create({
   featuresList: {
     marginBottom: 30,
     marginTop: "auto",
-    width: "100%", // Increased margin to raise features from bottom
+    width: "100%",
   },
   iconContainer: {
-    position: "absolute",
-    left: 16,
-    top: 16, // Adjusted for taller buttons
-    zIndex: 1,
-    width: 24,
+    alignItems: "center",
     height: 24,
     justifyContent: "center",
-    alignItems: "center",
+    left: 16,
+    position: "absolute",
+    top: 16,
+    width: 24,
+    zIndex: 1,
   },
   logo: {
     height: 40,
@@ -286,7 +274,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   spacer: {
-    height: height * 0.1, // 10% of screen height
+    height: height * 0.1,
   },
   subtitle: {
     color: "rgba(255, 255, 255, 0.9)",

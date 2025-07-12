@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import { useState } from "react"
 import {
   View,
   ScrollView,
@@ -13,23 +13,11 @@ import { CustomDropdown } from "@/components/CustomDropdown"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { Icon } from "@/components/Icon"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
-import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { TextField } from "@/components/TextField"
 import { useGroups } from "@/hooks/useGroups"
 import type { GroupCategory } from "@/services/api/types"
 import { useAppTheme } from "@/theme/context"
-// If not installed, run: npm install @react-native-picker/picker
-
-const CATEGORY_ICONS: Record<string, keyof typeof import("@/components/Icon").iconRegistry> = {
-  family: "more", // fallback, you can add a family icon if you have one
-  friends: "bell",
-  work: "menu",
-  community: "settings",
-  hobby: "ladybug",
-  travel: "view",
-  other: "more",
-}
 
 export const CreateGroupScreen = ({ navigation }: any) => {
   const { themed, theme } = useAppTheme()
@@ -46,7 +34,6 @@ export const CreateGroupScreen = ({ navigation }: any) => {
 
   const handleCreateGroup = async () => {
     if (!formData.name.trim()) {
-      // Use your custom alert/modal for errors if desired
       return
     }
     setLoading(true)
@@ -60,7 +47,6 @@ export const CreateGroupScreen = ({ navigation }: any) => {
       }
       const result = await createGroup(groupData)
       if (result) {
-        // Just go back to the previous screen, GroupsScreen will refresh when it comes into focus
         navigation.goBack()
       }
     } catch (e) {
@@ -225,7 +211,7 @@ export const CreateGroupScreen = ({ navigation }: any) => {
 // Styles
 const $root = ({ colors }: any): ViewStyle => ({ flex: 1, backgroundColor: colors.background })
 
-const $label = ({ typography, colors, spacing }: any): TextStyle => ({
+const $label = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.medium,
   fontSize: 15,
   color: colors.text,
@@ -311,7 +297,7 @@ const $headerTitle = ({ typography, colors }: any): TextStyle => ({
   flex: 1,
   textAlign: "center",
 })
-const $headerSpacer = (): ViewStyle => ({ width: 40 }) // Same width as back button for balance
+const $headerSpacer = (): ViewStyle => ({ width: 40 })
 const $formContentWithTopMargin = ({ spacing }: any): ViewStyle => ({
   flexGrow: 1,
   justifyContent: "center",
@@ -337,6 +323,6 @@ const $pickerContainer = ({ spacing, colors }: any): ViewStyle => ({
   borderRadius: 12,
   backgroundColor: colors.input || colors.cardColor,
   overflow: "hidden",
-  height: 56, // slightly taller for better alignment
+  height: 56,
   justifyContent: "center",
 })

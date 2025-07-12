@@ -113,31 +113,19 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
   const { user, googleUser, userProfile, isLoading: authLoading } = useAuth()
   // #endregion
 
-  // Debug logs for auth data
-  useEffect(() => {
-    console.log("🔍 [ProfileBox] Component mounted/updated")
-    console.log("🔍 [ProfileBox] Auth data:", {
-      user: user ? { id: user.id, email: user.email } : null,
-      googleUser: googleUser ? { id: googleUser.user?.id, email: googleUser.user?.email } : null,
-      userProfile: userProfile,
-      isLoading: authLoading,
-    })
-  }, [user, googleUser, userProfile, authLoading])
+  // Removed debug logging to improve performance
 
   // #region Memoized Values
   const _containerStyles = useMemo(() => [themed($container), style], [themed, style])
 
   // Use provided data or fall back to auth context data
   const _userData = useMemo((): ProfileBoxData | null => {
-    console.log("🔍 [ProfileBox] Computing userData")
     if (data) {
-      console.log("🔍 [ProfileBox] Using provided data:", data)
       return data
     }
 
     // First priority: use the user profile from the database
     if (userProfile) {
-      console.log("🔍 [ProfileBox] Using userProfile data:", userProfile)
       return {
         id: userProfile.id,
         email: userProfile.email,
@@ -150,11 +138,6 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
 
     // Second priority: use Supabase user data
     if (user) {
-      console.log("🔍 [ProfileBox] Using Supabase user data:", {
-        id: user.id,
-        email: user.email,
-        metadata: user.user_metadata,
-      })
       return {
         id: user.id,
         email: user.email,
@@ -166,7 +149,6 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
 
     // Third priority: use Google user data
     if (googleUser) {
-      console.log("🔍 [ProfileBox] Using Google user data:", googleUser.user)
       return {
         id: googleUser.id,
         email: googleUser.email,
@@ -176,44 +158,31 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
       }
     }
 
-    console.log("🔍 [ProfileBox] No user data available")
     return null
   }, [data, user, googleUser, userProfile])
 
   const _displayName = useMemo(() => {
-    const name = _getDisplayName(_userData)
-    console.log("🔍 [ProfileBox] Display name:", name)
-    return name
+    return _getDisplayName(_userData)
   }, [_userData])
 
   const _displayEmail = useMemo(() => {
-    const email = _getDisplayEmail(_userData)
-    console.log("🔍 [ProfileBox] Display email:", email)
-    return email
+    return _getDisplayEmail(_userData)
   }, [_userData])
 
   const _displayBio = useMemo(() => {
-    const bio = _getDisplayBio(_userData)
-    console.log("🔍 [ProfileBox] Display bio:", bio)
-    return bio
+    return _getDisplayBio(_userData)
   }, [_userData])
 
   const _avatarInitial = useMemo(() => {
-    const initial = _getAvatarInitial(_userData)
-    console.log("🔍 [ProfileBox] Avatar initial:", initial)
-    return initial
+    return _getAvatarInitial(_userData)
   }, [_userData])
 
   const _hasValidData = useMemo(() => {
-    const isValid = _isValidData(_userData)
-    console.log("🔍 [ProfileBox] Has valid data:", isValid)
-    return isValid
+    return _isValidData(_userData)
   }, [_userData])
 
   const _isLoading = useMemo(() => {
-    const loading = isLoading || authLoading
-    console.log("🔍 [ProfileBox] Is loading:", loading)
-    return loading
+    return isLoading || authLoading
   }, [isLoading, authLoading])
   // #endregion
 
@@ -277,7 +246,6 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
   // #endregion
 
   const _renderContent = (): React.ReactElement => {
-    console.log("🔍 [ProfileBox] Rendering content with data:", _userData)
     return (
       <View style={_containerStyles} testID={testID} {..._getPressableProps()}>
         <View style={themed($contentContainer)}>

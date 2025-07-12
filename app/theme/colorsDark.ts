@@ -58,6 +58,7 @@ export const colors = {
   cta: palette.accent300,
   cardColor: palette.neutral100,
   sectionBorderColor: palette.neutral400,
+  headerBackground: palette.neutral100,
   /**
    * Gradient colors for primary theme
    */

@@ -4,6 +4,7 @@ import { ViewStyle, TextStyle, ActivityIndicator, View, ImageStyle, ScrollView }
 import { Button } from "@/components/Button"
 import { CustomDropdown } from "@/components/CustomDropdown"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
+import { Header } from "@/components/Header"
 import { Icon } from "@/components/Icon"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
@@ -212,14 +213,13 @@ export const AddScreen: FC<AddScreenProps> = ({ route }) => {
 
   const _renderContent = (): React.JSX.Element => (
     <Screen
-      preset="scroll"
-      safeAreaEdges={["top"]}
+      preset="fixed"
+      safeAreaEdges={["top", "bottom"]}
       style={themed($root)}
-      contentContainerStyle={{ paddingBottom: spacing.xl * 3 + spacing.md }}
     >
-      <HeaderSection themed={themed} onCancel={() => {}} />
+      <Header title="Add Item" />
       <ScrollView
-        contentContainerStyle={themed($formContentWithTopMargin)}
+        contentContainerStyle={{ ...themed($formContentWithTopMargin), paddingHorizontal: spacing.md }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -383,39 +383,10 @@ const $pickerContainer = ({ spacing, colors }: any): ViewStyle => ({
   height: 56,
   justifyContent: "center",
 })
-const $headerRow = ({ spacing }: any): ViewStyle => ({
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  marginBottom: spacing.sm,
-})
-const $headerTitle = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.bold,
-  fontSize: 20,
-  color: colors.text,
-  flex: 1,
-  textAlign: "center",
-})
-const $headerSpacer = (): ViewStyle => ({ width: 40 })
-const $backButtonPlain = ({ spacing }: any): ViewStyle => ({
-  marginRight: spacing.sm,
-  paddingHorizontal: 12,
-  paddingVertical: 12,
-  backgroundColor: "transparent",
-  borderWidth: 0,
-  elevation: 0,
-  shadowOpacity: 0,
-  minWidth: 48,
-  minHeight: 48,
-  justifyContent: "center",
-  alignItems: "center",
-  borderRadius: 8,
-})
 const $formContentWithTopMargin = ({ spacing }: any): ViewStyle => ({
   flexGrow: 1,
   justifyContent: "flex-start",
   padding: spacing.lg,
-  paddingTop: spacing.sm,
   gap: 6,
   paddingBottom: spacing.xl * 2,
 })
@@ -517,19 +488,7 @@ const $quickSuggestionText: ThemedStyle<TextStyle> = ({ colors }) => ({
 })
 // #endregion
 
-// Move subcomponents above AddScreen and pass themed as a prop from within AddScreen
-const HeaderSection = ({ themed, onCancel }: { themed: any; onCancel: () => void }) => (
-  <View style={themed($headerRow)}>
-    <Button
-      LeftAccessory={() => <Icon icon="back" size={22} />}
-      style={themed($backButtonPlain)}
-      onPress={onCancel}
-      preset="default"
-    />
-    <Text style={themed($headerTitle)} text="Add New Item" />
-    <View style={themed($headerSpacer)} />
-  </View>
-)
+
 
 const QuickSuggestion = ({ themed, icon, label }: { themed: any; icon: string; label: string }) => (
   <View style={themed($quickSuggestion)}>
