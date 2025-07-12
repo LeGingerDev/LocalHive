@@ -9,6 +9,7 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated"
 
+import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { Icon } from "@/components/Icon"
 import { Text } from "@/components/Text"
 import { Group } from "@/services/api/types"
@@ -30,9 +31,10 @@ export const GroupCard = ({ group, navigation, index = 0 }: GroupCardProps) => {
   const translateY = useSharedValue(50)
   const buttonScale = useSharedValue(1)
 
-  // Calculate member display text
+  // Calculate member and item display text
   const memberCount = group.member_count || 0
   const memberText = group.member_limit ? `${memberCount}/${group.member_limit}` : `${memberCount}`
+  const itemCount = group.item_count || 0
 
   // Determine privacy label
   const privacyLabel = group.is_public ? "Public" : "Private"
@@ -109,33 +111,47 @@ export const GroupCard = ({ group, navigation, index = 0 }: GroupCardProps) => {
             </View>
 
             <View style={themed($metaRow)}>
-              <Icon
-                icon="menu"
-                size={14}
-                color={theme.colors.textDim}
-                containerStyle={themed($memberIconContainer)}
-              />
-              <Text style={themed($memberCount)} text="Members: " />
-              <Text style={themed($memberCountValue)} text={memberText} />
+              <View style={themed($metaItem)}>
+                <Icon
+                  icon="menu"
+                  size={14}
+                  color={theme.colors.textDim}
+                  containerStyle={themed($memberIconContainer)}
+                />
+                <Text style={themed($memberCount)} text="Members: " />
+                <Text style={themed($memberCountValue)} text={memberText} />
+              </View>
+              <View style={themed($metaItem)}>
+                <Icon
+                  icon="view"
+                  size={14}
+                  color={theme.colors.textDim}
+                  containerStyle={themed($itemIconContainer)}
+                />
+                <Text style={themed($itemCount)} text="Items: " />
+                <Text style={themed($itemCountValue)} text={itemCount.toString()} />
+              </View>
             </View>
           </View>
 
           <Animated.View style={animatedButtonStyle}>
-            <TouchableOpacity
-              style={themed($viewButton)}
-              onPress={handleViewGroup}
-              onPressIn={handleButtonPressIn}
-              onPressOut={handleButtonPressOut}
-              activeOpacity={1}
-            >
-              <Text style={themed($viewButtonText)} text="View" />
-              <Icon
-                icon="caretRight"
-                size={12}
-                color="#000000"
-                containerStyle={themed($buttonIconContainer)}
-              />
-            </TouchableOpacity>
+            <CustomGradient preset="primary" style={themed($viewButton)}>
+              <TouchableOpacity
+                style={themed($viewButtonInner)}
+                onPress={handleViewGroup}
+                onPressIn={handleButtonPressIn}
+                onPressOut={handleButtonPressOut}
+                activeOpacity={1}
+              >
+                <Text style={themed($viewButtonText)} text="View" />
+                <Icon
+                  icon="caretRight"
+                  size={12}
+                  color="#ffffff"
+                  containerStyle={themed($buttonIconContainer)}
+                />
+              </TouchableOpacity>
+            </CustomGradient>
           </Animated.View>
         </View>
       </TouchableOpacity>
@@ -204,6 +220,12 @@ const $groupName = ({ colors, typography }: any): TextStyle => ({
 const $metaRow = (): ViewStyle => ({
   flexDirection: "row",
   alignItems: "center",
+  gap: spacing.md,
+})
+
+const $metaItem = (): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
 })
 
 const $memberIconContainer = (): ViewStyle => ({
@@ -222,23 +244,42 @@ const $memberCountValue = ({ colors, typography }: any): TextStyle => ({
   color: colors.text,
 })
 
+const $itemIconContainer = (): ViewStyle => ({
+  marginRight: 4,
+})
+
+const $itemCount = ({ colors, typography }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 13,
+  color: colors.textDim,
+})
+
+const $itemCountValue = ({ colors, typography }: any): TextStyle => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 13,
+  color: colors.text,
+})
+
 const $viewButton = ({ colors }: any): ViewStyle => ({
-  backgroundColor: colors.cta,
+  borderRadius: 8,
+  overflow: "hidden",
+  alignSelf: "center",
+})
+const $viewButtonInner = ({ colors }: any): ViewStyle => ({
+  backgroundColor: "transparent",
   borderRadius: 8,
   paddingVertical: spacing.xs,
   paddingHorizontal: spacing.md,
-  alignSelf: "center",
   flexDirection: "row",
   alignItems: "center",
-  borderWidth: 1,
-  borderColor: colors.cta,
 })
 
 const $viewButtonText = ({ colors, typography }: any): TextStyle => ({
-  color: "#000000",
+  color: "#ffffff",
   fontFamily: typography.primary.medium,
   fontSize: 14,
-  textAlign: "center",
+  textAlignVertical: "center",
+  includeFontPadding: false,
 })
 
 const $buttonIconContainer = (): ViewStyle => ({

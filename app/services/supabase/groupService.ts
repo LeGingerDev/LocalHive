@@ -55,13 +55,14 @@ export class GroupService {
 
       const groupIds = membershipData.map((m) => m.group_id)
 
-      // Get the groups with member counts
+      // Get the groups with member counts and item counts
       const { data: groupsData, error: groupsError } = await supabase
         .from("groups")
         .select(
           `
           *,
-          member_count:group_members(count)
+          member_count:group_members(count),
+          item_count:items(count)
         `,
         )
         .in("id", groupIds)
@@ -78,10 +79,11 @@ export class GroupService {
         .select("*")
         .in("id", creatorIds)
 
-      // Combine data and ensure member_count is a number
+      // Combine data and ensure member_count and item_count are numbers
       const enrichedGroups = groupsData.map((group) => ({
         ...group,
         member_count: group.member_count?.[0]?.count || 0,
+        item_count: group.item_count?.[0]?.count || 0,
         creator: creatorProfiles?.find((profile) => profile.id === group.creator_id) || null,
       }))
 

@@ -1,15 +1,10 @@
 import React, { useEffect, useState } from "react"
 import { View, ScrollView, ViewStyle, TextStyle, TouchableOpacity, Modal } from "react-native"
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  withDelay,
-} from "react-native-reanimated"
+import { useNavigation } from "@react-navigation/native"
 
 import { CustomAlert } from "@/components/Alert"
 import { Button } from "@/components/Button"
+import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { MembersSection } from "@/components/Groups/MembersSection"
 import { RecentActivitySection } from "@/components/Groups/RecentActivitySection"
 import { Icon } from "@/components/Icon"
@@ -21,8 +16,10 @@ import { useAuth } from "@/context/AuthContext"
 import { useGroups } from "@/hooks/useGroups"
 import { Group, GroupMember, GroupPost } from "@/services/api/types"
 import { GroupService } from "@/services/supabase/groupService"
+import { ItemService, type Item } from "@/services/supabase/itemService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
+import type { ThemedStyle } from "@/theme/types"
 
 interface GroupDetailScreenProps {
   route: { params: { groupId: string } }
@@ -53,29 +50,26 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [showMemberSuccessAlert, setShowMemberSuccessAlert] = useState(false)
   const [errorAlertMessage, setErrorAlertMessage] = useState("")
   const [successAlertMessage, setSuccessAlertMessage] = useState("")
+  const [showMenuModal, setShowMenuModal] = useState(false)
+  const [items, setItems] = useState<Item[]>([])
+  const [itemsLoading, setItemsLoading] = useState(false)
 
-  // Animation values
-  const headerOpacity = useSharedValue(0)
-  const headerTranslateY = useSharedValue(-20)
-  const groupInfoOpacity = useSharedValue(0)
-  const groupInfoTranslateY = useSharedValue(20)
-  const actionButtonsOpacity = useSharedValue(0)
-  const actionButtonsScale = useSharedValue(0.8)
-  const membersSectionOpacity = useSharedValue(0)
-  const membersSectionTranslateY = useSharedValue(30)
-  const activitySectionOpacity = useSharedValue(0)
-  const activitySectionTranslateY = useSharedValue(30)
-  const closeButtonOpacity = useSharedValue(0)
-  const closeButtonScale = useSharedValue(0.8)
+  // Calculate if user can manage the group (admin or creator)
+  const canManageGroup = userRole === "creator" || userRole === "admin"
+
+  // Track if all data is fully loaded and ready for display
+  const [isDataReady, setIsDataReady] = useState(false)
 
   useEffect(() => {
     loadGroupDetails()
+    loadGroupItems()
   }, [groupId])
 
   const loadGroupDetails = async () => {
     try {
       setLoading(true)
       setError(null)
+      setIsDataReady(false) // Reset data ready state
 
       // Load group details
       const { data: groupData, error: groupError } = await GroupService.getGroupById(groupId)
@@ -131,12 +125,36 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           console.log("No authenticated user found")
           setUserRole(null)
         }
+
+        // Mark data as ready after a short delay to ensure all state updates are complete
+        setTimeout(() => {
+          console.log("[GroupDetailScreen] Marking data as ready")
+          setIsDataReady(true)
+        }, 100)
       }
     } catch (err) {
       setError("Failed to load group details")
       console.error("Error loading group details:", err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadGroupItems = async () => {
+    try {
+      setItemsLoading(true)
+      const { data, error } = await ItemService.getGroupItems(groupId)
+      if (error) {
+        console.error("Error loading group items:", error)
+        return
+      }
+      if (data) {
+        setItems(data)
+      }
+    } catch (err) {
+      console.error("Error loading group items:", err)
+    } finally {
+      setItemsLoading(false)
     }
   }
 
@@ -148,6 +166,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     setShowInviteModal(false)
     // Refresh group details to show updated member count
     loadGroupDetails()
+    loadGroupItems() // Also refresh items
   }
 
   const handleInviteCancel = () => {
@@ -184,11 +203,8 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 
   const handleSuccessAlertConfirm = () => {
     setShowSuccessAlert(false)
-    // Navigate back to groups screen with refresh flag
-    navigation.navigate("Main", {
-      screen: "Groups",
-      params: { refresh: true },
-    })
+    // Just go back to the previous screen, GroupsScreen will refresh when it comes into focus
+    navigation.goBack()
   }
 
   const handleRemoveMember = (member: GroupMember) => {
@@ -233,95 +249,32 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     setMemberToRemove(null)
   }
 
-  // Check if user can manage the group (admin or creator)
-  const canManageGroup = userRole === "creator" || userRole === "admin"
+  // ItemCard component
+  const ItemCard = ({ item, themed }: { item: Item; themed: any }) => (
+    <View style={themed($itemCard)}>
+      <View style={themed($itemImageContainer)}>
+        {item.image_urls && item.image_urls.length > 0 ? (
+          <View style={themed($itemImage)}>
+            <Text style={themed($itemImagePlaceholder)} text="📷" />
+          </View>
+        ) : (
+          <View style={themed($itemImagePlaceholder)}>
+            <Icon icon="menu" size={24} color={theme.colors.textDim} />
+          </View>
+        )}
+      </View>
+      <View style={themed($itemContent)}>
+        <Text style={themed($itemTitle)} text={item.title} />
+        <Text style={themed($itemCategory)} text={item.category} />
+        {item.location && <Text style={themed($itemLocation)} text={`📍 ${item.location}`} />}
+        {item.details && (
+          <Text style={themed($itemDetails)} text={item.details} numberOfLines={2} />
+        )}
+      </View>
+    </View>
+  )
 
-  // Reset animation values when groupId changes
-  useEffect(() => {
-    // Reset all animation values to initial state
-    headerOpacity.value = 0
-    headerTranslateY.value = -20
-    groupInfoOpacity.value = 0
-    groupInfoTranslateY.value = 20
-    actionButtonsOpacity.value = 0
-    actionButtonsScale.value = 0.8
-    membersSectionOpacity.value = 0
-    membersSectionTranslateY.value = 30
-    activitySectionOpacity.value = 0
-    activitySectionTranslateY.value = 30
-    closeButtonOpacity.value = 0
-    closeButtonScale.value = 0.8
-  }, [groupId])
-
-  // Trigger animations when screen loads
-  useEffect(() => {
-    if (!loading && group) {
-      // Header animation
-      headerOpacity.value = withTiming(1, { duration: 600 })
-      headerTranslateY.value = withSpring(0, { damping: 15, stiffness: 300 })
-
-      // Group info animation
-      groupInfoOpacity.value = withDelay(200, withTiming(1, { duration: 600 }))
-      groupInfoTranslateY.value = withDelay(200, withSpring(0, { damping: 15, stiffness: 300 }))
-
-      // Action buttons animation
-      actionButtonsOpacity.value = withDelay(400, withTiming(1, { duration: 600 }))
-      actionButtonsScale.value = withDelay(400, withSpring(1, { damping: 15, stiffness: 300 }))
-
-      // Members section animation
-      membersSectionOpacity.value = withDelay(600, withTiming(1, { duration: 600 }))
-      membersSectionTranslateY.value = withDelay(
-        600,
-        withSpring(0, { damping: 15, stiffness: 300 }),
-      )
-
-      // Activity section animation
-      activitySectionOpacity.value = withDelay(800, withTiming(1, { duration: 600 }))
-      activitySectionTranslateY.value = withDelay(
-        800,
-        withSpring(0, { damping: 15, stiffness: 300 }),
-      )
-
-      // Close button animation (if visible)
-      if (canManageGroup) {
-        closeButtonOpacity.value = withDelay(1000, withTiming(1, { duration: 600 }))
-        closeButtonScale.value = withDelay(1000, withSpring(1, { damping: 15, stiffness: 300 }))
-      }
-    }
-  }, [loading, group, canManageGroup])
-
-  // Animated styles
-  const headerAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: headerOpacity.value,
-    transform: [{ translateY: headerTranslateY.value }],
-  }))
-
-  const groupInfoAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: groupInfoOpacity.value,
-    transform: [{ translateY: groupInfoTranslateY.value }],
-  }))
-
-  const actionButtonsAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: actionButtonsOpacity.value,
-    transform: [{ scale: actionButtonsScale.value }],
-  }))
-
-  const membersSectionAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: membersSectionOpacity.value,
-    transform: [{ translateY: membersSectionTranslateY.value }],
-  }))
-
-  const activitySectionAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: activitySectionOpacity.value,
-    transform: [{ translateY: activitySectionTranslateY.value }],
-  }))
-
-  const closeButtonAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: closeButtonOpacity.value,
-    transform: [{ scale: closeButtonScale.value }],
-  }))
-
-  if (loading) {
+  if (loading || !isDataReady) {
     return (
       <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
         <LoadingSpinner text="Loading group details..." />
@@ -348,25 +301,26 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 
   return (
     <Screen style={themed($root)} preset="scroll" safeAreaEdges={["top", "bottom"]}>
-      <Animated.View style={[themed($headerRow), headerAnimatedStyle]}>
-        <Button
-          LeftAccessory={() => <Icon icon="back" size={22} color={theme.colors.text} />}
+      <View style={themed($headerRow)}>
+        <TouchableOpacity
           style={themed($backButtonPlain)}
           onPress={() => navigation.goBack()}
-          preset="default"
-        />
+          activeOpacity={0.8}
+        >
+          <Icon icon="back" size={22} color={theme.colors.text} />
+        </TouchableOpacity>
         <Text style={themed($headerTitle)} text={group.name} />
         <TouchableOpacity
           style={themed($headerActionButton)}
-          onPress={() => setShowMenuAlert(true)}
+          onPress={() => setShowMenuModal(true)}
           activeOpacity={0.8}
         >
           <Text style={themed($headerActionText)} text="..." />
         </TouchableOpacity>
-      </Animated.View>
+      </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Animated.View style={[themed($groupInfo), groupInfoAnimatedStyle]}>
+        <View style={themed($groupInfo)}>
           <Text
             style={themed($groupDescription)}
             text={group.description || "No description available"}
@@ -375,9 +329,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             style={themed($groupStats)}
             text={`${group.member_count || 0} members • ${group.post_count || 0} posts`}
           />
-        </Animated.View>
+        </View>
 
-        <Animated.View style={[themed($actionButtons), actionButtonsAnimatedStyle]}>
+        <View style={themed($actionButtons)}>
           <TouchableOpacity
             style={themed($actionButton)}
             onPress={handleInviteMembers}
@@ -392,9 +346,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           >
             <Text style={themed($actionButtonText)} text="Create Post" />
           </TouchableOpacity>
-        </Animated.View>
+        </View>
 
-        <Animated.View style={membersSectionAnimatedStyle}>
+        <View>
           <MembersSection
             members={members}
             onRetry={loadGroupDetails}
@@ -402,36 +356,89 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             creatorId={group?.creator_id}
             onRemoveMember={handleRemoveMember}
           />
-        </Animated.View>
+        </View>
 
-        <Animated.View style={activitySectionAnimatedStyle}>
+        <View>
           <RecentActivitySection
             data={{ title: "Recent Activity", description: `${posts.length} recent posts` }}
             onRetry={loadGroupDetails}
           />
-        </Animated.View>
+        </View>
+
+        {/* Items Section */}
+        <View style={themed($itemsSection)}>
+          <Text style={themed($itemsSectionTitle)} text="Items" />
+          {itemsLoading ? (
+            <LoadingSpinner text="Loading items..." />
+          ) : items.length > 0 ? (
+            <View style={themed($itemsList)}>
+              {items.map((item) => (
+                <ItemCard key={item.id} item={item} themed={themed} />
+              ))}
+            </View>
+          ) : (
+            <View style={themed($emptyItemsContainer)}>
+              <Text style={themed($emptyItemsText)} text="No items yet" />
+              <Text style={themed($emptyItemsSubtext)} text="Add the first item to this group!" />
+            </View>
+          )}
+        </View>
       </ScrollView>
 
-      {/* Close Group Button - Only visible to admins and creators */}
-      {canManageGroup ? (
-        <Animated.View style={[themed($closeGroupContainer), closeButtonAnimatedStyle]}>
+      {/* Add Item Button at the bottom */}
+      <View style={themed($addItemContainer)}>
+        <CustomGradient preset="primary" style={themed($addItemButton)}>
           <TouchableOpacity
-            style={themed($closeGroupButton)}
-            onPress={handleCloseGroup}
-            disabled={deleting}
+            style={themed($addItemButtonInner)}
+            onPress={() => navigation.navigate("Main", { screen: "Add", params: { groupId } })}
             activeOpacity={0.8}
           >
-            <Text
-              style={themed($closeGroupButtonText)}
-              text={deleting ? "Closing..." : "Close Group"}
-            />
+            <Text style={themed($addItemButtonText)} text="Add Item" />
           </TouchableOpacity>
-        </Animated.View>
-      ) : userRole === "member" ? (
-        <View style={themed($infoContainer)}>
-          <Text style={themed($infoText)} text="Only group admins and creators can close groups" />
+        </CustomGradient>
+      </View>
+
+      {/* Menu Modal for group actions */}
+      <Modal
+        visible={showMenuModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowMenuModal(false)}
+      >
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" }}>
+          <View
+            style={{
+              backgroundColor: theme.colors.cardColor,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              padding: 24,
+            }}
+          >
+            {canManageGroup && (
+              <TouchableOpacity
+                style={themed($closeGroupButton)}
+                onPress={() => {
+                  setShowMenuModal(false)
+                  handleCloseGroup()
+                }}
+                disabled={deleting}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={themed($closeGroupButtonText)}
+                  text={deleting ? "Closing..." : "Close Group"}
+                />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={{ marginTop: 16, alignItems: "center" }}
+              onPress={() => setShowMenuModal(false)}
+            >
+              <Text style={{ color: theme.colors.textDim, fontSize: 16 }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      ) : null}
+      </Modal>
 
       {/* Invitation Modal */}
       <Modal
@@ -542,16 +549,17 @@ const $backButtonText = ({ typography, colors }: any): TextStyle => ({
 })
 const $backButtonPlain = ({ spacing }: any): ViewStyle => ({
   marginRight: spacing.sm,
-  paddingHorizontal: 8,
-  paddingVertical: 8,
+  paddingHorizontal: 12,
+  paddingVertical: 12,
   backgroundColor: "transparent",
   borderWidth: 0,
   elevation: 0,
   shadowOpacity: 0,
-  minWidth: 44,
-  minHeight: 44,
+  minWidth: 48,
+  minHeight: 48,
   justifyContent: "center",
   alignItems: "center",
+  borderRadius: 8,
 })
 const $headerTitle = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.bold,
@@ -599,6 +607,28 @@ const $actionButtonText = ({ colors, typography }: any): TextStyle => ({
   color: colors.tint,
   fontFamily: typography.primary.medium,
   fontSize: 15,
+  textAlign: "center",
+})
+const $addItemContainer = ({ spacing }: any): ViewStyle => ({
+  padding: spacing.md,
+  paddingBottom: spacing.lg,
+})
+const $addItemButton = ({ colors, typography }: any): ViewStyle => ({
+  borderRadius: 16,
+  overflow: "hidden",
+})
+const $addItemButtonInner = ({ colors, typography }: any): ViewStyle => ({
+  backgroundColor: "transparent",
+  borderRadius: 16,
+  paddingVertical: spacing.md,
+  paddingHorizontal: spacing.lg,
+  alignItems: "center",
+  justifyContent: "center",
+})
+const $addItemButtonText = ({ colors, typography }: any): TextStyle => ({
+  color: "#ffffff",
+  fontFamily: typography.primary.bold,
+  fontSize: 16,
   textAlign: "center",
 })
 const $closeGroupContainer = ({ spacing }: any): ViewStyle => ({
@@ -657,4 +687,108 @@ const $infoText = ({ typography, colors }: any): TextStyle => ({
   fontSize: 14,
   color: colors.textDim,
   textAlign: "center",
+})
+
+// Items Section Styles
+const $itemsSection = ({ spacing }: any): ViewStyle => ({
+  marginTop: spacing.lg,
+  marginBottom: spacing.md,
+})
+
+const $itemsSectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 18,
+  color: colors.text,
+  marginBottom: spacing.md,
+})
+
+const $itemsList = ({ spacing }: any): ViewStyle => ({
+  gap: spacing.sm,
+})
+
+const $itemCard = ({ colors, spacing }: any): ViewStyle => ({
+  flexDirection: "row",
+  backgroundColor: colors.background,
+  borderRadius: 12,
+  padding: spacing.md,
+  borderWidth: 1,
+  borderColor: colors.border,
+  shadowColor: colors.text,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 2,
+})
+
+const $itemImageContainer = ({ spacing }: any): ViewStyle => ({
+  marginRight: spacing.md,
+})
+
+const $itemImage = ({ colors, spacing }: any): ViewStyle => ({
+  width: 60,
+  height: 60,
+  borderRadius: 8,
+  backgroundColor: colors.cardColor,
+  justifyContent: "center",
+  alignItems: "center",
+})
+
+const $itemImagePlaceholder = ({ colors, spacing }: any): ViewStyle => ({
+  width: 60,
+  height: 60,
+  borderRadius: 8,
+  backgroundColor: colors.cardColor,
+  justifyContent: "center",
+  alignItems: "center",
+})
+
+const $itemContent = (): ViewStyle => ({
+  flex: 1,
+})
+
+const $itemTitle = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 16,
+  color: colors.text,
+  marginBottom: 4,
+})
+
+const $itemCategory = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 12,
+  color: colors.tint,
+  textTransform: "capitalize",
+  marginBottom: 4,
+})
+
+const $itemLocation = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 12,
+  color: colors.textDim,
+  marginBottom: 4,
+})
+
+const $itemDetails = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 12,
+  color: colors.textDim,
+  lineHeight: 16,
+})
+
+const $emptyItemsContainer = ({ spacing }: any): ViewStyle => ({
+  alignItems: "center",
+  paddingVertical: spacing.xl,
+})
+
+const $emptyItemsText = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 16,
+  color: colors.textDim,
+  marginBottom: spacing.xs,
+})
+
+const $emptyItemsSubtext = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.textDim,
 })

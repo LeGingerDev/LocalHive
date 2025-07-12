@@ -25,7 +25,7 @@ import { CacheDebugger, CacheService } from "@/services/cache"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 
-const windowHeight = Dimensions.get('window').height
+const windowHeight = Dimensions.get("window").height
 const estimatedContentHeight = 300 // Adjust this estimate as needed
 const verticalPadding = Math.max((windowHeight - estimatedContentHeight) / 2, 0)
 
@@ -78,6 +78,9 @@ export const GroupsScreen = ({ navigation, route }: any) => {
     "default",
   )
 
+  // Track if we should force refresh when coming back from CreateGroup
+  const [shouldForceRefresh, setShouldForceRefresh] = useState(false)
+
   // Debug logging
   useEffect(() => {
     console.log("GroupsScreen Debug:", {
@@ -109,6 +112,14 @@ export const GroupsScreen = ({ navigation, route }: any) => {
           forceRefreshGroups()
           // Clear the refresh flag
           navigation.setParams({ refresh: undefined })
+          return
+        }
+
+        // Force refresh when coming back from CreateGroup
+        if (shouldForceRefresh) {
+          console.log("GroupsScreen: Force refresh after creating group")
+          forceRefreshGroups()
+          setShouldForceRefresh(false)
           return
         }
 
@@ -178,6 +189,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
       setAlertVisible(true)
       return
     }
+    setShouldForceRefresh(true)
     navigation.navigate("CreateGroup")
   }
 
@@ -189,6 +201,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
       setAlertVisible(true)
       return
     }
+    setShouldForceRefresh(true)
     navigation.navigate("CreateGroup")
   }
 
@@ -421,8 +434,8 @@ const $sectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({
 })
 const $emptyStateContainer = (): ViewStyle => ({
   flex: 1,
-  justifyContent: 'flex-start',
-  alignItems: 'center',
+  justifyContent: "flex-start",
+  alignItems: "center",
   paddingTop: verticalPadding,
   paddingBottom: verticalPadding,
 })

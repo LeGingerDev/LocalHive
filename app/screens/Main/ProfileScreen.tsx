@@ -97,16 +97,7 @@ const ProfileScreen = () => {
         />
         <SubContainer style={styles.subContainer} />
       </View>
-      <Button
-        text="Print Access Token"
-        onPress={async () => {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession()
-          console.log("[DEBUG] Supabase access token:", session?.access_token)
-        }}
-        style={{ marginBottom: 16 }}
-      />
+
       <SettingsSection style={styles.settingsSection}>
         <ThemeToggle />
         <SettingsItem icon="notifications-outline" label="Notifications" />

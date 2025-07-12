@@ -63,6 +63,7 @@ export interface Group {
   creator?: Profile
   member_count?: number
   post_count?: number
+  item_count?: number
 }
 
 export interface GroupMember {

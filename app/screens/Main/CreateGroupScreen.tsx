@@ -60,7 +60,8 @@ export const CreateGroupScreen = ({ navigation }: any) => {
       }
       const result = await createGroup(groupData)
       if (result) {
-        navigation.navigate("Main", { screen: "Groups", params: { refresh: true } })
+        // Just go back to the previous screen, GroupsScreen will refresh when it comes into focus
+        navigation.goBack()
       }
     } catch (e) {
       console.log("[CreateGroupScreen] Error in handleCreateGroup:", e)

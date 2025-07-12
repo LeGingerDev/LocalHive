@@ -8,6 +8,7 @@ import { ComponentProps } from "react"
 import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator, NativeStackScreenProps } from "@react-navigation/native-stack"
 
+import { SwipeableTabNavigator } from "@/components/SwipeableTabNavigator"
 import Config from "@/config"
 import { LandingScreen } from "@/screens/Auth/LandingScreen"
 import { SplashScreen } from "@/screens/Auth/SplashScreen"
@@ -18,7 +19,6 @@ import { GroupDetailScreen } from "@/screens/Main/GroupDetailScreen"
 import { useAppTheme } from "@/theme/context"
 
 import { BottomTabNavigator } from "./BottomTabNavigator"
-import { SwipeableTabNavigator } from "@/components/SwipeableTabNavigator"
 import { navigationRef, useBackButtonHandler } from "./navigationUtilities"
 
 /**
@@ -70,7 +70,7 @@ const AppStack = () => {
         },
         animation: "fade",
         animationDuration: 300,
-        gestureEnabled: false,
+        // gestureEnabled: false, // Remove this line to re-enable gestures
       }}
     >
       <Stack.Screen name="Splash" component={SplashScreen} />

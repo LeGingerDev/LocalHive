@@ -92,23 +92,20 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
         )
         labelOpacity.value = withTiming(1, { duration: 200 })
         glowOpacity.value = withTiming(0.3, { duration: 300 })
-        
+
         // Start floating animation for Add button
         if (tab.name === "Add") {
           floatY.value = withRepeat(
-            withSequence(
-              withTiming(-3, { duration: 1000 }),
-              withTiming(0, { duration: 1000 })
-            ),
+            withSequence(withTiming(-3, { duration: 1000 }), withTiming(0, { duration: 1000 })),
             -1,
-            true
+            true,
           )
         }
       } else {
         scale.value = withSpring(1, { damping: 15, stiffness: 150 })
         labelOpacity.value = withTiming(0.8, { duration: 200 })
         glowOpacity.value = withTiming(0, { duration: 200 })
-        
+
         // Stop floating animation
         if (tab.name === "Add") {
           floatY.value = withTiming(0, { duration: 300 })
@@ -117,10 +114,7 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
     }, [isFocused])
 
     const animatedContainerStyle = useAnimatedStyle(() => ({
-      transform: [
-        { scale: scale.value }, 
-        { translateY: translateY.value + floatY.value }
-      ],
+      transform: [{ scale: scale.value }, { translateY: translateY.value + floatY.value }],
       opacity: opacity.value,
     }))
 
@@ -173,7 +167,9 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
             style={[
               styles.addButton,
               {
-                backgroundColor: isFocused ? theme.colors.palette.primary500 : theme.colors.palette.primary400,
+                backgroundColor: isFocused
+                  ? theme.colors.palette.primary500
+                  : theme.colors.palette.primary400,
                 borderColor: isFocused ? theme.colors.palette.accent400 : theme.colors.background,
                 shadowColor: theme.colors.palette.neutral800,
               },
@@ -198,8 +194,8 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
     }
 
     // Add extra margin for Search and Groups buttons to create more space around Add button
-    const extraMargin = tab.name === "Search" ? { marginRight: 20 } : 
-                       tab.name === "Groups" ? { marginLeft: 20 } : {}
+    const extraMargin =
+      tab.name === "Search" ? { marginRight: 20 } : tab.name === "Groups" ? { marginLeft: 20 } : {}
 
     return (
       <AnimatedTouchable

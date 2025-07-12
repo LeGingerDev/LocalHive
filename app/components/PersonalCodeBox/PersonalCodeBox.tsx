@@ -2,6 +2,7 @@ import { FC, useState } from "react"
 import { View, TouchableOpacity, StyleProp, ViewStyle, TextStyle, Clipboard } from "react-native"
 
 import { CustomAlert } from "@/components/Alert/CustomAlert"
+import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { Text } from "@/components/Text"
 import { PersonalCodeService } from "@/services/supabase/personalCodeService"
 import { ShareService } from "@/services/supabase/shareService"
@@ -183,16 +184,18 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
             accessibilityLabel="Code subtitle"
           />
         </View>
-        <TouchableOpacity
-          style={themed($copyButton)}
-          onPress={handleCopyCode}
-          accessibilityRole="button"
-          accessibilityLabel="Copy code"
-          activeOpacity={0.8}
-          disabled={!code || isLoading || isGenerating}
-        >
-          <Text text="Copy Code" style={themed($copyButtonText)} />
-        </TouchableOpacity>
+        <CustomGradient preset="primary" style={themed($copyButton)}>
+          <TouchableOpacity
+            style={themed($copyButtonInner)}
+            onPress={handleCopyCode}
+            accessibilityRole="button"
+            accessibilityLabel="Copy code"
+            activeOpacity={0.8}
+            disabled={!code || isLoading || isGenerating}
+          >
+            <Text text="Copy Code" style={themed($copyButtonText)} />
+          </TouchableOpacity>
+        </CustomGradient>
       </View>
       <CustomAlert
         visible={alertVisible}
@@ -291,7 +294,11 @@ const $subtitle: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
 })
 
 const $copyButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  backgroundColor: colors.tint,
+  borderRadius: 8,
+  overflow: "hidden",
+})
+const $copyButtonInner: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: "transparent",
   borderRadius: 8,
   paddingVertical: spacing.md,
   alignItems: "center",
@@ -300,5 +307,5 @@ const $copyButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
 const $copyButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.medium,
   fontSize: 16,
-  color: colors.background,
+  color: "#ffffff",
 })
