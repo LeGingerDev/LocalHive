@@ -32,6 +32,7 @@ import { AuthProvider } from "./context/AuthContext"
 import { initI18n } from "./i18n"
 import { AppNavigator } from "./navigators/AppNavigator"
 import { useNavigationPersistence } from "./navigators/navigationUtilities"
+import { setupAppStateListener } from "./services/supabase/supabase"
 import { ThemeProvider } from "./theme/context"
 import { customFontsToLoad } from "./theme/typography"
 import { loadDateFnsLocale } from "./utils/formatDate"
@@ -105,6 +106,11 @@ export function App() {
     return () => {
       subscription.remove()
     }
+  }, [])
+
+  // Set up Supabase app state listener for session refresh
+  useEffect(() => {
+    setupAppStateListener()
   }, [])
 
   // Before we show the app, we have to wait for our state to be ready.

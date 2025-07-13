@@ -1,4 +1,4 @@
-import { createSupabaseClient } from "./supabase"
+import { supabase } from "./supabase"
 
 export interface PersonalCodeResponse {
   personal_code: string
@@ -23,7 +23,6 @@ export class PersonalCodeService {
   static async generatePersonalCode(): Promise<PersonalCodeResponse | PersonalCodeError> {
     try {
       // Get the current session to access the access token
-      const supabase = createSupabaseClient(true)
       const {
         data: { session },
         error: sessionError,
@@ -95,7 +94,6 @@ export class PersonalCodeService {
    */
   static async fetchPersonalCodeFromDatabase(): Promise<string | null> {
     try {
-      const supabase = createSupabaseClient(true)
       const {
         data: { user },
         error: userError,

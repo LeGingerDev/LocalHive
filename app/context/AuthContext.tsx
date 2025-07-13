@@ -5,7 +5,11 @@ import { CacheService } from "@/services/cache/cacheService"
 import { AuthService } from "@/services/supabase/authService"
 import googleAuthService from "@/services/supabase/googleAuthService"
 import { PersonalCodeService } from "@/services/supabase/personalCodeService"
-import { createSupabaseClient } from "@/services/supabase/supabase"
+import {
+  supabase,
+  setupAppStateListener,
+  cleanupAppStateListener,
+} from "@/services/supabase/supabase"
 
 interface UserProfile {
   id: string
@@ -152,11 +156,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     initAuth()
 
-    // Set up Supabase auth listener
-    const supabase = createSupabaseClient(true)
+    // Set up app state listener for session refresh
+    setupAppStateListener()
+
+    // Set up Supabase auth listener using shared client
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       if (mounted) {
         if (event === "SIGNED_IN" && session?.user) {
           // Clear all caches when a new user signs in to prevent showing stale data
@@ -222,6 +228,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       mounted = false
       subscription.unsubscribe()
+      cleanupAppStateListener()
     }
   }, [])
 

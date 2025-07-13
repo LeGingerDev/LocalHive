@@ -1,3 +1,4 @@
+import { AppState, AppStateStatus } from "react-native"
 import { createClient } from "@supabase/supabase-js"
 import { MMKV } from "react-native-mmkv"
 
@@ -28,17 +29,53 @@ const supabaseStorage = {
   },
 }
 
-// Create a function to get Supabase client with configurable session persistence
-export const createSupabaseClient = (persistSession: boolean = true) => {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      storage: persistSession ? supabaseStorage : undefined,
-      autoRefreshToken: persistSession,
-      persistSession: persistSession,
-      detectSessionInUrl: false,
-    },
+// Create a single, shared Supabase client instance
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    storage: supabaseStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+})
+
+// Handle app state changes to refresh session when app resumes
+let appStateListener: any = null
+
+export const setupAppStateListener = () => {
+  if (appStateListener) {
+    return // Already set up
+  }
+
+  appStateListener = AppState.addEventListener("change", async (nextAppState: AppStateStatus) => {
+    if (nextAppState === "active") {
+      // App has come to the foreground - refresh session
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
+        if (error) {
+          console.warn("Error refreshing session on app resume:", error)
+        } else if (session) {
+          console.log("Session refreshed on app resume")
+        }
+      } catch (error) {
+        console.warn("Failed to refresh session on app resume:", error)
+      }
+    }
   })
 }
 
-// Default client with session persistence enabled
-export const supabase = createSupabaseClient(true)
+export const cleanupAppStateListener = () => {
+  if (appStateListener) {
+    appStateListener()
+    appStateListener = null
+  }
+}
+
+// Legacy function for backward compatibility (deprecated)
+export const createSupabaseClient = (persistSession: boolean = true) => {
+  console.warn("createSupabaseClient is deprecated. Use the shared 'supabase' instance instead.")
+  return supabase
+}
