@@ -338,14 +338,16 @@ export const useGroups = () => {
   )
 
   useEffect(() => {
-    console.log("useGroups: useEffect triggered, calling loadGroups and loadInvitations in parallel")
+    console.log(
+      "useGroups: useEffect triggered, calling loadGroups and loadInvitations in parallel",
+    )
     console.log("useGroups: Current state:", {
       loading,
       groupsCount: groups.length,
       invitationsCount: invitations.length,
       error,
     })
-    
+
     // Load both in parallel for better performance
     Promise.all([loadGroups(), loadInvitations()]).catch((error) => {
       console.error("useGroups: Error loading data in parallel:", error)

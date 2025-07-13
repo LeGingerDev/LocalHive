@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react"
+
 import { useAuth } from "@/context/AuthContext"
-import { ItemService } from "@/services/supabase/itemService"
 import { GroupService } from "@/services/supabase/groupService"
+import { ItemService } from "@/services/supabase/itemService"
 
 export interface UserStats {
   groupsCount: number
@@ -63,4 +64,4 @@ export const useUserStats = () => {
     error,
     refreshStats,
   }
-} 
+}

@@ -10,8 +10,8 @@ import {
 } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 
-import { Header } from "@/components/Header"
 import { InvitationCard } from "@/components/Groups/InvitationCard"
+import { Header } from "@/components/Header"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
@@ -154,18 +154,20 @@ export const InvitationsScreen = () => {
 
   return (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
-      <Header 
+      <Header
         title="Invitations"
         rightActions={
-          __DEV__ ? [
-            {
-              text: "🔄 Debug",
-              onPress: handleForceRefresh
-            }
-          ] : undefined
+          __DEV__
+            ? [
+                {
+                  text: "🔄 Debug",
+                  onPress: handleForceRefresh,
+                },
+              ]
+            : undefined
         }
       />
-      
+
       {!user ? (
         <View style={themed($content)}>
           <AuthPrompt />
@@ -266,7 +268,7 @@ export const InvitationsScreen = () => {
 
 // Styles
 const $root = (): ViewStyle => ({ flex: 1 })
-const $content = ({ spacing }: any): ViewStyle => ({ 
+const $content = ({ spacing }: any): ViewStyle => ({
   padding: spacing.lg,
   paddingBottom: spacing.xl * 2,
 })

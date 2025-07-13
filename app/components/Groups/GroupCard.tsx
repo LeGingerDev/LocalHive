@@ -167,7 +167,7 @@ const $groupCard = ({ colors, spacing }: any): ViewStyle => ({
   elevation: 2,
   borderWidth: 1,
   borderColor: colors.border,
-  height: 70
+  height: 70,
 })
 
 const $touchableContainer = (): ViewStyle => ({

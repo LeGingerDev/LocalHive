@@ -1,7 +1,8 @@
 import React from "react"
 import { View, ViewStyle, TextStyle, TouchableOpacity, ImageStyle } from "react-native"
-import { Text } from "@/components/Text"
+
 import { Icon, IconTypes } from "@/components/Icon"
+import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 
@@ -38,11 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* First column: Title (with optional back button) */}
       <View style={themed($leftColumn)}>
         {showBackButton && (
-          <TouchableOpacity
-            style={themed($backButton)}
-            onPress={onBackPress}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={themed($backButton)} onPress={onBackPress} activeOpacity={0.8}>
             <Icon icon="back" size={24} style={themed($backButtonIcon)} />
           </TouchableOpacity>
         )}
@@ -111,15 +108,17 @@ const $rightColumn = ({ spacing }: any): ViewStyle => ({
   paddingRight: spacing.md,
 })
 
-const $headerTitle = (showBackButton: boolean) => (theme: any): TextStyle => ({
-  fontFamily: theme.typography.primary.bold,
-  fontSize: 22,
-  color: theme.colors.text,
-  textAlign: "left",
-  marginLeft: showBackButton ? theme.spacing.sm : 0,
-  // Remove vertical padding for perfect centering
-  paddingVertical: 0,
-})
+const $headerTitle =
+  (showBackButton: boolean) =>
+  (theme: any): TextStyle => ({
+    fontFamily: theme.typography.primary.bold,
+    fontSize: 22,
+    color: theme.colors.text,
+    textAlign: "left",
+    marginLeft: showBackButton ? theme.spacing.sm : 0,
+    // Remove vertical padding for perfect centering
+    paddingVertical: 0,
+  })
 
 const $backButton = ({ spacing }: any): ViewStyle => ({
   marginRight: spacing.sm,

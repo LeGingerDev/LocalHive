@@ -3,9 +3,9 @@ import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator } from "react-
 
 import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
+import { useUserStats } from "@/hooks/useUserStats"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
-import { useUserStats } from "@/hooks/useUserStats"
 
 import ProfileStat from "./ProfileStat"
 

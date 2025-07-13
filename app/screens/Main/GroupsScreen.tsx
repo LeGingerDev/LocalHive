@@ -12,8 +12,9 @@ import { useFocusEffect } from "@react-navigation/native"
 
 import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { GroupCard } from "@/components/Groups/GroupCard"
-import { Header } from "@/components/Header"
 import { InvitationCard } from "@/components/Groups/InvitationCard"
+import { Header } from "@/components/Header"
+import { Icon } from "@/components/Icon"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
@@ -79,6 +80,9 @@ export const GroupsScreen = ({ navigation, route }: any) => {
 
   // Track if we should force refresh when coming back from CreateGroup
   const [shouldForceRefresh, setShouldForceRefresh] = useState(false)
+
+  // Collapsible groups state
+  const [groupsCollapsed, setGroupsCollapsed] = useState(false)
 
   // Removed debug logging to improve performance
 
@@ -156,6 +160,10 @@ export const GroupsScreen = ({ navigation, route }: any) => {
     navigation.navigate("CreateGroup")
   }
 
+  const handleGroupsToggle = useCallback(() => {
+    setGroupsCollapsed(!groupsCollapsed)
+  }, [groupsCollapsed])
+
   const handleRefresh = useCallback(async () => {
     if (user) {
       await refreshGroups()
@@ -195,8 +203,8 @@ export const GroupsScreen = ({ navigation, route }: any) => {
 
   return (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
-      <Header 
-        title="Groups" 
+      <Header
+        title="Groups"
         rightActions={[
           {
             text: "Refresh",
@@ -244,9 +252,41 @@ export const GroupsScreen = ({ navigation, route }: any) => {
           </View>
         ) : (
           user &&
-          groups.map((group: Group, index: number) => (
-            <GroupCard key={group.id} group={group} navigation={navigation} index={index} />
-          ))
+          groups.length > 0 && (
+            <>
+              {/* Collapsible Groups Section Header */}
+              <TouchableOpacity
+                style={themed($sectionHeader)}
+                onPress={handleGroupsToggle}
+                activeOpacity={0.7}
+              >
+                <View style={themed($sectionHeaderContent)}>
+                  <Text style={themed($sectionHeaderTitle)} text={`Groups (${groups.length})`} />
+                  <Icon
+                    icon={groupsCollapsed ? "caretRight" : "caretLeft"}
+                    size={20}
+                    color={themed($sectionHeaderIconColor)}
+                  />
+                </View>
+              </TouchableOpacity>
+
+              {/* Groups Content */}
+              {!groupsCollapsed ? (
+                // Show full GroupCards when expanded
+                groups.map((group: Group, index: number) => (
+                  <GroupCard key={group.id} group={group} navigation={navigation} index={index} />
+                ))
+              ) : (
+                // Show compact summary when collapsed
+                <View style={themed($collapsedGroupsContainer)}>
+                  <Text
+                    style={themed($collapsedGroupsSummary)}
+                    text={`${groups.length} group${groups.length !== 1 ? "s" : ""} hidden`}
+                  />
+                </View>
+              )}
+            </>
+          )
         )}
 
         {!loading && user && invitations.length > 0 && (
@@ -468,4 +508,37 @@ const $noInvitationsSubtext = ({ typography, colors }: any): TextStyle => ({
   fontSize: 14,
   color: colors.textDim,
   textAlign: "center",
+})
+
+const $sectionHeader = ({ colors, spacing }: any): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  paddingVertical: spacing.sm,
+  paddingHorizontal: spacing.md,
+  backgroundColor: colors.primary100,
+  borderRadius: 8,
+  marginBottom: spacing.sm,
+})
+const $sectionHeaderContent = (): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+})
+const $sectionHeaderTitle = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
+  color: colors.text,
+})
+const $sectionHeaderIconColor = ({ colors }: any): string => colors.text
+const $collapsedGroupsContainer = ({ spacing }: any): ViewStyle => ({
+  paddingHorizontal: spacing.md,
+  marginTop: spacing.sm,
+})
+const $collapsedGroupsSummary = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.textDim,
+  textAlign: "center",
+  fontStyle: "italic",
 })

@@ -3,9 +3,9 @@ import { View, ScrollView, ViewStyle, TextStyle, TouchableOpacity, Modal } from 
 
 import { CustomAlert } from "@/components/Alert"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
-import { Header } from "@/components/Header"
 import { MembersSection } from "@/components/Groups/MembersSection"
 import { RecentActivitySection } from "@/components/Groups/RecentActivitySection"
+import { Header } from "@/components/Header"
 import { Icon } from "@/components/Icon"
 import { InvitationForm } from "@/components/InvitationForm"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
@@ -299,21 +299,18 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 
   return (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
-      <Header 
-        title={group.name} 
-        showBackButton 
+      <Header
+        title={group.name}
+        showBackButton
         onBackPress={() => navigation.goBack()}
         rightActions={[
           {
             text: "...",
-            onPress: () => setShowMenuModal(true)
-          }
+            onPress: () => setShowMenuModal(true),
+          },
         ]}
       />
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
-        contentContainerStyle={themed($content)}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={themed($content)}>
         <View style={themed($groupInfo)}>
           <Text
             style={themed($groupDescription)}
@@ -524,7 +521,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 
 // Styles
 const $root = (): ViewStyle => ({ flex: 1 })
-const $content = ({ spacing }: any): ViewStyle => ({ 
+const $content = ({ spacing }: any): ViewStyle => ({
   padding: spacing.lg,
   paddingBottom: spacing.xl * 2,
 })

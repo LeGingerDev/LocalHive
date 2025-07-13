@@ -6,8 +6,8 @@ import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { useAppTheme } from "@/theme/context"
-import type { ThemedStyle } from "@/theme/types"
 import { spacing } from "@/theme/spacing"
+import type { ThemedStyle } from "@/theme/types"
 
 // #region Types & Interfaces
 interface SearchScreenProps extends BottomTabScreenProps<"Search"> {}
@@ -121,7 +121,9 @@ export const SearchScreen: FC<SearchScreenProps> = () => {
   const renderContent = (): React.JSX.Element => (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
       <Header title="Search" />
-      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg }}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg }}
+      >
         {data && (
           <>
             <Text style={themed($dataText)} text={`ID: ${data.id ?? "N/A"}`} />

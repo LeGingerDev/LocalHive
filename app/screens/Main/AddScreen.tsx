@@ -212,14 +212,13 @@ export const AddScreen: FC<AddScreenProps> = ({ route }) => {
   )
 
   const _renderContent = (): React.JSX.Element => (
-    <Screen
-      preset="fixed"
-      safeAreaEdges={["top", "bottom"]}
-      style={themed($root)}
-    >
+    <Screen preset="fixed" safeAreaEdges={["top", "bottom"]} style={themed($root)}>
       <Header title="Add Item" />
       <ScrollView
-        contentContainerStyle={{ ...themed($formContentWithTopMargin), paddingHorizontal: spacing.md }}
+        contentContainerStyle={{
+          ...themed($formContentWithTopMargin),
+          paddingHorizontal: spacing.md,
+        }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -487,8 +486,6 @@ const $quickSuggestionText: ThemedStyle<TextStyle> = ({ colors }) => ({
   fontSize: 13,
 })
 // #endregion
-
-
 
 const QuickSuggestion = ({ themed, icon, label }: { themed: any; icon: string; label: string }) => (
   <View style={themed($quickSuggestion)}>

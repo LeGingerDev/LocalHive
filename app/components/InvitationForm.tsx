@@ -67,7 +67,7 @@ export const InvitationForm = ({
           autoCapitalize="characters"
           autoCorrect={false}
           maxLength={9}
-                    style={[themed($input), { lineHeight: 1, height: 40}]}
+          style={[themed($input), { lineHeight: 1, height: 40 }]}
           textAlignVertical="center"
         />
         {loading ? (
@@ -127,7 +127,7 @@ const $sectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({
   color: colors.text,
   marginBottom: spacing.xs,
 })
-const $input = ({ spacing }: any): ViewStyle => ({ 
+const $input = ({ spacing }: any): ViewStyle => ({
   marginBottom: spacing.md,
   height: 48,
 })

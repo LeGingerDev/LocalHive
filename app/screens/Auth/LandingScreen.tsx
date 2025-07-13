@@ -65,7 +65,7 @@ export const LandingScreen = () => {
       if (result.success) {
         // Refresh user state to ensure it's properly updated
         await refreshUser()
-        
+
         navigation.reset({
           index: 0,
           routes: [{ name: "Main" }],

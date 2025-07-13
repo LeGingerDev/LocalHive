@@ -67,14 +67,9 @@ const ProfileScreen = () => {
       safeAreaEdges={["top", "bottom"]}
       style={{ flex: 1, backgroundColor: theme.colors.background }}
     >
-
-      
       <Header title="Profile" />
-      
-      <ScrollView 
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
+
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.profileBoxContainer}>
           <ProfileBox style={styles.profileBox} />
           <PersonalCodeBox

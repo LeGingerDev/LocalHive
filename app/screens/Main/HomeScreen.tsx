@@ -6,8 +6,8 @@ import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { useAppTheme } from "@/theme/context"
-import type { ThemedStyle } from "@/theme/types"
 import { spacing } from "@/theme/spacing"
+import type { ThemedStyle } from "@/theme/types"
 
 // #region Types & Interfaces
 interface HomeScreenProps extends BottomTabScreenProps<"Home"> {}
@@ -121,7 +121,9 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
   const renderContent = (): React.JSX.Element => (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
       <Header title="Home" />
-      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg }}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg }}
+      >
         {data && (
           <>
             <Text style={themed($dataText)} text={`ID: ${data.id ?? "N/A"}`} />
