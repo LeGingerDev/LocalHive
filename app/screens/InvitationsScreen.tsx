@@ -10,6 +10,7 @@ import {
 } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 
+import { Header } from "@/components/Header"
 import { InvitationCard } from "@/components/Groups/InvitationCard"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
@@ -152,30 +153,32 @@ export const InvitationsScreen = () => {
   }
 
   return (
-    <Screen style={themed($root)} preset="scroll" safeAreaEdges={["top", "bottom"]}>
-      <View style={themed($headerRow)}>
-        <Text style={themed($headerTitle)} text="Invitations" />
-        <View style={themed($headerActions)}>
-          {__DEV__ && (
-            <TouchableOpacity
-              style={themed($debugButton)}
-              onPress={handleForceRefresh}
-              activeOpacity={0.8}
-            >
-              <Text style={themed($debugButtonText)} text="🔄 Debug" />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
+    <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
+      <Header 
+        title="Invitations"
+        rightActions={
+          __DEV__ ? [
+            {
+              text: "🔄 Debug",
+              onPress: handleForceRefresh
+            }
+          ] : undefined
+        }
+      />
+      
       {!user ? (
-        <AuthPrompt />
+        <View style={themed($content)}>
+          <AuthPrompt />
+        </View>
       ) : loading ? (
-        <View style={themed($loadingContainer)}>
-          <LoadingSpinner text="Loading invitations..." />
+        <View style={themed($content)}>
+          <View style={themed($loadingContainer)}>
+            <LoadingSpinner text="Loading invitations..." />
+          </View>
         </View>
       ) : (
         <ScrollView
+          contentContainerStyle={themed($content)}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -262,7 +265,11 @@ export const InvitationsScreen = () => {
 }
 
 // Styles
-const $root = (): ViewStyle => ({ flex: 1, padding: spacing.md })
+const $root = (): ViewStyle => ({ flex: 1 })
+const $content = ({ spacing }: any): ViewStyle => ({ 
+  padding: spacing.lg,
+  paddingBottom: spacing.xl * 2,
+})
 const $headerRow = (): ViewStyle => ({
   flexDirection: "row",
   alignItems: "center",

@@ -27,6 +27,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
 
 import { AlertProvider } from "./components/Alert"
+import { StatusBarManager } from "./components/StatusBarManager"
 import { AuthProvider } from "./context/AuthContext"
 import { initI18n } from "./i18n"
 import { AppNavigator } from "./navigators/AppNavigator"
@@ -127,6 +128,7 @@ export function App() {
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <KeyboardProvider>
           <ThemeProvider>
+            <StatusBarManager />
             <AuthProvider>
               <AlertProvider>
                 <AppNavigator

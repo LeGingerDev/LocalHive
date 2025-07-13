@@ -27,6 +27,7 @@ const $container: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   justifyContent: "center",
   paddingVertical: spacing.xs,
   paddingHorizontal: spacing.sm,
+  width: 100, // Fixed width for even alignment
 })
 
 const $value: ThemedStyle<TextStyle> = ({ colors, typography }) => ({

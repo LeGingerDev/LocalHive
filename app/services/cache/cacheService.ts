@@ -24,8 +24,8 @@ export class CacheService {
   private static readonly CACHE_VERSION = "1.0.0"
   private static readonly GROUPS_CACHE_KEY = "groups_cache"
   private static readonly INVITATIONS_CACHE_KEY = "invitations_cache"
-  private static readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes in milliseconds
-  private static readonly INVITATIONS_CACHE_TTL = 2 * 60 * 1000 // 2 minutes in milliseconds for invitations
+  private static readonly CACHE_TTL = 10 * 60 * 1000 // 10 minutes in milliseconds (increased from 5)
+  private static readonly INVITATIONS_CACHE_TTL = 5 * 60 * 1000 // 5 minutes in milliseconds for invitations (increased from 2)
   private static readonly MAX_CACHE_AGE = 30 * 60 * 1000 // 30 minutes in milliseconds
 
   /**

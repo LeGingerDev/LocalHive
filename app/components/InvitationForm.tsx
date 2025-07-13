@@ -25,7 +25,7 @@ export const InvitationForm = ({
 }: InvitationFormProps) => {
   const { themed } = useAppTheme()
   const { inviteByCode, loading, error } = useInvitations()
-  const [personalCode, setPersonalCode] = useState("")
+  const [personalCode, setPersonalCode] = useState("VISU-")
 
   // Invite by code
   const handleSendInvitation = useCallback(async () => {
@@ -64,9 +64,11 @@ export const InvitationForm = ({
           placeholder="Enter user's invitation code"
           value={personalCode}
           onChangeText={setPersonalCode}
-          autoCapitalize="none"
+          autoCapitalize="characters"
           autoCorrect={false}
-          style={themed($input)}
+          maxLength={9}
+                    style={[themed($input), { lineHeight: 1, height: 40}]}
+          textAlignVertical="center"
         />
         {loading ? (
           <View style={themed($loadingContainer)}>
@@ -125,7 +127,10 @@ const $sectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({
   color: colors.text,
   marginBottom: spacing.xs,
 })
-const $input = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.md })
+const $input = ({ spacing }: any): ViewStyle => ({ 
+  marginBottom: spacing.md,
+  height: 48,
+})
 const $sendButton = ({ spacing }: any): ViewStyle => ({ marginTop: spacing.md })
 const $loadingContainer = ({ spacing }: any): ViewStyle => ({
   paddingVertical: spacing.xl,

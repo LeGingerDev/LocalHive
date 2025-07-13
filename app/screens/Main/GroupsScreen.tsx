@@ -101,27 +101,14 @@ export const GroupsScreen = ({ navigation, route }: any) => {
           return
         }
 
-        // Always check for new invitations when screen comes into focus
-        // This ensures users see new invitations immediately
-        if (CacheService.shouldRefreshGroupsInvitations(user?.id)) {
+        // Only refresh if cache is significantly stale (more than 10 minutes)
+        const cacheStats = CacheService.getCacheStats(user?.id)
+        if (cacheStats.age && cacheStats.age > 10 * 60 * 1000) {
+          // 10 minutes - only refresh if cache is quite old
           refreshGroups()
         }
-
-        // For groups, use the existing logic but be more aggressive
-        if (CacheService.shouldRefreshGroups()) {
-          if (groups.length === 0) {
-            refreshGroups()
-          } else {
-            // Refresh groups if cache is stale (more than 5 minutes instead of 10)
-            const cacheStats = CacheService.getCacheStats(user?.id)
-            if (cacheStats.age && cacheStats.age > 5 * 60 * 1000) {
-              // 5 minutes
-              refreshGroups()
-            }
-          }
-        }
       }
-    }, [user, loading, refreshGroups, groups.length, invitations.length, route.params?.refresh]),
+    }, [user, loading, refreshGroups, route.params?.refresh]),
   )
 
   const handleInvitationResponse = async (
@@ -208,7 +195,19 @@ export const GroupsScreen = ({ navigation, route }: any) => {
 
   return (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
-      <Header title="Groups" rightAction={{ text: "+ New", onPress: handleNewGroup }} />
+      <Header 
+        title="Groups" 
+        rightActions={[
+          {
+            text: "Refresh",
+            onPress: handleForceRefresh,
+          },
+          {
+            text: "+ New",
+            onPress: handleNewGroup,
+          },
+        ]}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.xl * 2 }}

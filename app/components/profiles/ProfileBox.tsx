@@ -5,6 +5,7 @@ import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
+import { useUserStats } from "@/hooks/useUserStats"
 
 import ProfileStat from "./ProfileStat"
 
@@ -111,6 +112,7 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
   // #region Hooks & Context
   const { themed } = useAppTheme()
   const { user, googleUser, userProfile, isLoading: authLoading } = useAuth()
+  const userStats = useUserStats()
   // #endregion
 
   // Removed debug logging to improve performance
@@ -182,8 +184,8 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
   }, [_userData])
 
   const _isLoading = useMemo(() => {
-    return isLoading || authLoading
-  }, [isLoading, authLoading])
+    return isLoading || authLoading || userStats.loading
+  }, [isLoading, authLoading, userStats.loading])
   // #endregion
 
   // #region Event Handlers
@@ -251,7 +253,7 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
         <View style={themed($contentContainer)}>
           {/* Avatar */}
           <View style={themed($avatar)}>
-            <Text style={themed($avatarInitial)}>{_avatarInitial}</Text>
+            <Text style={themed($avatarInitial)} text={_avatarInitial} />
           </View>
           {/* User Name */}
           <Text style={themed($name)} text={_displayName} testID={`${testID}_name`} />
@@ -265,7 +267,12 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
         {/* Separator line */}
         <View style={themed($separator)} />
         {/* ProfileStat */}
-        <ProfileStat />
+        <ProfileStat
+          stats={[
+            { value: userStats.stats.groupsCount, label: "Groups" },
+            { value: userStats.stats.itemsCount, label: "Items Added" },
+          ]}
+        />
       </View>
     )
   }
@@ -423,4 +430,5 @@ const $separator: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   opacity: 0.3,
   marginVertical: spacing.md,
 })
+
 // #endregion

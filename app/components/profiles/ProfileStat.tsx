@@ -13,11 +13,10 @@ export interface ProfileStatProps {
 
 export const ProfileStat: React.FC<ProfileStatProps> = ({ stats, style }) => {
   const { themed } = useAppTheme()
-  // Use 3 placeholder stats if none provided
+  // Use 2 placeholder stats if none provided
   const displayStats = stats ?? [
     { value: 0, label: "Groups" },
     { value: 0, label: "Items Added" },
-    { value: 0, label: "Searches" },
   ]
   return (
     <View style={[themed($container), style]}>
@@ -38,9 +37,9 @@ export default ProfileStat
 const $container: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flexDirection: "row",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "center",
+  alignSelf: "center",
   paddingVertical: 0,
-  paddingHorizontal: spacing.md,
 })
 
 const $item: ThemedStyle<ViewStyle> = ({ spacing }) => ({

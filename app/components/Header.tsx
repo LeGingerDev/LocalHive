@@ -9,6 +9,11 @@ interface HeaderProps {
   title: string
   showBackButton?: boolean
   onBackPress?: () => void
+  rightActions?: Array<{
+    icon?: IconTypes
+    text?: string
+    onPress: () => void
+  }>
   rightAction?: {
     icon?: IconTypes
     text?: string
@@ -20,9 +25,13 @@ export const Header: React.FC<HeaderProps> = ({
   title,
   showBackButton = false,
   onBackPress,
+  rightActions,
   rightAction,
 }) => {
   const { themed } = useAppTheme()
+
+  // Support both single rightAction and multiple rightActions for backward compatibility
+  const actions = rightActions || (rightAction ? [rightAction] : [])
 
   return (
     <View style={themed($headerContainer)}>
@@ -43,19 +52,20 @@ export const Header: React.FC<HeaderProps> = ({
       <View style={themed($centerColumn)} />
       {/* Third column: Right actions */}
       <View style={themed($rightColumn)}>
-        {rightAction && (
+        {actions.map((action, index) => (
           <TouchableOpacity
+            key={index}
             style={themed($actionButton)}
-            onPress={rightAction.onPress}
+            onPress={action.onPress}
             activeOpacity={0.8}
           >
-            {rightAction.icon ? (
-              <Icon icon={rightAction.icon} size={20} style={themed($actionIcon)} />
+            {action.icon ? (
+              <Icon icon={action.icon} size={20} style={themed($actionIcon)} />
             ) : (
-              <Text style={themed($actionText)} text={rightAction.text || ""} />
+              <Text style={themed($actionText)} text={action.text || ""} />
             )}
           </TouchableOpacity>
-        )}
+        ))}
       </View>
     </View>
   )
@@ -83,14 +93,14 @@ const $headerContainer = (theme: any): ViewStyle => ({
 })
 
 const $leftColumn = ({ spacing }: any): ViewStyle => ({
-  flex: 1,
+  flex: 2,
   flexDirection: "row",
   alignItems: "center",
   paddingLeft: spacing.md,
 })
 
 const $centerColumn = (): ViewStyle => ({
-  flex: 1,
+  flex: 0.5,
 })
 
 const $rightColumn = ({ spacing }: any): ViewStyle => ({

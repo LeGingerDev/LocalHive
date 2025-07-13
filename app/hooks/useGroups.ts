@@ -338,30 +338,34 @@ export const useGroups = () => {
   )
 
   useEffect(() => {
-    console.log("useGroups: useEffect triggered, calling loadGroups and loadInvitations")
+    console.log("useGroups: useEffect triggered, calling loadGroups and loadInvitations in parallel")
     console.log("useGroups: Current state:", {
       loading,
       groupsCount: groups.length,
       invitationsCount: invitations.length,
       error,
     })
-    loadGroups()
-    loadInvitations()
+    
+    // Load both in parallel for better performance
+    Promise.all([loadGroups(), loadInvitations()]).catch((error) => {
+      console.error("useGroups: Error loading data in parallel:", error)
+    })
   }, []) // Empty dependency array since loadGroups and loadInvitations are now stable
 
   // Clear caches when user changes
   useEffect(() => {
     if (user?.id) {
-      console.log("useGroups: User changed, clearing caches and reloading data")
+      console.log("useGroups: User changed, clearing caches and reloading data in parallel")
       // Clear caches for the new user to ensure fresh data
       CacheService.clearGroupsCache(user.id)
       // Reset state
       setGroups([])
       setInvitations([])
       setError(null)
-      // Load fresh data
-      loadGroups(true)
-      loadInvitations(true)
+      // Load fresh data in parallel
+      Promise.all([loadGroups(true), loadInvitations(true)]).catch((error) => {
+        console.error("useGroups: Error loading data for new user:", error)
+      })
     }
   }, [user?.id])
 
@@ -373,9 +377,8 @@ export const useGroups = () => {
     try {
       // Check if we need to refresh based on cache TTL
       if (CacheService.shouldRefreshGroups(user?.id)) {
-        console.log("useGroups: Cache TTL expired, fetching fresh data")
-        await loadGroups(true)
-        await loadInvitations(true)
+        console.log("useGroups: Cache TTL expired, fetching fresh data in parallel")
+        await Promise.all([loadGroups(true), loadInvitations(true)])
       } else {
         console.log("useGroups: Cache still fresh, no refresh needed")
       }
@@ -390,11 +393,10 @@ export const useGroups = () => {
     setIsRefreshing(true)
 
     try {
-      // Clear cache and fetch fresh data
+      // Clear cache and fetch fresh data in parallel
       CacheService.clearGroupsCache(user?.id)
-      console.log("useGroups: Cache cleared, fetching fresh data")
-      await loadGroups(true)
-      await loadInvitations(true)
+      console.log("useGroups: Cache cleared, fetching fresh data in parallel")
+      await Promise.all([loadGroups(true), loadInvitations(true)])
     } finally {
       setIsRefreshing(false)
     }

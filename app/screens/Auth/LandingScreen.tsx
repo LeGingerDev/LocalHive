@@ -7,6 +7,7 @@ import { CustomGradient } from "@/components/CustomGradient"
 import { RoundedButton } from "@/components/RoundedButton"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
+import { useAuth } from "@/context/AuthContext"
 import googleAuthService from "@/services/supabase/googleAuthService"
 import { hideNavigationBar } from "@/utils/navigationBarUtils"
 import { useSafeAreaInsetsStyle } from "@/utils/useSafeAreaInsetsStyle"
@@ -29,6 +30,7 @@ const AppleIcon = () => (
 
 export const LandingScreen = () => {
   const navigation = useNavigation<any>()
+  const { refreshUser } = useAuth()
   const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
   const translateYAnim = useRef(new Animated.Value(50)).current
@@ -61,6 +63,9 @@ export const LandingScreen = () => {
       const result = await googleAuthService.signInWithGoogle()
 
       if (result.success) {
+        // Refresh user state to ensure it's properly updated
+        await refreshUser()
+        
         navigation.reset({
           index: 0,
           routes: [{ name: "Main" }],

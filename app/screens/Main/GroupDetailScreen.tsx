@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react"
 import { View, ScrollView, ViewStyle, TextStyle, TouchableOpacity, Modal } from "react-native"
-import { useNavigation } from "@react-navigation/native"
 
 import { CustomAlert } from "@/components/Alert"
-import { Button } from "@/components/Button"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
+import { Header } from "@/components/Header"
 import { MembersSection } from "@/components/Groups/MembersSection"
 import { RecentActivitySection } from "@/components/Groups/RecentActivitySection"
 import { Icon } from "@/components/Icon"
@@ -19,7 +18,6 @@ import { GroupService } from "@/services/supabase/groupService"
 import { ItemService, type Item } from "@/services/supabase/itemService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
-import type { ThemedStyle } from "@/theme/types"
 
 interface GroupDetailScreenProps {
   route: { params: { groupId: string } }
@@ -300,26 +298,22 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   }
 
   return (
-    <Screen style={themed($root)} preset="scroll" safeAreaEdges={["top", "bottom"]}>
-      <View style={themed($headerRow)}>
-        <TouchableOpacity
-          style={themed($backButtonPlain)}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
-        >
-          <Icon icon="back" size={22} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={themed($headerTitle)} text={group.name} />
-        <TouchableOpacity
-          style={themed($headerActionButton)}
-          onPress={() => setShowMenuModal(true)}
-          activeOpacity={0.8}
-        >
-          <Text style={themed($headerActionText)} text="..." />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
+      <Header 
+        title={group.name} 
+        showBackButton 
+        onBackPress={() => navigation.goBack()}
+        rightActions={[
+          {
+            text: "...",
+            onPress: () => setShowMenuModal(true)
+          }
+        ]}
+      />
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={themed($content)}
+      >
         <View style={themed($groupInfo)}>
           <Text
             style={themed($groupDescription)}
@@ -529,7 +523,11 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 }
 
 // Styles
-const $root = (): ViewStyle => ({ flex: 1, padding: spacing.md })
+const $root = (): ViewStyle => ({ flex: 1 })
+const $content = ({ spacing }: any): ViewStyle => ({ 
+  padding: spacing.lg,
+  paddingBottom: spacing.xl * 2,
+})
 const $headerRow = (): ViewStyle => ({
   flexDirection: "row",
   alignItems: "center",

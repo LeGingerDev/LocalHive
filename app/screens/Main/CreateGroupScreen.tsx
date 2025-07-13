@@ -11,13 +11,16 @@ import {
 import { Button } from "@/components/Button"
 import { CustomDropdown } from "@/components/CustomDropdown"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
+import { Header } from "@/components/Header"
 import { Icon } from "@/components/Icon"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
+import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { TextField } from "@/components/TextField"
 import { useGroups } from "@/hooks/useGroups"
 import type { GroupCategory } from "@/services/api/types"
 import { useAppTheme } from "@/theme/context"
+import { spacing } from "@/theme/spacing"
 
 export const CreateGroupScreen = ({ navigation }: any) => {
   const { themed, theme } = useAppTheme()
@@ -85,34 +88,21 @@ export const CreateGroupScreen = ({ navigation }: any) => {
 
   if (loading) {
     return (
-      <View style={themed($root)}>
+      <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
         <LoadingSpinner text="Creating group..." />
-      </View>
+      </Screen>
     )
   }
 
   return (
-    <View style={themed($root)}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
-      >
+    <Screen style={themed($root)} preset="scroll" safeAreaEdges={["top", "bottom"]}>
+      <Header title="Create Group" showBackButton onBackPress={() => navigation.goBack()} />
+      <View style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={themed($formContentWithTopMargin)}
+          contentContainerStyle={themed($formContent)}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={themed($headerRow)}>
-            <Button
-              LeftAccessory={() => <Icon icon="back" size={22} color={theme.colors.text} />}
-              style={themed($backButtonPlain)}
-              onPress={() => navigation.goBack()}
-              preset="default"
-            />
-            <Text style={themed($headerTitle)} text="Create A Group" />
-            <View style={themed($headerSpacer)} />
-          </View>
           <Text style={themed($label)} text="Group Name" />
           <TextField
             placeholder="Enter group name"
@@ -199,12 +189,11 @@ export const CreateGroupScreen = ({ navigation }: any) => {
               style={themed($cancelButtonRed)}
               textStyle={themed($cancelButtonTextRed)}
               onPress={() => navigation.goBack()}
-              preset="default"
             />
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+      </View>
+    </Screen>
   )
 }
 
@@ -215,6 +204,7 @@ const $label = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.medium,
   fontSize: 15,
   color: colors.text,
+  marginBottom: 4,
 })
 
 const $input = ({ typography, colors }: any): TextStyle => ({
@@ -298,6 +288,11 @@ const $headerTitle = ({ typography, colors }: any): TextStyle => ({
   textAlign: "center",
 })
 const $headerSpacer = (): ViewStyle => ({ width: 40 })
+const $formContent = ({ spacing }: any): ViewStyle => ({
+  padding: spacing.lg,
+  paddingBottom: spacing.xl * 2,
+})
+
 const $formContentWithTopMargin = ({ spacing }: any): ViewStyle => ({
   flexGrow: 1,
   justifyContent: "center",

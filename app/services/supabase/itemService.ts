@@ -186,4 +186,26 @@ export class ItemService {
       }
     }
   }
+
+  /**
+   * Get the count of items created by a specific user
+   */
+  static async getUserItemsCount(
+    userId: string,
+  ): Promise<{ data: number | null; error: PostgrestError | null }> {
+    try {
+      const { count, error } = await supabase
+        .from("items")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+
+      return { data: count, error }
+    } catch (error) {
+      console.error("Error getting user items count:", error)
+      return {
+        data: null,
+        error: error as PostgrestError,
+      }
+    }
+  }
 }

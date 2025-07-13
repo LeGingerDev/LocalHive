@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
-import { StatusBar, View, StyleSheet } from "react-native"
+import { View, StyleSheet, ScrollView } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 
+import { Header } from "@/components/Header"
 import { PersonalCodeBox } from "@/components/PersonalCodeBox"
 import { ProfileBox } from "@/components/profiles/ProfileBox"
 import { SettingsItem } from "@/components/profiles/SettingsItem"
@@ -12,13 +13,19 @@ import { ThemeToggle } from "@/components/ThemeToggle"
 import { useAuth } from "@/context/AuthContext"
 import googleAuthService from "@/services/supabase/googleAuthService"
 import { useAppTheme } from "@/theme/context"
+import { setSystemUIBackgroundColor } from "@/theme/context.utils"
 import { spacing } from "@/theme/spacing"
 
 const ProfileScreen = () => {
-  const { themeContext } = useAppTheme()
+  const { themeContext, theme } = useAppTheme()
   const navigation = useNavigation<any>()
   const { refreshUser, userProfile } = useAuth()
   const [isLoadingCode, setIsLoadingCode] = useState(false)
+
+  // Set the status bar background color to match the header
+  useEffect(() => {
+    setSystemUIBackgroundColor(theme.colors.headerBackground)
+  }, [theme.colors.headerBackground])
 
   const handleRefreshPersonalCode = async () => {
     setIsLoadingCode(true)
@@ -56,35 +63,38 @@ const ProfileScreen = () => {
 
   return (
     <Screen
-      preset="scroll"
-      safeAreaEdges={["top"]}
-      systemBarStyle={themeContext === "dark" ? "light" : "dark"}
-      contentContainerStyle={styles.container}
+      preset="fixed"
+      safeAreaEdges={["top", "bottom"]}
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
     >
-      <StatusBar
-        barStyle={themeContext === "dark" ? "light-content" : "dark-content"}
-        backgroundColor="transparent"
-        translucent
-      />
-      <View style={styles.profileBoxContainer}>
-        <ProfileBox style={styles.profileBox} />
-        <PersonalCodeBox
-          style={styles.personalCodeBox}
-          code={userProfile?.personal_code}
-          isLoading={isLoadingCode}
-          onRefresh={handleRefreshPersonalCode}
-        />
-        <SubContainer style={styles.subContainer} />
-      </View>
 
-      <SettingsSection style={styles.settingsSection}>
-        <ThemeToggle />
-        <SettingsItem icon="notifications-outline" label="Notifications" />
-        <SettingsItem icon="lock-closed-outline" label="Privacy & Security" />
-        <SettingsItem icon="help-circle-outline" label="Help & Support" />
-        <SettingsItem icon="information-circle-outline" label="About Local Hive" />
-        <SettingsItem icon="log-out-outline" label="Sign Out" signOut onPress={handleSignOut} />
-      </SettingsSection>
+      
+      <Header title="Profile" />
+      
+      <ScrollView 
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.profileBoxContainer}>
+          <ProfileBox style={styles.profileBox} />
+          <PersonalCodeBox
+            style={styles.personalCodeBox}
+            code={userProfile?.personal_code}
+            isLoading={isLoadingCode}
+            onRefresh={handleRefreshPersonalCode}
+          />
+          <SubContainer style={styles.subContainer} />
+        </View>
+
+        <SettingsSection style={styles.settingsSection}>
+          <ThemeToggle />
+          <SettingsItem icon="notifications-outline" label="Notifications" />
+          <SettingsItem icon="lock-closed-outline" label="Privacy & Security" />
+          <SettingsItem icon="help-circle-outline" label="Help & Support" />
+          <SettingsItem icon="information-circle-outline" label="About Local Hive" />
+          <SettingsItem icon="log-out-outline" label="Sign Out" signOut onPress={handleSignOut} />
+        </SettingsSection>
+      </ScrollView>
     </Screen>
   )
 }
