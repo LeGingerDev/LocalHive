@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import { View, ScrollView, ViewStyle, TextStyle, TouchableOpacity, Modal } from "react-native"
 
 import { CustomAlert } from "@/components/Alert"
@@ -42,7 +42,6 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [memberToRemove, setMemberToRemove] = useState<GroupMember | null>(null)
   const [showRemoveMemberAlert, setShowRemoveMemberAlert] = useState(false)
   const [removingMember, setRemovingMember] = useState(false)
-  const [showCreatePostAlert, setShowCreatePostAlert] = useState(false)
   const [showMenuAlert, setShowMenuAlert] = useState(false)
   const [showErrorAlert, setShowErrorAlert] = useState(false)
   const [showMemberSuccessAlert, setShowMemberSuccessAlert] = useState(false)
@@ -51,6 +50,11 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [showMenuModal, setShowMenuModal] = useState(false)
   const [items, setItems] = useState<Item[]>([])
   const [itemsLoading, setItemsLoading] = useState(false)
+
+  // Collapsible sections state
+  const [membersCollapsed, setMembersCollapsed] = useState(false)
+  const [recentActivityCollapsed, setRecentActivityCollapsed] = useState(false)
+  const [itemsCollapsed, setItemsCollapsed] = useState(false)
 
   // Calculate if user can manage the group (admin or creator)
   const canManageGroup = userRole === "creator" || userRole === "admin"
@@ -81,6 +85,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           name: groupData.name,
           creator_id: groupData.creator_id,
           members_count: groupData.members?.length || 0,
+          member_count: groupData.member_count,
+          member_limit: groupData.member_limit,
+          capacity_check: groupData.member_limit && (groupData.member_count || 0) >= groupData.member_limit,
         })
 
         setGroup(groupData)
@@ -171,10 +178,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     setShowInviteModal(false)
   }
 
-  const handleCreatePost = () => {
-    // TODO: Implement create post functionality
-    setShowCreatePostAlert(true)
-  }
+
 
   const handleCloseGroup = () => {
     setShowCloseAlert(true)
@@ -201,8 +205,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 
   const handleSuccessAlertConfirm = () => {
     setShowSuccessAlert(false)
-    // Just go back to the previous screen, GroupsScreen will refresh when it comes into focus
-    navigation.goBack()
+    console.log("🔍 [GroupDetailScreen] Group deleted successfully, navigating back to Groups with refresh")
+    // Navigate back to main and then to groups tab with refresh parameter
+    navigation.navigate("Main", { screen: "Groups", params: { refresh: true } })
   }
 
   const handleRemoveMember = (member: GroupMember) => {
@@ -246,6 +251,19 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     setShowRemoveMemberAlert(false)
     setMemberToRemove(null)
   }
+
+  // Collapsible section handlers
+  const handleMembersToggle = useCallback(() => {
+    setMembersCollapsed(!membersCollapsed)
+  }, [membersCollapsed])
+
+  const handleRecentActivityToggle = useCallback(() => {
+    setRecentActivityCollapsed(!recentActivityCollapsed)
+  }, [recentActivityCollapsed])
+
+  const handleItemsToggle = useCallback(() => {
+    setItemsCollapsed(!itemsCollapsed)
+  }, [itemsCollapsed])
 
   // ItemCard component
   const ItemCard = ({ item, themed }: { item: Item; themed: any }) => (
@@ -318,62 +336,155 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           />
           <Text
             style={themed($groupStats)}
-            text={`${group.member_count || 0} members • ${group.post_count || 0} posts`}
+            text={`${group.member_count || 0} members • ${group.item_count || 0} items`}
           />
         </View>
 
         <View style={themed($actionButtons)}>
-          <TouchableOpacity
-            style={themed($actionButton)}
-            onPress={handleInviteMembers}
-            activeOpacity={0.8}
-          >
-            <Text style={themed($actionButtonText)} text="Invite Members" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={themed($actionButton)}
-            onPress={handleCreatePost}
-            activeOpacity={0.8}
-          >
-            <Text style={themed($actionButtonText)} text="Create Post" />
-          </TouchableOpacity>
+          {(() => {
+            const isAtCapacity = !!(group?.member_limit && (group.member_count || 0) >= group.member_limit)
+            console.log("Action button capacity check:", {
+              member_limit: group?.member_limit,
+              member_count: group?.member_count,
+              isAtCapacity,
+              buttonText: isAtCapacity ? "Max Capacity, Can't add new members" : "Invite Members"
+            })
+            return (
+              <TouchableOpacity
+                style={[
+                  themed($actionButton),
+                  isAtCapacity ? themed($actionButtonDisabled) : null
+                ]}
+                onPress={handleInviteMembers}
+                activeOpacity={0.8}
+                disabled={isAtCapacity}
+              >
+                <Text 
+                  style={[
+                    themed($actionButtonText),
+                    isAtCapacity ? themed($actionButtonTextDisabled) : null
+                  ]} 
+                  text={isAtCapacity ? "Max Capacity, Can't add new members" : "Invite Members"} 
+                />
+              </TouchableOpacity>
+            )
+          })()}
         </View>
 
-        <View>
-          <MembersSection
-            members={members}
-            onRetry={loadGroupDetails}
-            canManageMembers={canManageGroup}
-            creatorId={group?.creator_id}
-            onRemoveMember={handleRemoveMember}
-          />
-        </View>
-
-        <View>
-          <RecentActivitySection
-            data={{ title: "Recent Activity", description: `${posts.length} recent posts` }}
-            onRetry={loadGroupDetails}
-          />
-        </View>
-
-        {/* Items Section */}
-        <View style={themed($itemsSection)}>
-          <Text style={themed($itemsSectionTitle)} text="Items" />
-          {itemsLoading ? (
-            <LoadingSpinner text="Loading items..." />
-          ) : items.length > 0 ? (
-            <View style={themed($itemsList)}>
-              {items.map((item) => (
-                <ItemCard key={item.id} item={item} themed={themed} />
-              ))}
+        {/* Collapsible Members Section */}
+        <TouchableOpacity
+          style={themed($sectionHeader)}
+          onPress={handleMembersToggle}
+          activeOpacity={0.7}
+        >
+          <View style={themed($sectionHeaderContent)}>
+            <Text style={themed($sectionHeaderTitle)} text={`Members (${members.length}${group?.member_limit ? `/${group.member_limit}` : ''})`} />
+            <View style={themed($sectionHeaderRight)}>
+              {membersCollapsed && (
+                <Text style={themed($collapsedSectionSummary)} text={`${members.length} member${members.length !== 1 ? "s" : ""} hidden`} />
+              )}
+              <Icon
+                icon={membersCollapsed ? "caretRight" : "caretLeft"}
+                size={20}
+                color={theme.colors.text}
+              />
             </View>
-          ) : (
-            <View style={themed($emptyItemsContainer)}>
-              <Text style={themed($emptyItemsText)} text="No items yet" />
-              <Text style={themed($emptyItemsSubtext)} text="Add the first item to this group!" />
+          </View>
+        </TouchableOpacity>
+
+        {!membersCollapsed && (
+          <View>
+            <MembersSection
+              members={members}
+              onRetry={loadGroupDetails}
+              canManageMembers={canManageGroup}
+              creatorId={group?.creator_id}
+              onRemoveMember={handleRemoveMember}
+              memberLimit={group?.member_limit}
+            />
+          </View>
+        )}
+
+        {/* Collapsible Recent Activity Section */}
+        <TouchableOpacity
+          style={themed($sectionHeader)}
+          onPress={handleRecentActivityToggle}
+          activeOpacity={0.7}
+        >
+          <View style={themed($sectionHeaderContent)}>
+            <Text style={themed($sectionHeaderTitle)} text={`Recent Activity (${posts.length})`} />
+            <View style={themed($sectionHeaderRight)}>
+              {recentActivityCollapsed && (
+                <Text style={themed($collapsedSectionSummary)} text={`${posts.length} post${posts.length !== 1 ? "s" : ""} hidden`} />
+              )}
+              <Icon
+                icon={recentActivityCollapsed ? "caretRight" : "caretLeft"}
+                size={20}
+                color={theme.colors.text}
+              />
             </View>
-          )}
-        </View>
+          </View>
+        </TouchableOpacity>
+
+        {!recentActivityCollapsed && (
+          <View style={themed($itemsSection)}>
+            {posts.length > 0 ? (
+              <View style={themed($itemsList)}>
+                {posts.map((post) => (
+                  <View key={post.id} style={themed($itemCard)}>
+                    <Text style={themed($itemTitle)} text={post.content} numberOfLines={2} />
+                    <Text style={themed($itemDetails)} text={`By ${post.user?.full_name || 'Unknown'} • ${new Date(post.created_at).toLocaleDateString()}`} />
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={themed($emptyItemsContainer)}>
+                <Text style={themed($emptyItemsText)} text="No recent activity" />
+                <Text style={themed($emptyItemsSubtext)} text="Activity will appear here when members interact with the group" />
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Collapsible Items Section */}
+        <TouchableOpacity
+          style={themed($sectionHeader)}
+          onPress={handleItemsToggle}
+          activeOpacity={0.7}
+        >
+          <View style={themed($sectionHeaderContent)}>
+            <Text style={themed($sectionHeaderTitle)} text={`Items (${items.length})`} />
+            <View style={themed($sectionHeaderRight)}>
+              {itemsCollapsed && (
+                <Text style={themed($collapsedSectionSummary)} text={`${items.length} item${items.length !== 1 ? "s" : ""} hidden`} />
+              )}
+              <Icon
+                icon={itemsCollapsed ? "caretRight" : "caretLeft"}
+                size={20}
+                color={theme.colors.text}
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {!itemsCollapsed && (
+          <View style={themed($itemsSection)}>
+            {itemsLoading ? (
+              <LoadingSpinner text="Loading items..." />
+            ) : items.length > 0 ? (
+              <View style={themed($itemsList)}>
+                {items.map((item) => (
+                  <ItemCard key={item.id} item={item} themed={themed} />
+                ))}
+              </View>
+            ) : (
+              <View style={themed($emptyItemsContainer)}>
+                <Text style={themed($emptyItemsText)} text="No items yet" />
+                <Text style={themed($emptyItemsSubtext)} text="Add the first item to this group!" />
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
 
       {/* Add Item Button at the bottom */}
@@ -478,14 +589,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         confirmStyle="destructive"
       />
 
-      {/* Create Post Alert */}
-      <CustomAlert
-        visible={showCreatePostAlert}
-        title="Create Post"
-        message="This feature will be implemented soon!"
-        confirmText="OK"
-        onConfirm={() => setShowCreatePostAlert(false)}
-      />
+
 
       {/* Menu Alert */}
       <CustomAlert
@@ -522,7 +626,8 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 // Styles
 const $root = (): ViewStyle => ({ flex: 1 })
 const $content = ({ spacing }: any): ViewStyle => ({
-  padding: spacing.lg,
+  paddingHorizontal: spacing.md,
+  paddingTop: spacing.sm,
   paddingBottom: spacing.xl * 2,
 })
 const $headerRow = (): ViewStyle => ({
@@ -603,6 +708,13 @@ const $actionButtonText = ({ colors, typography }: any): TextStyle => ({
   fontFamily: typography.primary.medium,
   fontSize: 15,
   textAlign: "center",
+})
+const $actionButtonDisabled = ({ colors }: any): ViewStyle => ({
+  backgroundColor: colors.errorLight,
+  opacity: 0.7,
+})
+const $actionButtonTextDisabled = ({ colors }: any): TextStyle => ({
+  color: colors.error,
 })
 const $addItemContainer = ({ spacing }: any): ViewStyle => ({
   padding: spacing.md,
@@ -786,4 +898,41 @@ const $emptyItemsSubtext = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.normal,
   fontSize: 14,
   color: colors.textDim,
+})
+
+// Collapsible section styles
+const $sectionHeader = ({ colors, spacing }: any): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  paddingVertical: spacing.sm,
+  backgroundColor: colors.primary100,
+  borderRadius: 8,
+  marginBottom: spacing.sm,
+})
+const $sectionHeaderContent = (): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  width: "100%",
+})
+const $sectionHeaderRight = (): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 8,
+})
+const $sectionHeaderTitle = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
+  color: colors.text,
+})
+const $collapsedSectionContainer = ({ spacing }: any): ViewStyle => ({
+  paddingHorizontal: spacing.md,
+  marginTop: spacing.sm,
+})
+const $collapsedSectionSummary = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.textDim,
+  fontStyle: "italic",
 })

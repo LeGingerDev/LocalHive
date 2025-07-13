@@ -1,18 +1,19 @@
-import { useCallback } from "react"
+import { useCallback, useState } from "react"
 import {
   View,
   ScrollView,
   ViewStyle,
   TextStyle,
-  Alert,
   TouchableOpacity,
   RefreshControl,
 } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 
+import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { InvitationCard } from "@/components/Groups/InvitationCard"
 import { Header } from "@/components/Header"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
+import { NotReadyYet } from "@/components/NotReadyYet"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
@@ -73,6 +74,13 @@ export const InvitationsScreen = () => {
     cancelInvitation,
   } = useInvitations()
 
+  // Alert state
+  const [alertVisible, setAlertVisible] = useState(false)
+  const [alertTitle, setAlertTitle] = useState("")
+  const [alertMessage, setAlertMessage] = useState("")
+  const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">("default")
+  const [alertOnConfirm, setAlertOnConfirm] = useState<(() => void) | null>(null)
+
   // Smart refresh when screen comes into focus
   useFocusEffect(
     useCallback(() => {
@@ -82,38 +90,50 @@ export const InvitationsScreen = () => {
     }, [user, loading, refreshInvitations]),
   )
 
+  const showAlert = (
+    title: string,
+    message: string,
+    confirmStyle: "default" | "destructive" | "success" = "default",
+    onConfirm?: () => void
+  ) => {
+    setAlertTitle(title)
+    setAlertMessage(message)
+    setAlertConfirmStyle(confirmStyle)
+    setAlertOnConfirm(onConfirm || (() => setAlertVisible(false)))
+    setAlertVisible(true)
+  }
+
   const handleInvitationResponse = async (
     invitationId: string,
     status: "accepted" | "declined",
   ): Promise<boolean> => {
     const success = await respondToInvitation(invitationId, status)
     if (success) {
-      Alert.alert(
+      showAlert(
         status === "accepted" ? "Invitation Accepted" : "Invitation Declined",
         status === "accepted" ? "You have joined the group!" : "The invitation has been declined.",
+        status === "accepted" ? "success" : "default"
       )
     } else {
-      Alert.alert("Error", "Failed to respond to invitation. Please try again.")
+      showAlert("Error", "Failed to respond to invitation. Please try again.", "destructive")
     }
     return success
   }
 
   const handleCancelInvitation = async (invitationId: string) => {
-    Alert.alert("Cancel Invitation", "Are you sure you want to cancel this invitation?", [
-      { text: "No", style: "cancel" },
-      {
-        text: "Yes",
-        style: "destructive",
-        onPress: async () => {
-          const success = await cancelInvitation(invitationId)
-          if (success) {
-            Alert.alert("Success", "Invitation has been cancelled.")
-          } else {
-            Alert.alert("Error", "Failed to cancel invitation. Please try again.")
-          }
-        },
-      },
-    ])
+    showAlert(
+      "Cancel Invitation",
+      "Are you sure you want to cancel this invitation?",
+      "destructive",
+      async () => {
+        const success = await cancelInvitation(invitationId)
+        if (success) {
+          showAlert("Success", "Invitation has been cancelled.", "success")
+        } else {
+          showAlert("Error", "Failed to cancel invitation. Please try again.", "destructive")
+        }
+      }
+    )
   }
 
   const handleRefresh = useCallback(async () => {
@@ -154,114 +174,23 @@ export const InvitationsScreen = () => {
 
   return (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
-      <Header
-        title="Invitations"
-        rightActions={
-          __DEV__
-            ? [
-                {
-                  text: "🔄 Debug",
-                  onPress: handleForceRefresh,
-                },
-              ]
-            : undefined
-        }
-      />
+      <Header title="Invitations" />
+      <NotReadyYet pageName="Invitations" />
 
-      {!user ? (
-        <View style={themed($content)}>
-          <AuthPrompt />
-        </View>
-      ) : loading ? (
-        <View style={themed($content)}>
-          <View style={themed($loadingContainer)}>
-            <LoadingSpinner text="Loading invitations..." />
-          </View>
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={themed($content)}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              tintColor={themed($refreshControlColor).color}
-            />
+      <CustomAlert
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        confirmText="OK"
+        confirmStyle={alertConfirmStyle}
+        onConfirm={() => {
+          if (alertOnConfirm) {
+            alertOnConfirm()
           }
-        >
-          {/* Pending Invitations Section */}
-          <View style={themed($section)}>
-            <Text
-              style={themed($sectionTitle)}
-              text={`Pending Invitations (${pendingInvitations.length})`}
-            />
-            {pendingInvitations.length === 0 ? (
-              <EmptyState
-                title="No Pending Invitations"
-                message="You don't have any pending group invitations at the moment."
-              />
-            ) : (
-              pendingInvitations.map((invitation: GroupInvitation) => (
-                <InvitationCard
-                  key={invitation.id}
-                  invite={invitation}
-                  onRespond={handleInvitationResponse}
-                />
-              ))
-            )}
-          </View>
-
-          {/* Sent Invitations Section */}
-          <View style={themed($section)}>
-            <Text
-              style={themed($sectionTitle)}
-              text={`Sent Invitations (${sentInvitations.length})`}
-            />
-            {sentInvitations.length === 0 ? (
-              <EmptyState
-                title="No Sent Invitations"
-                message="You haven't sent any group invitations yet."
-              />
-            ) : (
-              sentInvitations.map((invitation: GroupInvitation) => (
-                <View key={invitation.id} style={themed($sentInvitationCard)}>
-                  <View style={themed($sentInvitationInfo)}>
-                    <View style={themed($avatar)}>
-                      <Text
-                        style={themed($avatarInitial)}
-                        text={invitation.group?.name?.[0] || "G"}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={themed($sentInvitationTitle)}
-                        text={invitation.group?.name || "Unknown Group"}
-                      />
-                      <Text
-                        style={themed($sentInvitationMeta)}
-                        text={`Invited ${invitation.invitee?.full_name || invitation.invitee?.email || "Unknown User"}`}
-                      />
-                      <Text
-                        style={themed($sentInvitationStatus)}
-                        text={`Status: ${invitation.status}`}
-                      />
-                    </View>
-                  </View>
-                  {invitation.status === "pending" && (
-                    <TouchableOpacity
-                      style={themed($cancelButton)}
-                      onPress={() => handleCancelInvitation(invitation.id)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={themed($cancelButtonText)} text="Cancel" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ))
-            )}
-          </View>
-        </ScrollView>
-      )}
+          setAlertVisible(false)
+        }}
+        onCancel={() => setAlertVisible(false)}
+      />
     </Screen>
   )
 }

@@ -6,7 +6,7 @@ import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 
-interface HeaderProps {
+export interface HeaderProps {
   title: string
   showBackButton?: boolean
   onBackPress?: () => void
@@ -77,7 +77,6 @@ const $headerContainer = (theme: any): ViewStyle => ({
   width: "100%",
   paddingTop: 0,
   paddingBottom: 0,
-  marginBottom: spacing.md,
   // Add subtle shadow and border for visual polish
   borderBottomWidth: 1,
   borderBottomColor: theme.colors.border,

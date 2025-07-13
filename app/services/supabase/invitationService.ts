@@ -262,16 +262,15 @@ export class InvitationService {
         }
       }
 
-      // Update the invitation status
-      const { data: updatedInvitation, error: updateError } = await supabase
+      // Delete the invitation row (for both accepted and declined)
+      const { error: deleteError } = await supabase
         .from("group_invitations")
-        .update({ status })
+        .delete()
         .eq("id", invitationId)
-        .select("*")
-        .single()
+        .eq("invitee_id", user.id)
 
-      if (updateError || !updatedInvitation) {
-        return { data: null, error: updateError }
+      if (deleteError) {
+        return { data: null, error: deleteError }
       }
 
       // If accepted, add user to group
@@ -286,11 +285,17 @@ export class InvitationService {
           console.error("Error adding user to group after accepting invitation:", membershipError)
           // Don't fail the whole operation, just log the error
         }
+
+        // Enrich the invitation with related data for the response
+        const enrichedInvitation = await this._enrichSingleInvitation({
+          ...invitation,
+          status: "accepted" // Set the status for the response
+        })
+        return { data: enrichedInvitation, error: null }
       }
 
-      // Enrich the invitation with related data
-      const enrichedInvitation = await this._enrichSingleInvitation(updatedInvitation)
-      return { data: enrichedInvitation, error: null }
+      // For declined invitations, return null data since the invitation is deleted
+      return { data: null, error: null }
     } catch (error) {
       console.error("Error responding to invitation:", error)
       return {

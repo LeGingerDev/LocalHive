@@ -23,11 +23,21 @@ export class GroupService {
    * Get all groups for the current user
    */
   static async getUserGroups(): Promise<{ data: Group[] | null; error: PostgrestError | null }> {
+    console.log("🔍 [GroupService] getUserGroups called")
+    
     try {
+      console.log("🔍 [GroupService] Getting current user")
       const {
         data: { user },
       } = await supabase.auth.getUser()
+      
+      console.log("🔍 [GroupService] User auth result:", {
+        hasUser: !!user,
+        userId: user?.id,
+      })
+      
       if (!user) {
+        console.log("🔍 [GroupService] No user found, returning auth error")
         return {
           data: null,
           error: {
@@ -39,22 +49,34 @@ export class GroupService {
         }
       }
 
+      console.log("🔍 [GroupService] Getting user group memberships")
       // First get group IDs where user is a member (avoids recursion)
       const { data: membershipData, error: membershipError } = await supabase
         .from("group_members")
         .select("group_id")
         .eq("user_id", user.id)
 
+      console.log("🔍 [GroupService] Membership query result:", {
+        hasData: !!membershipData,
+        dataLength: membershipData?.length || 0,
+        hasError: !!membershipError,
+        error: membershipError,
+      })
+
       if (membershipError) {
+        console.log("🔍 [GroupService] Membership error, returning:", membershipError)
         return { data: null, error: membershipError }
       }
 
       if (!membershipData || membershipData.length === 0) {
+        console.log("🔍 [GroupService] No memberships found, returning empty array")
         return { data: [], error: null }
       }
 
       const groupIds = membershipData.map((m) => m.group_id)
+      console.log("🔍 [GroupService] Group IDs found:", groupIds)
 
+      console.log("🔍 [GroupService] Getting groups data")
       // Get the groups with member counts and item counts
       const { data: groupsData, error: groupsError } = await supabase
         .from("groups")
@@ -68,16 +90,30 @@ export class GroupService {
         .in("id", groupIds)
         .order("created_at", { ascending: false })
 
+      console.log("🔍 [GroupService] Groups query result:", {
+        hasData: !!groupsData,
+        dataLength: groupsData?.length || 0,
+        hasError: !!groupsError,
+        error: groupsError,
+      })
+
       if (groupsError || !groupsData) {
+        console.log("🔍 [GroupService] Groups error, returning:", groupsError)
         return { data: null, error: groupsError }
       }
 
+      console.log("🔍 [GroupService] Getting creator profiles")
       // Get creator profiles
       const creatorIds = [...new Set(groupsData.map((g) => g.creator_id))]
       const { data: creatorProfiles } = await supabase
         .from("profiles")
         .select("*")
         .in("id", creatorIds)
+
+      console.log("🔍 [GroupService] Creator profiles result:", {
+        hasData: !!creatorProfiles,
+        dataLength: creatorProfiles?.length || 0,
+      })
 
       // Combine data and ensure member_count and item_count are numbers
       const enrichedGroups = groupsData.map((group) => ({
@@ -87,9 +123,18 @@ export class GroupService {
         creator: creatorProfiles?.find((profile) => profile.id === group.creator_id) || null,
       }))
 
+      console.log("🔍 [GroupService] Returning enriched groups:", {
+        count: enrichedGroups.length,
+        groups: enrichedGroups.map(g => ({ id: g.id, name: g.name })),
+      })
+
       return { data: enrichedGroups as Group[], error: null }
     } catch (error) {
-      console.error("Error getting user groups:", error)
+      console.error("🔍 [GroupService] Exception getting user groups:", error)
+      console.error("🔍 [GroupService] Exception details:", {
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      })
       return {
         data: null,
         error: error as PostgrestError,
@@ -159,6 +204,7 @@ export class GroupService {
         ...groupData,
         creator,
         members: enrichedMembers,
+        member_count: enrichedMembers.length, // Calculate member count from actual members
         recent_posts: enrichedPosts,
         catalogs: [], // This would need to be implemented based on your catalog system
       }
@@ -656,30 +702,36 @@ export class GroupService {
         }
       }
 
-      if (status === "declined") {
-        // Delete the invitation row
-        const { error: deleteError } = await supabase
-          .from("group_invitations")
-          .delete()
-          .eq("id", invitationId)
-          .eq("invitee_id", user.id)
-        if (deleteError) {
-          return { data: null, error: deleteError }
-        }
-        return { data: null, error: null }
-      }
-
-      // Update the invitation status to accepted
-      const { data: invitation, error: updateError } = await supabase
+      // Get the invitation first to get the group_id
+      const { data: invitation, error: fetchError } = await supabase
         .from("group_invitations")
-        .update({ status })
+        .select("*")
         .eq("id", invitationId)
         .eq("invitee_id", user.id)
-        .select("*")
+        .eq("status", "pending")
         .single()
 
-      if (updateError || !invitation) {
-        return { data: null, error: updateError }
+      if (fetchError || !invitation) {
+        return {
+          data: null,
+          error: {
+            message: "Invitation not found or already responded to",
+            details: "",
+            hint: "",
+            code: "404",
+          } as PostgrestError,
+        }
+      }
+
+      // Delete the invitation row (for both accepted and declined)
+      const { error: deleteError } = await supabase
+        .from("group_invitations")
+        .delete()
+        .eq("id", invitationId)
+        .eq("invitee_id", user.id)
+
+      if (deleteError) {
+        return { data: null, error: deleteError }
       }
 
       // If accepted, add user to group
@@ -687,36 +739,43 @@ export class GroupService {
         await this.addMember(invitation.group_id, user.id, "member")
       }
 
-      // Get the group data
-      const { data: group } = await supabase
-        .from("groups")
-        .select("*")
-        .eq("id", invitation.group_id)
-        .single()
+      // For accepted invitations, we need to return the group data for the UI
+      if (status === "accepted") {
+        // Get the group data
+        const { data: group } = await supabase
+          .from("groups")
+          .select("*")
+          .eq("id", invitation.group_id)
+          .single()
 
-      // Get inviter profile
-      const { data: inviterProfile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", invitation.inviter_id)
-        .single()
+        // Get inviter profile
+        const { data: inviterProfile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", invitation.inviter_id)
+          .single()
 
-      // Get invitee profile
-      const { data: inviteeProfile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single()
+        // Get invitee profile
+        const { data: inviteeProfile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single()
 
-      // Combine the data
-      const enrichedInvitation = {
-        ...invitation,
-        group: group || null,
-        inviter: inviterProfile || null,
-        invitee: inviteeProfile || null,
+        // Create a minimal invitation object with the group data for the UI
+        const enrichedInvitation = {
+          ...invitation,
+          status: "accepted", // Set the status for the response
+          group: group || null,
+          inviter: inviterProfile || null,
+          invitee: inviteeProfile || null,
+        }
+
+        return { data: enrichedInvitation as GroupInvitation, error: null }
       }
 
-      return { data: enrichedInvitation as GroupInvitation, error: null }
+      // For declined invitations, return null data since the invitation is deleted
+      return { data: null, error: null }
     } catch (error) {
       console.error("Error responding to invitation:", error)
       return {

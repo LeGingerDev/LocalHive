@@ -22,7 +22,7 @@ export type BottomTabParamList = {
   Home: undefined
   Search: undefined
   Add: { groupId?: string } | undefined
-  Groups: undefined
+  Groups: { refresh?: boolean } | undefined
   Profile: undefined
 }
 

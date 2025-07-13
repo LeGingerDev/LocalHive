@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react"
-import { View, StyleSheet, Animated, Easing, Image, Dimensions, Alert } from "react-native"
+import { View, StyleSheet, Animated, Easing, Image, Dimensions } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
 
+import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { CustomGradient } from "@/components/CustomGradient"
 import { RoundedButton } from "@/components/RoundedButton"
 import { Screen } from "@/components/Screen"
@@ -36,6 +37,12 @@ export const LandingScreen = () => {
   const translateYAnim = useRef(new Animated.Value(50)).current
   const $containerInsets = useSafeAreaInsetsStyle(["top", "bottom"])
 
+  // Alert state
+  const [alertVisible, setAlertVisible] = useState(false)
+  const [alertTitle, setAlertTitle] = useState("")
+  const [alertMessage, setAlertMessage] = useState("")
+  const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">("default")
+
   useEffect(() => {
     hideNavigationBar()
     // Animate content in
@@ -54,6 +61,17 @@ export const LandingScreen = () => {
       }),
     ]).start()
   }, [fadeAnim, translateYAnim])
+
+  const showAlert = (
+    title: string,
+    message: string,
+    confirmStyle: "default" | "destructive" | "success" = "default"
+  ) => {
+    setAlertTitle(title)
+    setAlertMessage(message)
+    setAlertConfirmStyle(confirmStyle)
+    setAlertVisible(true)
+  }
 
   const handleGoogleSignIn = async () => {
     if (isGoogleSigningIn) return
@@ -74,24 +92,20 @@ export const LandingScreen = () => {
         if (result.error === "CANCELLED") {
           return
         } else if (result.error === "PLAY_SERVICES_NOT_AVAILABLE") {
-          Alert.alert(
+          showAlert(
             "Google Play Services Required",
-            "Please update Google Play Services to use Google Sign-In.",
-            [{ text: "OK" }],
+            "Please update Google Play Services to use Google Sign-In."
           )
         } else {
-          Alert.alert(
+          showAlert(
             "Sign-In Failed",
-            result.message || "An error occurred during sign-in. Please try again.",
-            [{ text: "OK" }],
+            result.message || "An error occurred during sign-in. Please try again."
           )
         }
       }
     } catch (error) {
       console.error("Google sign-in error:", error)
-      Alert.alert("Sign-In Error", "An unexpected error occurred. Please try again.", [
-        { text: "OK" },
-      ])
+      showAlert("Sign-In Error", "An unexpected error occurred. Please try again.")
     } finally {
       setIsGoogleSigningIn(false)
     }
@@ -190,6 +204,15 @@ export const LandingScreen = () => {
           </View>
         </Animated.View>
       </CustomGradient>
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        confirmText="OK"
+        confirmStyle={alertConfirmStyle}
+        onConfirm={() => setAlertVisible(false)}
+      />
     </Screen>
   )
 }

@@ -1,6 +1,8 @@
-import React, { FC, useState, useEffect, useCallback } from "react"
-import { ViewStyle, TextStyle, ActivityIndicator, View, ImageStyle, ScrollView } from "react-native"
+import React, { FC, useState, useEffect, useCallback, useRef } from "react"
+import { ViewStyle, TextStyle, ActivityIndicator, View, ImageStyle, ScrollView, Image, Dimensions } from "react-native"
+import { useFocusEffect } from "@react-navigation/native"
 
+import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { Button } from "@/components/Button"
 import { CustomDropdown } from "@/components/CustomDropdown"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
@@ -12,16 +14,23 @@ import { TextField } from "@/components/TextField"
 import { useAuth } from "@/context/AuthContext"
 import { useGroups } from "@/hooks/useGroups"
 import { useItemCategories } from "@/hooks/useItemCategories"
-import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
-import type { BottomTabParamList } from "@/navigators/BottomTabNavigator"
+import type { BottomTabScreenProps, BottomTabParamList } from "@/navigators/BottomTabNavigator"
 import { ItemService } from "@/services/supabase/itemService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
-// import { useNavigation } from "@react-navigation/native"
+import { useNavigation } from "@react-navigation/native"
+
+const windowHeight = Dimensions.get("window").height
+const estimatedContentHeight = 450 // Match GroupsScreen
+const verticalPadding = Math.max((windowHeight - estimatedContentHeight) / 2, 0)
 
 // #region Types & Interfaces
-interface AddScreenProps extends BottomTabScreenProps<"Add"> {}
+// Extend AddScreen route params to include optional 'refresh' flag
+interface AddScreenRouteParams {
+  groupId?: string
+  refresh?: boolean
+}
 
 interface AddData {
   // TODO: Define your data structure here
@@ -49,7 +58,7 @@ interface AddError {
  * Note: This screen should be wrapped in an error boundary at the app level
  * for comprehensive error handling.
  */
-export const AddScreen: FC<AddScreenProps> = ({ route }) => {
+export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }) => {
   // #region Private State Variables
   const groupIdFromParams = route.params?.groupId as string | undefined
   const [_isLoading, setIsLoading] = useState<boolean>(true)
@@ -57,7 +66,7 @@ export const AddScreen: FC<AddScreenProps> = ({ route }) => {
   const [_error, setError] = useState<AddError | null>(null)
   const [_isRefreshing, setIsRefreshing] = useState<boolean>(false)
   const { themed, theme } = useAppTheme()
-  const { groups, loading: groupsLoading, error: groupsError } = useGroups()
+  const { groups, loading: groupsLoading, error: groupsError, refresh } = useGroups()
   const { categories, loading: categoriesLoading, error: categoriesError } = useItemCategories()
   const { user } = useAuth()
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(groupIdFromParams ?? null)
@@ -66,7 +75,14 @@ export const AddScreen: FC<AddScreenProps> = ({ route }) => {
   const [location, setLocation] = useState<string>("")
   const [notes, setNotes] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
-  const [showSuccess, setShowSuccess] = useState<boolean>(false)
+
+  // CustomAlert state
+  const [alertVisible, setAlertVisible] = useState(false)
+  const [alertTitle, setAlertTitle] = useState("")
+  const [alertMessage, setAlertMessage] = useState("")
+  const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">(
+    "default",
+  )
 
   // Select group from params if provided, else first group by default when loaded
   useEffect(() => {
@@ -81,7 +97,7 @@ export const AddScreen: FC<AddScreenProps> = ({ route }) => {
   // #endregion
 
   // #region Hooks & Context
-  // const navigation = useNavigation<AppStackNavigationProp<"Add">>()
+  // Remove any duplicate navigation declarations throughout the file. Only use the navigation prop from the component signature.
   // #endregion
 
   // #region Data Fetching Functions
@@ -135,15 +151,24 @@ export const AddScreen: FC<AddScreenProps> = ({ route }) => {
       return
     }
 
+    // Show confirmation alert
+    setAlertTitle("Save Item")
+    setAlertMessage(`Are you sure you want to save "${title.trim()}" to your group?`)
+    setAlertConfirmStyle("default")
+    setAlertVisible(true)
+  }, [user?.id, selectedGroupId, title, selectedCategory, location, notes])
+
+  const _handleConfirmSave = useCallback(async (): Promise<void> => {
     try {
       setIsSubmitting(true)
       setError(null)
+      setAlertVisible(false)
 
       const { data, error: createError } = await ItemService.createItem({
-        group_id: selectedGroupId,
-        user_id: user.id,
+        group_id: selectedGroupId!,
+        user_id: user!.id,
         title: title.trim(),
-        category: selectedCategory,
+        category: selectedCategory!,
         location: location.trim() || undefined,
         notes: notes.trim() || undefined,
       })
@@ -154,17 +179,18 @@ export const AddScreen: FC<AddScreenProps> = ({ route }) => {
 
       if (data) {
         console.log("Item created successfully:", data)
-        setShowSuccess(true)
+        
         // Clear the form
         setTitle("")
         setLocation("")
         setNotes("")
         setSelectedCategory(null)
 
-        // Hide success message after 3 seconds
-        setTimeout(() => {
-          setShowSuccess(false)
-        }, 3000)
+        // Show success modal
+        setAlertTitle("Success!")
+        setAlertMessage(`"${title.trim()}" has been added to your group successfully!`)
+        setAlertConfirmStyle("success")
+        setAlertVisible(true)
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to save item"
@@ -174,6 +200,19 @@ export const AddScreen: FC<AddScreenProps> = ({ route }) => {
       setIsSubmitting(false)
     }
   }, [user?.id, selectedGroupId, title, selectedCategory, location, notes])
+
+  // Helper function to check if form is valid
+  const isFormValid = useCallback((): boolean => {
+    return !!(selectedGroupId && title.trim() && selectedCategory)
+  }, [selectedGroupId, title, selectedCategory])
+
+  // Dynamic gradient button style with opacity
+  const getGradientButtonStyle = useCallback((): ViewStyle => {
+    return {
+      ...themed($gradientButton),
+      opacity: isFormValid() ? 1 : 0.5,
+    }
+  }, [themed, isFormValid])
   // #endregion
 
   // #region Lifecycle Effects
@@ -193,6 +232,17 @@ export const AddScreen: FC<AddScreenProps> = ({ route }) => {
       isMounted = false
     }
   }, [_fetchData])
+
+  // Auto-refresh groups when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (user && !groupsLoading) {
+        refresh()
+      }
+    })
+
+    return unsubscribe
+  }, [navigation, user, groupsLoading, refresh])
   // #endregion
 
   // #region Render Helpers
@@ -218,120 +268,141 @@ export const AddScreen: FC<AddScreenProps> = ({ route }) => {
         contentContainerStyle={{
           ...themed($formContentWithTopMargin),
           paddingHorizontal: spacing.md,
+          paddingBottom: spacing.xl * 4,
         }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Add to group */}
-        <Text style={themed($label)} text="Add to group" />
-        {groupsLoading ? (
+        {/* Add to group - Only show header and dropdown when groups exist */}
+        {!groupsLoading && groups.length === 0 ? (
+          <View style={themed($emptyStateContainer)}>
+            <View style={themed($emptyState)}>
+              <Image
+                source={require("../../../assets/Visu/Visu_Shocked.png")}
+                style={{ width: 160, height: 160, resizeMode: "contain", marginBottom: spacing.lg }}
+                accessibilityLabel="No groups illustration"
+              />
+              <Text style={themed($emptyStateTitle)} text="No Groups Yet" />
+              <Text style={themed($emptyStateText)} text="Create or join a group first before adding an item" />
+              <CustomGradient preset="primary" style={{ borderRadius: 8, marginTop: spacing.md }}>
+                <Button
+                  text="Go to Groups"
+                  style={{ backgroundColor: "transparent", borderRadius: 8 }}
+                  textStyle={{ color: "#fff", fontFamily: theme.typography.primary.medium, fontSize: 16, textAlign: "center" }}
+                  onPress={() => navigation.navigate("Groups")}
+                  preset="reversed"
+                />
+              </CustomGradient>
+            </View>
+          </View>
+        ) : groupsLoading ? (
           <ActivityIndicator size="small" color={theme.colors.tint} style={{ marginBottom: 16 }} />
         ) : (
-          <CustomDropdown
-            options={groups.map((g) => ({ label: g.name, value: g.id }))}
-            value={selectedGroupId}
-            onChange={setSelectedGroupId}
-            placeholder={groups.length === 0 ? "No groups found" : "Select group..."}
-            style={themed($pickerContainer)}
-          />
-        )}
-        {/* Title */}
-        <Text style={themed($label)} text="Title *" />
-        <TextField
-          placeholder="e.g. Fresh German Bread, Paracetamol, Dr"
-          style={themed($input)}
-          containerStyle={themed($inputContainerFlat)}
-          value={title}
-          onChangeText={setTitle}
-        />
-        {/* Category */}
-        <Text style={themed($label)} text="Category *" />
-        {categoriesLoading ? (
-          <ActivityIndicator size="small" color={theme.colors.tint} style={{ marginBottom: 16 }} />
-        ) : (
-          <CustomDropdown
-            options={categories.map((cat) => ({ label: cat.label, value: cat.value }))}
-            value={selectedCategory}
-            onChange={setSelectedCategory}
-            placeholder="Select a category..."
-            style={themed($pickerContainer)}
-          />
-        )}
-        <Text
-          style={themed($categoryHint)}
-          text="AI will suggest the best category based on your title"
-        />
-        {/* Location */}
-        <Text style={themed($label)} text="Location" />
-        <TextField
-          placeholder="e.g. Kaufland Hauptstraße, ..."
-          style={themed($input)}
-          containerStyle={themed($inputContainerFlat)}
-          value={location}
-          onChangeText={setLocation}
-        />
-        <Text style={themed($locationLink)} text="Use current location" onPress={() => {}} />
-        {/* Photo Picker */}
-        <Text style={themed($label)} text="Photo" />
-        <View style={themed($photoBox)}>
-          <Icon icon="menu" size={32} style={themed($photoIcon)} />
-          <Text style={themed($photoText)} text="Add a photo to help others find this item" />
-          <View style={themed($photoButtonRow)}>
-            <Button text="Take Photo" style={themed($photoButton)} onPress={() => {}} />
-            <Button text="Gallery" style={themed($photoButton)} onPress={() => {}} />
-          </View>
-        </View>
-        {/* Notes */}
-        <Text style={themed($label)} text="Notes" />
-        <TextField
-          placeholder="Any helpful details... opening hours, specific location within store, tips, etc."
-          style={themed($input)}
-          containerStyle={themed($inputContainerFlat)}
-          multiline
-          value={notes}
-          onChangeText={setNotes}
-        />
-        <Text
-          style={themed($notesHint)}
-          text="The more details you add, the more helpful it is for your group"
-        />
-        {/* Quick Suggestions */}
-        <Text style={themed($quickSuggestionsLabel)} text="Quick suggestions" />
-        <View style={themed($quickSuggestionsRow)}>
-          <QuickSuggestion themed={themed} icon="menu" label="Add address" />
-          <QuickSuggestion themed={themed} icon="clock" label="Opening hours" />
-          <QuickSuggestion themed={themed} icon="check" label="Price range" />
-          <QuickSuggestion themed={themed} icon="phone" label="Phone number" />
-          <QuickSuggestion themed={themed} icon="view" label="Website" />
-        </View>
-        {/* Success Message */}
-        {showSuccess && (
-          <View style={themed($successMessage)}>
-            <Text style={themed($successText)} text="Item created successfully! 🎉" />
-          </View>
+          <>
+            <Text style={themed($label)} text="Add to group" />
+            <CustomDropdown
+              options={groups.map((g) => ({ label: g.name, value: g.id }))}
+              value={selectedGroupId}
+              onChange={setSelectedGroupId}
+              placeholder="Select group..."
+              style={themed($pickerContainer)}
+            />
+          </>
         )}
 
-        {/* Action Buttons */}
-        <View style={themed($buttonRow)}>
-          <CustomGradient preset="primary" style={themed($gradientButton)}>
-            <Button
-              text={isSubmitting ? "Saving..." : "Save"}
-              textStyle={themed($gradientButtonTextWhite)}
-              style={themed($gradientButtonInner)}
-              onPress={_handleSave}
-              preset="reversed"
-              disabled={isSubmitting || !selectedGroupId || !title.trim() || !selectedCategory}
+        {/* Only show the rest of the form if there are groups AND a group is selected */}
+        {!groupsLoading && groups.length > 0 && selectedGroupId && (
+          <>
+            {/* Title */}
+            <Text style={themed($label)} text="Title *" />
+            <TextField
+              placeholder="e.g. Fresh German Bread, Paracetamol, Dr"
+              style={themed($input)}
+              containerStyle={themed($inputContainerFlat)}
+              value={title}
+              onChangeText={setTitle}
             />
-          </CustomGradient>
-          <Button
-            text="Cancel"
-            style={themed($cancelButtonRed)}
-            textStyle={themed($cancelButtonTextRed)}
-            onPress={() => {}}
-            preset="default"
-          />
-        </View>
+            {/* Category */}
+            <Text style={themed($label)} text="Category *" />
+            {categoriesLoading ? (
+              <ActivityIndicator size="small" color={theme.colors.tint} style={{ marginBottom: 16 }} />
+            ) : (
+              <CustomDropdown
+                options={categories.map((cat) => ({ label: cat.label, value: cat.value }))}
+                value={selectedCategory}
+                onChange={setSelectedCategory}
+                placeholder="Select a category..."
+                style={themed($pickerContainer)}
+              />
+            )}
+            <Text
+              style={themed($categoryHint)}
+              text="AI will suggest the best category based on your title"
+            />
+            {/* Location */}
+            <Text style={themed($label)} text="Location" />
+            <TextField
+              placeholder="e.g. Kaufland Hauptstraße, ..."
+              style={themed($input)}
+              containerStyle={themed($inputContainerFlat)}
+              value={location}
+              onChangeText={setLocation}
+            />
+            <Text style={themed($locationLink)} text="Use current location" onPress={() => {}} />
+            {/* Photo Picker */}
+            <Text style={themed($label)} text="Photo" />
+            <View style={themed($photoBox)}>
+              <Icon icon="menu" size={32} style={themed($photoIcon)} />
+              <Text style={themed($photoText)} text="Add a photo to help others find this item" />
+              <View style={themed($photoButtonRow)}>
+                <Button text="Take Photo" style={themed($photoButton)} onPress={() => {}} />
+                <Button text="Gallery" style={themed($photoButton)} onPress={() => {}} />
+              </View>
+            </View>
+            {/* Notes */}
+            <Text style={themed($label)} text="Notes" />
+            <TextField
+              placeholder="Any helpful details... opening hours, specific location within store, tips, etc."
+              style={themed($input)}
+              containerStyle={themed($inputContainerFlat)}
+              multiline
+              value={notes}
+              onChangeText={setNotes}
+            />
+            <Text
+              style={themed($notesHint)}
+              text="The more details you add, the more helpful it is for your group"
+            />
+          </>
+        )}
+
+        {/* Action Buttons - Only show if there are groups AND a group is selected */}
+        {!groupsLoading && groups.length > 0 && selectedGroupId && (
+          <View style={themed($buttonRow)}>
+            <CustomGradient preset="primary" style={getGradientButtonStyle()}>
+              <Button
+                text={isSubmitting ? "Saving..." : "Save"}
+                textStyle={themed($gradientButtonTextWhite)}
+                style={themed($gradientButtonInner)}
+                onPress={_handleSave}
+                preset="reversed"
+                disabled={isSubmitting || !isFormValid()}
+              />
+            </CustomGradient>
+          </View>
+        )}
       </ScrollView>
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        confirmText={alertConfirmStyle === "success" ? "OK" : "Save"}
+        cancelText={alertConfirmStyle === "success" ? undefined : "Cancel"}
+        confirmStyle={alertConfirmStyle}
+        onConfirm={alertConfirmStyle === "success" ? () => setAlertVisible(false) : _handleConfirmSave}
+        onCancel={alertConfirmStyle === "success" ? undefined : () => setAlertVisible(false)}
+      />
     </Screen>
   )
   // #endregion
@@ -389,7 +460,10 @@ const $formContentWithTopMargin = ({ spacing }: any): ViewStyle => ({
   gap: 6,
   paddingBottom: spacing.xl * 2,
 })
-const $buttonRow = ({ spacing }: any): ViewStyle => ({ marginTop: spacing.lg })
+const $buttonRow = ({ spacing }: any): ViewStyle => ({ 
+  marginTop: spacing.lg,
+  marginBottom: spacing.xl,
+})
 const $gradientButton = (): ViewStyle => ({ borderRadius: 16, overflow: "hidden", marginBottom: 8 })
 const $gradientButtonInner = (): ViewStyle => ({
   backgroundColor: "transparent",
@@ -398,19 +472,9 @@ const $gradientButtonInner = (): ViewStyle => ({
 })
 const $gradientButtonTextWhite = ({ typography }: any): TextStyle => ({
   color: "#fff",
-  fontFamily: typography.primary.bold,
+  fontFamily: typography.primary.medium,
   fontSize: 16,
-})
-const $cancelButtonRed = ({ spacing, colors }: any): ViewStyle => ({
-  backgroundColor: colors.error || "#d32f2f",
-  borderRadius: 16,
-  minHeight: 48,
-  marginTop: spacing.xs,
-})
-const $cancelButtonTextRed = ({ typography, colors }: any): TextStyle => ({
-  color: "#fff",
-  fontFamily: typography.primary.bold,
-  fontSize: 16,
+  textAlign: "center",
 })
 // Keep or adapt the following for AddScreen-specific needs
 const $categoryHint: ThemedStyle<TextStyle> = ({ colors, spacing }) => ({
@@ -456,43 +520,7 @@ const $notesHint: ThemedStyle<TextStyle> = ({ colors, spacing }) => ({
   fontSize: 12,
   marginBottom: spacing.md,
 })
-const $quickSuggestionsLabel: ThemedStyle<TextStyle> = ({ typography, colors, spacing }) => ({
-  fontFamily: typography.primary.medium,
-  fontSize: 13,
-  color: colors.textDim,
-  marginBottom: spacing.xs,
-})
-const $quickSuggestionsRow: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  flexDirection: "row",
-  flexWrap: "wrap",
-  marginBottom: spacing.lg,
-})
-const $quickSuggestion: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  flexDirection: "row",
-  alignItems: "center",
-  backgroundColor: colors.cardColor,
-  borderRadius: 8,
-  paddingHorizontal: spacing.sm,
-  paddingVertical: spacing.xs,
-  marginRight: spacing.xs,
-  marginBottom: spacing.xs,
-})
-const $quickSuggestionIcon: ThemedStyle<ImageStyle> = ({ colors }) => ({
-  tintColor: colors.textDim,
-  marginRight: 4,
-})
-const $quickSuggestionText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.textDim,
-  fontSize: 13,
-})
 // #endregion
-
-const QuickSuggestion = ({ themed, icon, label }: { themed: any; icon: string; label: string }) => (
-  <View style={themed($quickSuggestion)}>
-    <Icon icon={icon as any} size={20} style={themed($quickSuggestionIcon)} />
-    <Text style={themed($quickSuggestionText)} text={label} />
-  </View>
-)
 
 // Add these styles at the bottom
 const $loadingContainer: ThemedStyle<ViewStyle> = () => ({
@@ -570,4 +598,47 @@ const $successText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.bold,
   fontSize: 16,
 })
+
+const $emptyStateContainer = (): ViewStyle => ({
+  flex: 1,
+  justifyContent: "flex-start",
+  alignItems: "center",
+  paddingTop: verticalPadding,
+  paddingBottom: verticalPadding,
+})
+
+const $emptyState = ({ spacing }: any): ViewStyle => ({
+  alignItems: "center",
+  justifyContent: "center",
+  paddingVertical: spacing.xl * 2,
+})
+
+const $emptyStateTitle = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 18,
+  color: colors.text,
+  marginBottom: spacing.md,
+})
+
+const $emptyStateText = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.textDim,
+  textAlign: "center",
+  marginBottom: spacing.md,
+})
 // #endregion
+
+const $createFirstGroupButton = ({ colors, typography }: any): ViewStyle => ({
+  backgroundColor: colors.primary100,
+  borderRadius: 8,
+  paddingVertical: spacing.sm,
+  paddingHorizontal: spacing.lg,
+  marginTop: spacing.md,
+})
+const $createFirstGroupButtonText = ({ colors, typography }: any): TextStyle => ({
+  color: colors.tint,
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
+  textAlign: "center",
+})

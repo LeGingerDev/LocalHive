@@ -16,6 +16,7 @@ export interface MembersSectionProps {
   onRemoveMember?: (member: GroupMember) => void
   canManageMembers?: boolean
   creatorId?: string
+  memberLimit?: number
   style?: ViewStyle
   testID?: string
 }
@@ -29,15 +30,20 @@ export const MembersSection = ({
   onRemoveMember,
   canManageMembers = false,
   creatorId,
+  memberLimit,
   style,
   testID = "membersSection",
 }: MembersSectionProps) => {
   const { themed } = useAppTheme()
 
+  // Create member count text
+  const memberCountText = memberLimit 
+    ? `Members (${members.length}/${memberLimit})`
+    : `Members (${members.length})`
+
   if (loading) {
     return (
       <View style={[themed($container), style]} testID={`${testID}_loading`}>
-        <Text style={themed($sectionTitle)} text="Members" />
         <MemberCard isLoading={true} />
       </View>
     )
@@ -46,7 +52,6 @@ export const MembersSection = ({
   if (error) {
     return (
       <View style={[themed($container), style]} testID={`${testID}_error`}>
-        <Text style={themed($sectionTitle)} text="Members" />
         <MemberCard error={error} onRetry={onRetry} />
       </View>
     )
@@ -54,7 +59,6 @@ export const MembersSection = ({
 
   return (
     <View style={[themed($container), style]} testID={testID}>
-      <Text style={themed($sectionTitle)} text="Members" />
       {members.length === 0 ? (
         <Text style={themed($emptyText)} text="No members yet" />
       ) : (

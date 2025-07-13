@@ -35,6 +35,11 @@ export const CreateGroupScreen = ({ navigation }: any) => {
     member_limit: "",
   })
 
+  // Helper function to check if form is valid
+  const isFormValid = (): boolean => {
+    return !!formData.name.trim()
+  }
+
   const handleCreateGroup = async () => {
     if (!formData.name.trim()) {
       return
@@ -50,7 +55,9 @@ export const CreateGroupScreen = ({ navigation }: any) => {
       }
       const result = await createGroup(groupData)
       if (result) {
-        navigation.goBack()
+        console.log("🔍 [CreateGroupScreen] Group created successfully, navigating back to Groups with refresh")
+        // Navigate back to main and then to groups tab
+        navigation.navigate("Main", { screen: "Groups", params: { refresh: true } })
       }
     } catch (e) {
       console.log("[CreateGroupScreen] Error in handleCreateGroup:", e)
@@ -59,32 +66,41 @@ export const CreateGroupScreen = ({ navigation }: any) => {
     }
   }
 
-  const groupCategories = [
-    "study",
-    "sports",
-    "hobby",
-    "social",
-    "family",
-    "food",
-    "places",
-    "shopping",
-    "transport",
-    "household",
-    "clothing",
-    "medical",
-    "local_customs",
-    "language",
-    "emergency",
-    "work",
-    "entertainment",
-    "services",
-    "restaurants",
-    "landmarks",
-    "cultural",
-    "daily_life",
-    "travel",
-    "friends",
-  ]
+  // Dynamic gradient button style with opacity
+  const getGradientButtonStyle = (): ViewStyle => {
+    return {
+      ...themed($gradientButton),
+      opacity: isFormValid() ? 1 : 0.5,
+    }
+  }
+
+  // TODO: When we need categories, re-enable this section
+  // const groupCategories = [
+  //   "study",
+  //   "sports",
+  //   "hobby",
+  //   "social",
+  //   "family",
+  //   "food",
+  //   "places",
+  //   "shopping",
+  //   "transport",
+  //   "household",
+  //   "clothing",
+  //   "medical",
+  //   "local_customs",
+  //   "language",
+  //   "emergency",
+  //   "work",
+  //   "entertainment",
+  //   "services",
+  //   "restaurants",
+  //   "landmarks",
+  //   "cultural",
+  //   "daily_life",
+  //   "travel",
+  //   "friends",
+  // ]
 
   if (loading) {
     return (
@@ -123,7 +139,8 @@ export const CreateGroupScreen = ({ navigation }: any) => {
             multiline
             numberOfLines={3}
           />
-          <Text style={themed($label)} text="Category" />
+          {/* TODO: When we need categories, re-enable this section */}
+          {/* <Text style={themed($label)} text="Category" />
           <CustomDropdown
             options={groupCategories.map((cat) => ({
               label: cat.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
@@ -136,7 +153,7 @@ export const CreateGroupScreen = ({ navigation }: any) => {
             placeholder="Select category..."
             style={themed($pickerContainer)}
             testID="categoryDropdown"
-          />
+          /> */}
           <Text style={themed($label)} text="Privacy" />
           <View style={themed($privacyRow)}>
             {[
@@ -175,21 +192,16 @@ export const CreateGroupScreen = ({ navigation }: any) => {
             containerStyle={themed($inputContainerFlat)}
           />
           <View style={themed($buttonRow)}>
-            <CustomGradient preset="primary" style={themed($gradientButton)}>
+            <CustomGradient preset="primary" style={getGradientButtonStyle()}>
               <Button
                 text="Create Group"
                 textStyle={themed($gradientButtonTextWhite)}
                 style={themed($gradientButtonInner)}
                 onPress={handleCreateGroup}
                 preset="reversed"
+                disabled={!isFormValid()}
               />
             </CustomGradient>
-            <Button
-              text="Cancel"
-              style={themed($cancelButtonRed)}
-              textStyle={themed($cancelButtonTextRed)}
-              onPress={() => navigation.goBack()}
-            />
           </View>
         </ScrollView>
       </View>

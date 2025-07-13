@@ -20,9 +20,10 @@ interface GroupCardProps {
   group: Group
   navigation: any
   index?: number // For staggered animations
+  onNavigateToDetail?: (groupId: string) => void // Optional custom navigation function
 }
 
-export const GroupCard = ({ group, navigation, index = 0 }: GroupCardProps) => {
+export const GroupCard = ({ group, navigation, index = 0, onNavigateToDetail }: GroupCardProps) => {
   const { themed, theme } = useAppTheme()
 
   // Animation values
@@ -50,7 +51,11 @@ export const GroupCard = ({ group, navigation, index = 0 }: GroupCardProps) => {
   }, [])
 
   const handleViewGroup = () => {
-    navigation.navigate("GroupDetail", { groupId: group.id })
+    if (onNavigateToDetail) {
+      onNavigateToDetail(group.id)
+    } else {
+      navigation.navigate("GroupDetail", { groupId: group.id })
+    }
   }
 
   const handlePressIn = () => {

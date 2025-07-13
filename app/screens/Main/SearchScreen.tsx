@@ -1,13 +1,16 @@
 import React, { FC, useState, useEffect, useCallback } from "react"
-import { ViewStyle, TextStyle, ActivityIndicator, ScrollView } from "react-native"
+import { ViewStyle, TextStyle, ActivityIndicator, ScrollView, View, Text, Image, Dimensions } from "react-native"
 
 import { Header } from "@/components/Header"
 import { Screen } from "@/components/Screen"
-import { Text } from "@/components/Text"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
+
+const windowHeight = Dimensions.get("window").height;
+const estimatedContentHeight = 250;
+const verticalPadding = Math.max((windowHeight - estimatedContentHeight) / 2, 0);
 
 // #region Types & Interfaces
 interface SearchScreenProps extends BottomTabScreenProps<"Search"> {}
@@ -24,19 +27,6 @@ interface SearchError {
 // #endregion
 
 // #region Screen Component
-/**
- * SearchScreen - A defensive screen with proper error handling and loading states
- *
- * Features:
- * - Loading state support
- * - Error state handling
- * - Pull-to-refresh functionality
- * - Null safety checks
- * - Follows SOLID principles
- *
- * Note: This screen should be wrapped in an error boundary at the app level
- * for comprehensive error handling.
- */
 export const SearchScreen: FC<SearchScreenProps> = () => {
   // #region Private State Variables
   const [isLoading, setIsLoading] = useState<boolean>(true)
@@ -52,20 +42,8 @@ export const SearchScreen: FC<SearchScreenProps> = () => {
   const fetchData = useCallback(async (): Promise<void> => {
     try {
       setError(null)
-      // TODO: Replace with your actual API call
-      // const response = await YourApiService.getData()
-
-      // TEMPORARY: Simulate API call for development/testing
-      // REMOVE THIS SECTION when implementing real API calls
       await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // TEMPORARY: Mock data for development/testing
-      // REMOVE THIS SECTION when implementing real API calls
-      const mockData: SearchData = {
-        id: "1",
-        name: "search data",
-      }
-
+      const mockData: SearchData = { id: "1", name: "search data" }
       setData(mockData)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
@@ -86,19 +64,9 @@ export const SearchScreen: FC<SearchScreenProps> = () => {
   // #region Lifecycle Effects
   useEffect(() => {
     let isMounted = true
-
-    const loadData = async () => {
-      if (isMounted) {
-        await fetchData()
-      }
-    }
-
+    const loadData = async () => { if (isMounted) { await fetchData() } }
     loadData()
-
-    // Cleanup function to prevent state updates on unmounted component
-    return () => {
-      isMounted = false
-    }
+    return () => { isMounted = false }
   }, [fetchData])
   // #endregion
 
@@ -106,32 +74,32 @@ export const SearchScreen: FC<SearchScreenProps> = () => {
   const renderLoadingState = (): React.JSX.Element => (
     <Screen style={themed($loadingContainer)} preset="fixed">
       <ActivityIndicator size="large" color={themed($activityIndicator).color} />
-      <Text style={themed($loadingText)} text="Loading..." />
+      <Text style={themed($loadingText)}>{"Loading..."}</Text>
     </Screen>
   )
 
   const renderErrorState = (): React.JSX.Element => (
     <Screen style={themed($errorContainer)} preset="fixed">
-      <Text style={themed($errorTitle)} text="Oops! Something went wrong" />
-      <Text style={themed($errorMessage)} text={error?.message ?? "Unknown error"} />
-      <Text style={themed($retryButton)} text="Tap to retry" onPress={handleRetry} />
+      <Text style={themed($errorTitle)}>{"Oops! Something went wrong"}</Text>
+      <Text style={themed($errorMessage)}>{error?.message ?? "Unknown error"}</Text>
+      <Text style={themed($retryButton)} onPress={handleRetry}>{"Tap to retry"}</Text>
     </Screen>
   )
 
   const renderContent = (): React.JSX.Element => (
-    <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
+    <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top"]}>
       <Header title="Search" />
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.lg }}
-      >
-        {data && (
-          <>
-            <Text style={themed($dataText)} text={`ID: ${data.id ?? "N/A"}`} />
-            <Text style={themed($dataText)} text={`Name: ${data.name ?? "N/A"}`} />
-          </>
-        )}
-        {/* TODO: Add your actual content here */}
-      </ScrollView>
+      <View style={themed($emptyStateContainer)}>
+        <View style={themed($emptyState)}>
+          <Image
+            source={require("../../../assets/Visu/Visu_Searching.png")}
+            style={{ width: 160, height: 160, resizeMode: "contain", marginBottom: spacing.lg }}
+            accessibilityLabel="Search not ready illustration"
+          />
+          <Text style={themed($emptyStateTitle)}>Search isn't ready yet</Text>
+          <Text style={themed($emptyStateText)}>This feature is coming soon!</Text>
+        </View>
+      </View>
     </Screen>
   )
   // #endregion
@@ -140,11 +108,9 @@ export const SearchScreen: FC<SearchScreenProps> = () => {
   if (isLoading && !data) {
     return renderLoadingState()
   }
-
   if (error && !data) {
     return renderErrorState()
   }
-
   return renderContent()
   // #endregion
 }
@@ -155,20 +121,17 @@ const $root: ThemedStyle<ViewStyle> = ({ colors }) => ({
   flex: 1,
   backgroundColor: colors.background,
 })
-
 const $loadingContainer: ThemedStyle<ViewStyle> = () => ({
   flex: 1,
   justifyContent: "center",
   alignItems: "center",
 })
-
 const $errorContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flex: 1,
   justifyContent: "center",
   alignItems: "center",
   padding: spacing.lg,
 })
-
 const $title: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   fontFamily: typography.primary.bold,
   fontSize: 24,
@@ -176,21 +139,18 @@ const $title: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   marginBottom: spacing.md,
   textAlign: "center",
 })
-
 const $dataText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   fontFamily: typography.primary.normal,
   fontSize: 16,
   color: colors.textDim,
   marginBottom: spacing.sm,
 })
-
 const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   fontFamily: typography.primary.normal,
   fontSize: 16,
   color: colors.textDim,
   marginTop: spacing.md,
 })
-
 const $errorTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   fontFamily: typography.primary.bold,
   fontSize: 18,
@@ -198,7 +158,6 @@ const $errorTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) =>
   marginBottom: spacing.sm,
   textAlign: "center",
 })
-
 const $errorMessage: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   fontFamily: typography.primary.normal,
   fontSize: 14,
@@ -206,15 +165,53 @@ const $errorMessage: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) 
   marginBottom: spacing.lg,
   textAlign: "center",
 })
-
 const $retryButton: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.medium,
   fontSize: 16,
   color: colors.tint,
   textDecorationLine: "underline",
 })
-
 const $activityIndicator: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.tint,
+})
+const $contentContainer: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  flex: 1,
+  justifyContent: "flex-start",
+  alignItems: "center",
+  backgroundColor: colors.background,
+  paddingTop: verticalPadding,
+  paddingBottom: verticalPadding,
+})
+const $placeholderText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: "white",
+  fontSize: 22,
+  fontWeight: "bold",
+  textAlign: "center",
+  marginTop: 8,
+})
+const $emptyStateContainer = (): ViewStyle => ({
+  flex: 1,
+  justifyContent: "flex-start",
+  alignItems: "center",
+  paddingTop: verticalPadding,
+  paddingBottom: verticalPadding,
+})
+const $emptyState = ({ spacing }: any): ViewStyle => ({
+  alignItems: "center",
+  justifyContent: "center",
+  paddingVertical: spacing.xl * 2,
+})
+const $emptyStateTitle = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 18,
+  color: colors.text,
+  marginBottom: spacing.md,
+})
+const $emptyStateText = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.textDim,
+  textAlign: "center",
+  marginBottom: spacing.md,
 })
 // #endregion

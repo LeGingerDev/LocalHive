@@ -36,18 +36,9 @@ const ProfileScreen = () => {
     }
   }
 
-  // Refresh user data when the screen loads
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        await refreshUser()
-      } catch (error) {
-        console.error("Error refreshing user data:", error)
-      }
-    }
-
-    loadUserData()
-  }, [refreshUser])
+  // Remove the unnecessary refreshUser call that was causing loading state interference
+  // The user data is already loaded by the AuthContext and doesn't need to be refreshed
+  // every time the ProfileScreen mounts
 
   const handleSignOut = async () => {
     try {

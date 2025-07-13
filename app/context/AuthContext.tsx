@@ -221,6 +221,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setGoogleUser(null)
           setUserProfile(null)
         }
+        
+        // Set loading to false for all auth state changes
+        // The initial session will be handled by the refreshUser function
         setIsLoading(false)
       }
     })

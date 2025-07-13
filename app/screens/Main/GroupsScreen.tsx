@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Dimensions,
+  Image,
 } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 
@@ -21,12 +22,13 @@ import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
 import { useGroups } from "@/hooks/useGroups"
 import { Group, GroupInvitation } from "@/services/api/types"
-import { CacheDebugger, CacheService } from "@/services/cache"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
+import { CustomGradient } from "@/components/Gradient/CustomGradient"
+import { Button } from "@/components/Button"
 
 const windowHeight = Dimensions.get("window").height
-const estimatedContentHeight = 300 // Adjust this estimate as needed
+const estimatedContentHeight = 450
 const verticalPadding = Math.max((windowHeight - estimatedContentHeight) / 2, 0)
 
 const ErrorView = ({ error, onRetry }: { error: string; onRetry: () => void }) => {
@@ -55,22 +57,19 @@ const AuthPrompt = () => {
 }
 
 export const GroupsScreen = ({ navigation, route }: any) => {
-  const { themed } = useAppTheme()
+  const { themed, theme } = useAppTheme()
   const { user, isLoading: authLoading } = useAuth()
+  
   const {
     groups,
     invitations,
     loading,
     error,
-    isRefreshing,
-    loadGroups,
-    refreshGroups,
-    forceRefreshGroups,
+    refresh,
     respondToInvitation,
-    createGroup,
   } = useGroups()
 
-  // CustomAlert state
+  // Alert state
   const [alertVisible, setAlertVisible] = useState(false)
   const [alertTitle, setAlertTitle] = useState("")
   const [alertMessage, setAlertMessage] = useState("")
@@ -78,41 +77,16 @@ export const GroupsScreen = ({ navigation, route }: any) => {
     "default",
   )
 
-  // Track if we should force refresh when coming back from CreateGroup
-  const [shouldForceRefresh, setShouldForceRefresh] = useState(false)
-
   // Collapsible groups state
   const [groupsCollapsed, setGroupsCollapsed] = useState(false)
 
-  // Removed debug logging to improve performance
-
-  // Smart refresh when screen comes into focus
+  // Refresh on focus
   useFocusEffect(
     useCallback(() => {
-      if (user && !loading) {
-        // Check if we need to force refresh (e.g., after creating a group)
-        if (route.params?.refresh) {
-          forceRefreshGroups()
-          // Clear the refresh flag
-          navigation.setParams({ refresh: undefined })
-          return
-        }
-
-        // Force refresh when coming back from CreateGroup
-        if (shouldForceRefresh) {
-          forceRefreshGroups()
-          setShouldForceRefresh(false)
-          return
-        }
-
-        // Only refresh if cache is significantly stale (more than 10 minutes)
-        const cacheStats = CacheService.getCacheStats(user?.id)
-        if (cacheStats.age && cacheStats.age > 10 * 60 * 1000) {
-          // 10 minutes - only refresh if cache is quite old
-          refreshGroups()
-        }
+      if (user) {
+        refresh()
       }
-    }, [user, loading, refreshGroups, route.params?.refresh]),
+    }, [user, refresh])
   )
 
   const handleInvitationResponse = async (
@@ -121,6 +95,9 @@ export const GroupsScreen = ({ navigation, route }: any) => {
   ): Promise<boolean> => {
     const success = await respondToInvitation(invitationId, status)
     if (success) {
+      // Refresh the data to ensure UI is updated
+      await refresh()
+      
       setAlertTitle(status === "accepted" ? "Invitation Accepted" : "Invitation Declined")
       setAlertMessage(
         status === "accepted" ? "You have joined the group!" : "The invitation has been declined.",
@@ -144,20 +121,11 @@ export const GroupsScreen = ({ navigation, route }: any) => {
       setAlertVisible(true)
       return
     }
-    setShouldForceRefresh(true)
     navigation.navigate("CreateGroup")
   }
 
-  const handleNewGroup = () => {
-    if (!user) {
-      setAlertTitle("Authentication Required")
-      setAlertMessage("Please sign in to create a group.")
-      setAlertConfirmStyle("default")
-      setAlertVisible(true)
-      return
-    }
-    setShouldForceRefresh(true)
-    navigation.navigate("CreateGroup")
+  const handleNavigateToGroupDetail = (groupId: string) => {
+    navigation.navigate("GroupDetail", { groupId })
   }
 
   const handleGroupsToggle = useCallback(() => {
@@ -166,22 +134,9 @@ export const GroupsScreen = ({ navigation, route }: any) => {
 
   const handleRefresh = useCallback(async () => {
     if (user) {
-      await refreshGroups()
+      await refresh()
     }
-  }, [refreshGroups, user])
-
-  const handleForceRefresh = useCallback(async () => {
-    if (user) {
-      await forceRefreshGroups()
-    }
-  }, [forceRefreshGroups, user])
-
-  const handleInvitationRefresh = useCallback(async () => {
-    if (user) {
-      // Force refresh invitations specifically
-      await forceRefreshGroups()
-    }
-  }, [forceRefreshGroups, user])
+  }, [refresh, user])
 
   // Show auth loading
   if (authLoading) {
@@ -196,11 +151,11 @@ export const GroupsScreen = ({ navigation, route }: any) => {
   if (error) {
     return (
       <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
-        <ErrorView error={error} onRetry={loadGroups} />
+        <ErrorView error={error} onRetry={() => refresh()} />
       </Screen>
     )
   }
-
+  
   return (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
       <Header
@@ -208,11 +163,11 @@ export const GroupsScreen = ({ navigation, route }: any) => {
         rightActions={[
           {
             text: "Refresh",
-            onPress: handleForceRefresh,
+            onPress: handleRefresh,
           },
           {
             text: "+ New",
-            onPress: handleNewGroup,
+            onPress: handleCreateGroup,
           },
         ]}
       />
@@ -221,8 +176,8 @@ export const GroupsScreen = ({ navigation, route }: any) => {
         contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.xl * 2 }}
         refreshControl={
           <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleForceRefresh}
+            refreshing={loading}
+            onRefresh={handleRefresh}
             tintColor={themed($refreshControlColor)}
           />
         }
@@ -235,19 +190,25 @@ export const GroupsScreen = ({ navigation, route }: any) => {
           </View>
         )}
 
-        {/* Main content area below header */}
         {!loading && user && groups.length === 0 && invitations.length === 0 ? (
           <View style={themed($emptyStateContainer)}>
             <View style={themed($emptyState)}>
+              <Image
+                source={require("../../../assets/Visu/Visu_Reading.png")}
+                style={{ width: 160, height: 160, resizeMode: "contain", marginBottom: spacing.lg }}
+                accessibilityLabel="No groups illustration"
+              />
               <Text style={themed($emptyStateTitle)} text="No Groups Yet" />
               <Text style={themed($emptyStateText)} text="Create your first group to get started" />
-              <TouchableOpacity
-                style={themed($createFirstGroupButton)}
-                onPress={handleCreateGroup}
-                activeOpacity={0.8}
-              >
-                <Text style={themed($createFirstGroupButtonText)} text="Create Your First Group" />
-              </TouchableOpacity>
+              <CustomGradient preset="primary" style={{ borderRadius: 8, marginTop: spacing.md }}>
+                <Button
+                  text="Create Your First Group"
+                  style={{ backgroundColor: "transparent", borderRadius: 8 }}
+                  textStyle={{ color: "#fff", fontFamily: theme.typography.primary.medium, fontSize: 16, textAlign: "center" }}
+                  onPress={handleCreateGroup}
+                  preset="reversed"
+                />
+              </CustomGradient>
             </View>
           </View>
         ) : (
@@ -262,28 +223,30 @@ export const GroupsScreen = ({ navigation, route }: any) => {
               >
                 <View style={themed($sectionHeaderContent)}>
                   <Text style={themed($sectionHeaderTitle)} text={`Groups (${groups.length})`} />
-                  <Icon
-                    icon={groupsCollapsed ? "caretRight" : "caretLeft"}
-                    size={20}
-                    color={themed($sectionHeaderIconColor)}
-                  />
+                  <View style={themed($sectionHeaderRight)}>
+                    {groupsCollapsed && (
+                      <Text style={themed($collapsedGroupsSummary)} text={`${groups.length} group${groups.length !== 1 ? "s" : ""} hidden`} />
+                    )}
+                    <Icon
+                      icon={groupsCollapsed ? "caretRight" : "caretLeft"}
+                      size={20}
+                      color={theme.colors.text}
+                    />
+                  </View>
                 </View>
               </TouchableOpacity>
 
               {/* Groups Content */}
-              {!groupsCollapsed ? (
-                // Show full GroupCards when expanded
+              {!groupsCollapsed && (
                 groups.map((group: Group, index: number) => (
-                  <GroupCard key={group.id} group={group} navigation={navigation} index={index} />
-                ))
-              ) : (
-                // Show compact summary when collapsed
-                <View style={themed($collapsedGroupsContainer)}>
-                  <Text
-                    style={themed($collapsedGroupsSummary)}
-                    text={`${groups.length} group${groups.length !== 1 ? "s" : ""} hidden`}
+                  <GroupCard 
+                    key={group.id} 
+                    group={group} 
+                    navigation={navigation} 
+                    index={index} 
+                    onNavigateToDetail={handleNavigateToGroupDetail}
                   />
-                </View>
+                ))
               )}
             </>
           )
@@ -308,7 +271,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
             <Text style={themed($noInvitationsText)} text="No pending invitations" />
             <Text
               style={themed($noInvitationsSubtext)}
-              text="Pull down to refresh or tap the mail icon above"
+              text="Pull down to refresh or tap the refresh button above"
             />
           </View>
         )}
@@ -328,45 +291,6 @@ export const GroupsScreen = ({ navigation, route }: any) => {
 
 // Styles
 const $root = ({ colors }: any): ViewStyle => ({ flex: 1, backgroundColor: colors.background })
-const $headerRow = (): ViewStyle => ({
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  marginBottom: spacing.md,
-})
-const $headerTitle = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.bold,
-  fontSize: 22,
-  color: colors.text,
-})
-const $headerActions = (): ViewStyle => ({
-  flexDirection: "row",
-  alignItems: "center",
-  gap: spacing.sm,
-})
-const $headerActionButton = ({ colors }: any): ViewStyle => ({
-  backgroundColor: colors.primary100,
-  borderRadius: 8,
-  paddingVertical: spacing.xs,
-  paddingHorizontal: spacing.md,
-})
-const $headerActionText = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.medium,
-  fontSize: 16,
-  color: colors.tint,
-})
-const $refreshHeaderButton = ({ colors }: any): ViewStyle => ({
-  backgroundColor: colors.primary100,
-  borderRadius: 8,
-  paddingVertical: spacing.xs,
-  paddingHorizontal: spacing.md,
-})
-const $refreshHeaderButtonText = ({ typography, colors }: any): TextStyle => ({
-  color: colors.tint,
-  fontFamily: typography.primary.medium,
-  fontSize: 14,
-  textAlign: "center",
-})
 const $loadingContainer = ({ spacing }: any): ViewStyle => ({
   paddingVertical: spacing.lg,
   alignItems: "center",
@@ -402,7 +326,6 @@ const $emptyStateContainer = (): ViewStyle => ({
   paddingTop: verticalPadding,
   paddingBottom: verticalPadding,
 })
-
 const $emptyState = ({ spacing }: any): ViewStyle => ({
   alignItems: "center",
   justifyContent: "center",
@@ -420,18 +343,6 @@ const $emptyStateText = ({ typography, colors }: any): TextStyle => ({
   color: colors.textDim,
   textAlign: "center",
   marginBottom: spacing.md,
-})
-const $createFirstGroupButton = ({ colors, typography }: any): ViewStyle => ({
-  backgroundColor: colors.primary100,
-  borderRadius: 8,
-  paddingVertical: spacing.sm,
-  paddingHorizontal: spacing.lg,
-})
-const $createFirstGroupButtonText = ({ colors, typography }: any): TextStyle => ({
-  color: colors.tint,
-  fontFamily: typography.primary.medium,
-  fontSize: 16,
-  textAlign: "center",
 })
 const $errorContainer = ({ spacing }: any): ViewStyle => ({
   flex: 1,
@@ -460,37 +371,6 @@ const $retryButtonText = ({ colors, typography }: any): TextStyle => ({
   textAlign: "center",
 })
 const $refreshControlColor = ({ colors }: any): string => colors.tint
-const $invitationIndicatorContainer = (): ViewStyle => ({ position: "relative" })
-const $invitationIndicatorButton = ({ colors }: any): ViewStyle => ({
-  backgroundColor: colors.primary100,
-  borderRadius: 8,
-  paddingVertical: spacing.xs,
-  paddingHorizontal: spacing.md,
-})
-const $invitationIndicatorText = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.medium,
-  fontSize: 16,
-  color: colors.tint,
-})
-const $notificationBadge = ({ colors }: any): ViewStyle => ({
-  position: "absolute",
-  top: -4,
-  right: -4,
-  backgroundColor: colors.error,
-  borderRadius: 10,
-  minWidth: 20,
-  height: 20,
-  alignItems: "center",
-  justifyContent: "center",
-  borderWidth: 2,
-  borderColor: colors.background,
-})
-const $notificationBadgeText = ({ typography, colors }: any): TextStyle => ({
-  color: colors.background,
-  fontFamily: typography.primary.bold,
-  fontSize: 12,
-  textAlign: "center",
-})
 const $noInvitationsContainer = ({ spacing }: any): ViewStyle => ({
   alignItems: "center",
   justifyContent: "center",
@@ -509,7 +389,6 @@ const $noInvitationsSubtext = ({ typography, colors }: any): TextStyle => ({
   color: colors.textDim,
   textAlign: "center",
 })
-
 const $sectionHeader = ({ colors, spacing }: any): ViewStyle => ({
   flexDirection: "row",
   alignItems: "center",
@@ -524,13 +403,18 @@ const $sectionHeaderContent = (): ViewStyle => ({
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "space-between",
+  width: "100%",
+})
+const $sectionHeaderRight = (): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 8,
 })
 const $sectionHeaderTitle = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.medium,
   fontSize: 16,
   color: colors.text,
 })
-const $sectionHeaderIconColor = ({ colors }: any): string => colors.text
 const $collapsedGroupsContainer = ({ spacing }: any): ViewStyle => ({
   paddingHorizontal: spacing.md,
   marginTop: spacing.sm,
@@ -539,6 +423,5 @@ const $collapsedGroupsSummary = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.normal,
   fontSize: 14,
   color: colors.textDim,
-  textAlign: "center",
   fontStyle: "italic",
 })
