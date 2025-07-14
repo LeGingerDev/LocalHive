@@ -69,7 +69,9 @@ export const setupAppStateListener = () => {
 
 export const cleanupAppStateListener = () => {
   if (appStateListener) {
-    appStateListener()
+    if (typeof appStateListener.remove === "function") {
+      appStateListener.remove()
+    }
     appStateListener = null
   }
 }

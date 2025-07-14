@@ -20,6 +20,7 @@ import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
 import { useNavigation } from "@react-navigation/native"
+import { cameraService } from "@/services/cameraService"
 
 const windowHeight = Dimensions.get("window").height
 const estimatedContentHeight = 450 // Match GroupsScreen
@@ -75,6 +76,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
   const [location, setLocation] = useState<string>("")
   const [notes, setNotes] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const [photoUri, setPhotoUri] = useState<string | null>(null)
 
   // CustomAlert state
   const [alertVisible, setAlertVisible] = useState(false)
@@ -261,6 +263,40 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
     </Screen>
   )
 
+  // Handler for taking a photo
+  const handleTakePhoto = async () => {
+    try {
+      const result = await cameraService.takePhoto({ allowsEditing: true, aspect: [4, 3], quality: 0.8 })
+      if (result && result.uri) {
+        // Compress the image to quality 0.6
+        const compressed = await cameraService.compressImage(result.uri, 0.6, 1024, 1024)
+        setPhotoUri(compressed.compressedUri)
+      }
+    } catch (error) {
+      setAlertTitle("Camera Error")
+      setAlertMessage(error instanceof Error ? error.message : "Could not open camera.")
+      setAlertConfirmStyle("destructive")
+      setAlertVisible(true)
+    }
+  }
+
+  // Handler for picking from gallery
+  const handlePickFromGallery = async () => {
+    try {
+      const result = await cameraService.pickFromGallery({ allowsEditing: true, aspect: [4, 3], quality: 0.8 })
+      if (result && result.uri) {
+        // Compress the image to quality 0.6
+        const compressed = await cameraService.compressImage(result.uri, 0.6, 1024, 1024)
+        setPhotoUri(compressed.compressedUri)
+      }
+    } catch (error) {
+      setAlertTitle("Gallery Error")
+      setAlertMessage(error instanceof Error ? error.message : "Could not open gallery.")
+      setAlertConfirmStyle("destructive")
+      setAlertVisible(true)
+    }
+  }
+
   const _renderContent = (): React.JSX.Element => (
     <Screen preset="fixed" safeAreaEdges={["top", "bottom"]} style={themed($root)}>
       <Header title="Add Item" />
@@ -351,12 +387,30 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
             <Text style={themed($locationLink)} text="Use current location" onPress={() => {}} />
             {/* Photo Picker */}
             <Text style={themed($label)} text="Photo" />
-            <View style={themed($photoBox)}>
-              <Icon icon="menu" size={32} style={themed($photoIcon)} />
-              <Text style={themed($photoText)} text="Add a photo to help others find this item" />
-              <View style={themed($photoButtonRow)}>
-                <Button text="Take Photo" style={themed($photoButton)} onPress={() => {}} />
-                <Button text="Gallery" style={themed($photoButton)} onPress={() => {}} />
+            <View style={[themed($photoBox), { width: "100%", alignSelf: "stretch" }]}>
+              {photoUri ? (
+                <Image
+                  source={{ uri: photoUri }}
+                  style={{
+                    width: "100%",
+                    aspectRatio: 4/3,
+                    borderRadius: 8,
+                    resizeMode: "cover",
+                    alignSelf: "center",
+                    borderWidth: 3,
+                    borderColor: "#fff",
+                    marginBottom: 12,
+                  }}
+                />
+              ) : (
+                <>
+                  <Icon icon="menu" size={32} style={themed($photoIcon)} />
+                  <Text style={themed($photoText)} text="Add a photo to help others find this item" />
+                </>
+              )}
+              <View style={[themed($photoButtonRow), { width: "100%", alignSelf: "stretch", flexDirection: "row" }]}>
+                <Button text="Take Photo" style={[themed($photoButton), { flex: 1, marginRight: 6 }]} onPress={handleTakePhoto} />
+                <Button text="Gallery" style={[themed($photoButton), { flex: 1, marginLeft: 6 }]} onPress={handlePickFromGallery} />
               </View>
             </View>
             {/* Notes */}
