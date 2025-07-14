@@ -436,7 +436,7 @@ const $input = ({ typography, colors }: any): TextStyle => ({
   paddingVertical: 10,
 })
 const $inputContainerFlat = ({ spacing }: any): ViewStyle => ({
-  marginBottom: spacing.sm,
+  marginBottom: spacing.xs,
   paddingHorizontal: 0,
   backgroundColor: "transparent",
   borderWidth: 0,
@@ -444,7 +444,7 @@ const $inputContainerFlat = ({ spacing }: any): ViewStyle => ({
   shadowOpacity: 0,
 })
 const $pickerContainer = ({ spacing, colors }: any): ViewStyle => ({
-  marginBottom: spacing.md,
+  marginBottom: spacing.sm,
   borderWidth: 1,
   borderColor: colors.border || colors.textDim,
   borderRadius: 12,
@@ -457,11 +457,11 @@ const $formContentWithTopMargin = ({ spacing }: any): ViewStyle => ({
   flexGrow: 1,
   justifyContent: "flex-start",
   padding: spacing.lg,
-  gap: 6,
+  gap: 4,
   paddingBottom: spacing.xl * 2,
 })
 const $buttonRow = ({ spacing }: any): ViewStyle => ({ 
-  marginTop: spacing.lg,
+  marginTop: spacing.md,
   marginBottom: spacing.xl,
 })
 const $gradientButton = (): ViewStyle => ({ borderRadius: 16, overflow: "hidden", marginBottom: 8 })
@@ -480,22 +480,22 @@ const $gradientButtonTextWhite = ({ typography }: any): TextStyle => ({
 const $categoryHint: ThemedStyle<TextStyle> = ({ colors, spacing }) => ({
   color: colors.textDim,
   fontSize: 12,
-  marginBottom: spacing.md,
+  marginBottom: spacing.sm,
 })
 const $locationLink: ThemedStyle<TextStyle> = ({ colors, spacing }) => ({
   color: colors.tint,
   fontSize: 12,
   marginLeft: spacing.sm,
   textDecorationLine: "underline",
-  marginBottom: spacing.md,
+  marginBottom: spacing.sm,
 })
 const $photoBox: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   borderWidth: 1,
   borderColor: colors.border,
   borderRadius: 12,
   alignItems: "center",
-  padding: spacing.lg,
-  marginBottom: spacing.md,
+  padding: spacing.md,
+  marginBottom: spacing.sm,
   backgroundColor: colors.cardColor,
 })
 const $photoIcon: ThemedStyle<ImageStyle> = ({ colors }) => ({
@@ -518,7 +518,7 @@ const $photoButton: ThemedStyle<ViewStyle> = ({ spacing }) => ({
 const $notesHint: ThemedStyle<TextStyle> = ({ colors, spacing }) => ({
   color: colors.textDim,
   fontSize: 12,
-  marginBottom: spacing.md,
+  marginBottom: spacing.sm,
 })
 // #endregion
 
