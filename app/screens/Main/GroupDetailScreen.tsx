@@ -8,6 +8,7 @@ import { RecentActivitySection } from "@/components/Groups/RecentActivitySection
 import { Header } from "@/components/Header"
 import { Icon } from "@/components/Icon"
 import { InvitationForm } from "@/components/InvitationForm"
+import { ItemCard } from "@/components/ItemCard"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
@@ -15,7 +16,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useGroups } from "@/hooks/useGroups"
 import { Group, GroupMember, GroupPost } from "@/services/api/types"
 import { GroupService } from "@/services/supabase/groupService"
-import { ItemService, type Item } from "@/services/supabase/itemService"
+import { ItemService, ItemWithProfile } from "@/services/supabase/itemService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 
@@ -48,13 +49,13 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [errorAlertMessage, setErrorAlertMessage] = useState("")
   const [successAlertMessage, setSuccessAlertMessage] = useState("")
   const [showMenuModal, setShowMenuModal] = useState(false)
-  const [items, setItems] = useState<Item[]>([])
+  const [items, setItems] = useState<ItemWithProfile[]>([])
   const [itemsLoading, setItemsLoading] = useState(false)
 
   // Collapsible sections state
   const [membersCollapsed, setMembersCollapsed] = useState(false)
-  const [recentActivityCollapsed, setRecentActivityCollapsed] = useState(false)
   const [itemsCollapsed, setItemsCollapsed] = useState(false)
+  const [recentActivityCollapsed, setRecentActivityCollapsed] = useState(false)
 
   // Calculate if user can manage the group (admin or creator)
   const canManageGroup = userRole === "creator" || userRole === "admin"
@@ -148,7 +149,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const loadGroupItems = async () => {
     try {
       setItemsLoading(true)
-      const { data, error } = await ItemService.getGroupItems(groupId)
+      const { data, error } = await ItemService.getGroupItemsWithProfiles(groupId)
       if (error) {
         console.error("Error loading group items:", error)
         return
@@ -257,38 +258,18 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     setMembersCollapsed(!membersCollapsed)
   }, [membersCollapsed])
 
-  const handleRecentActivityToggle = useCallback(() => {
-    setRecentActivityCollapsed(!recentActivityCollapsed)
-  }, [recentActivityCollapsed])
+
 
   const handleItemsToggle = useCallback(() => {
     setItemsCollapsed(!itemsCollapsed)
   }, [itemsCollapsed])
 
+  const handleRecentActivityToggle = useCallback(() => {
+    setRecentActivityCollapsed(!recentActivityCollapsed)
+  }, [recentActivityCollapsed])
+
   // ItemCard component
-  const ItemCard = ({ item, themed }: { item: Item; themed: any }) => (
-    <View style={themed($itemCard)}>
-      <View style={themed($itemImageContainer)}>
-        {item.image_urls && item.image_urls.length > 0 ? (
-          <View style={themed($itemImage)}>
-            <Text style={themed($itemImagePlaceholder)} text="📷" />
-          </View>
-        ) : (
-          <View style={themed($itemImagePlaceholder)}>
-            <Icon icon="menu" size={24} color={theme.colors.textDim} />
-          </View>
-        )}
-      </View>
-      <View style={themed($itemContent)}>
-        <Text style={themed($itemTitle)} text={item.title} />
-        <Text style={themed($itemCategory)} text={item.category} />
-        {item.location && <Text style={themed($itemLocation)} text={`📍 ${item.location}`} />}
-        {item.details && (
-          <Text style={themed($itemDetails)} text={item.details} numberOfLines={2} />
-        )}
-      </View>
-    </View>
-  )
+
 
   if (loading || !isDataReady) {
     return (
@@ -340,57 +321,48 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           />
         </View>
 
-        <View style={themed($actionButtons)}>
-          {(() => {
-            const isAtCapacity = !!(group?.member_limit && (group.member_count || 0) >= group.member_limit)
-            console.log("Action button capacity check:", {
-              member_limit: group?.member_limit,
-              member_count: group?.member_count,
-              isAtCapacity,
-              buttonText: isAtCapacity ? "Max Capacity, Can't add new members" : "Invite Members"
-            })
-            return (
-              <TouchableOpacity
-                style={[
-                  themed($actionButton),
-                  isAtCapacity ? themed($actionButtonDisabled) : null
-                ]}
-                onPress={handleInviteMembers}
-                activeOpacity={0.8}
-                disabled={isAtCapacity}
-              >
-                <Text 
-                  style={[
-                    themed($actionButtonText),
-                    isAtCapacity ? themed($actionButtonTextDisabled) : null
-                  ]} 
-                  text={isAtCapacity ? "Max Capacity, Can't add new members" : "Invite Members"} 
-                />
-              </TouchableOpacity>
-            )
-          })()}
-        </View>
+
 
         {/* Collapsible Members Section */}
-        <TouchableOpacity
-          style={themed($sectionHeader)}
-          onPress={handleMembersToggle}
-          activeOpacity={0.7}
-        >
+        <View style={themed($sectionHeader)}>
           <View style={themed($sectionHeaderContent)}>
-            <Text style={themed($sectionHeaderTitle)} text={`Members (${members.length}${group?.member_limit ? `/${group.member_limit}` : ''})`} />
+            <TouchableOpacity
+              style={themed($sectionHeaderLeft)}
+              onPress={handleMembersToggle}
+              activeOpacity={0.7}
+            >
+              <Text style={themed($sectionHeaderTitle)} text={`Members (${members.length}${group?.member_limit ? `/${group.member_limit}` : ''})`} />
+            </TouchableOpacity>
             <View style={themed($sectionHeaderRight)}>
               {membersCollapsed && (
                 <Text style={themed($collapsedSectionSummary)} text={`${members.length} member${members.length !== 1 ? "s" : ""} hidden`} />
               )}
-              <Icon
-                icon={membersCollapsed ? "caretRight" : "caretLeft"}
-                size={20}
-                color={theme.colors.text}
-              />
+              {!membersCollapsed && !(group?.member_limit && (group.member_count || 0) >= group.member_limit) && (
+                <TouchableOpacity
+                  style={themed($inviteButton)}
+                  onPress={handleInviteMembers}
+                  activeOpacity={0.8}
+                >
+                  <Text style={themed($inviteButtonText)} text="Invite" />
+                </TouchableOpacity>
+              )}
+              {!membersCollapsed && group?.member_limit && (group.member_count || 0) >= group.member_limit && (
+                <Text style={themed($inviteButtonDisabled)} text="Max Capacity" />
+              )}
+              <TouchableOpacity
+                style={themed($caretButton)}
+                onPress={handleMembersToggle}
+                activeOpacity={0.7}
+              >
+                <Icon
+                  icon={membersCollapsed ? "caretRight" : "caretLeft"}
+                  size={20}
+                  color={theme.colors.text}
+                />
+              </TouchableOpacity>
             </View>
           </View>
-        </TouchableOpacity>
+        </View>
 
         {!membersCollapsed && (
           <View>
@@ -412,10 +384,10 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           activeOpacity={0.7}
         >
           <View style={themed($sectionHeaderContent)}>
-            <Text style={themed($sectionHeaderTitle)} text={`Recent Activity (${posts.length})`} />
+            <Text style={themed($sectionHeaderTitle)} text="Recent Activity" />
             <View style={themed($sectionHeaderRight)}>
               {recentActivityCollapsed && (
-                <Text style={themed($collapsedSectionSummary)} text={`${posts.length} post${posts.length !== 1 ? "s" : ""} hidden`} />
+                <Text style={themed($collapsedSectionSummary)} text="Recent activity hidden" />
               )}
               <Icon
                 icon={recentActivityCollapsed ? "caretRight" : "caretLeft"}
@@ -427,23 +399,13 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         </TouchableOpacity>
 
         {!recentActivityCollapsed && (
-          <View style={themed($itemsSection)}>
-            {posts.length > 0 ? (
-              <View style={themed($itemsList)}>
-                {posts.map((post) => (
-                  <View key={post.id} style={themed($itemCard)}>
-                    <Text style={themed($itemTitle)} text={post.content} numberOfLines={2} />
-                    <Text style={themed($itemDetails)} text={`By ${post.user?.full_name || 'Unknown'} • ${new Date(post.created_at).toLocaleDateString()}`} />
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <View style={themed($emptyItemsContainer)}>
-                <Text style={themed($emptyItemsText)} text="No recent activity" />
-                <Text style={themed($emptyItemsSubtext)} text="Activity will appear here when members interact with the group" />
-              </View>
-            )}
-          </View>
+          <RecentActivitySection 
+            groupId={groupId}
+            onItemPress={(item) => {
+              // Handle item press - could navigate to item detail or edit
+              console.log("Item pressed:", item)
+            }}
+          />
         )}
 
         {/* Collapsible Items Section */}
@@ -474,7 +436,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             ) : items.length > 0 ? (
               <View style={themed($itemsList)}>
                 {items.map((item) => (
-                  <ItemCard key={item.id} item={item} themed={themed} />
+                  <ItemCard key={item.id} item={item} />
                 ))}
               </View>
             ) : (
@@ -809,78 +771,11 @@ const $itemsSectionTitle = ({ typography, colors, spacing }: any): TextStyle => 
   marginBottom: spacing.md,
 })
 
-const $itemsList = ({ spacing }: any): ViewStyle => ({
-  gap: spacing.sm,
+const $itemsList = (): ViewStyle => ({
+  // ItemCard components now have their own marginBottom
 })
 
-const $itemCard = ({ colors, spacing }: any): ViewStyle => ({
-  flexDirection: "row",
-  backgroundColor: colors.background,
-  borderRadius: 12,
-  padding: spacing.md,
-  borderWidth: 1,
-  borderColor: colors.border,
-  shadowColor: colors.text,
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-  elevation: 2,
-})
 
-const $itemImageContainer = ({ spacing }: any): ViewStyle => ({
-  marginRight: spacing.md,
-})
-
-const $itemImage = ({ colors, spacing }: any): ViewStyle => ({
-  width: 60,
-  height: 60,
-  borderRadius: 8,
-  backgroundColor: colors.cardColor,
-  justifyContent: "center",
-  alignItems: "center",
-})
-
-const $itemImagePlaceholder = ({ colors, spacing }: any): ViewStyle => ({
-  width: 60,
-  height: 60,
-  borderRadius: 8,
-  backgroundColor: colors.cardColor,
-  justifyContent: "center",
-  alignItems: "center",
-})
-
-const $itemContent = (): ViewStyle => ({
-  flex: 1,
-})
-
-const $itemTitle = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.bold,
-  fontSize: 16,
-  color: colors.text,
-  marginBottom: 4,
-})
-
-const $itemCategory = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 12,
-  color: colors.tint,
-  textTransform: "capitalize",
-  marginBottom: 4,
-})
-
-const $itemLocation = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 12,
-  color: colors.textDim,
-  marginBottom: 4,
-})
-
-const $itemDetails = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 12,
-  color: colors.textDim,
-  lineHeight: 16,
-})
 
 const $emptyItemsContainer = ({ spacing }: any): ViewStyle => ({
   alignItems: "center",
@@ -920,6 +815,29 @@ const $sectionHeaderRight = (): ViewStyle => ({
   flexDirection: "row",
   alignItems: "center",
   gap: 8,
+})
+const $sectionHeaderLeft = (): ViewStyle => ({
+  flex: 1,
+})
+const $inviteButton = ({ colors, spacing }: any): ViewStyle => ({
+  backgroundColor: colors.tint,
+  borderRadius: 6,
+  paddingVertical: spacing.xs,
+  paddingHorizontal: spacing.sm,
+})
+const $inviteButtonText = ({ colors, typography }: any): TextStyle => ({
+  color: colors.background,
+  fontFamily: typography.primary.medium,
+  fontSize: 12,
+})
+const $inviteButtonDisabled = ({ colors, typography }: any): TextStyle => ({
+  color: colors.textDim,
+  fontFamily: typography.primary.normal,
+  fontSize: 12,
+  fontStyle: "italic",
+})
+const $caretButton = (): ViewStyle => ({
+  padding: 4,
 })
 const $sectionHeaderTitle = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.medium,

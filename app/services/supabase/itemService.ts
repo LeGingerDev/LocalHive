@@ -18,7 +18,7 @@ export interface CreateItemData {
   media_urls?: string[]
 }
 
-export interface Item {
+export interface ItemWithProfile {
   id: string
   group_id: string
   user_id: string
@@ -26,9 +26,13 @@ export interface Item {
   category: string
   location?: string
   details?: string
-  image_urls?: string[]
   created_at: string
   updated_at: string
+  image_urls?: string[]
+  profile_id?: string
+  full_name?: string
+  email?: string
+  avatar_url?: string
 }
 
 /**
@@ -78,7 +82,7 @@ export class ItemService {
    */
   static async createItem(
     data: CreateItemData,
-  ): Promise<{ data: Item | null; error: PostgrestError | null }> {
+  ): Promise<{ data: ItemWithProfile | null; error: PostgrestError | null }> {
     try {
       const { data: createdItem, error } = await supabase
         .from("items")
@@ -94,7 +98,7 @@ export class ItemService {
         .select()
         .single()
 
-      return { data: createdItem as Item | null, error }
+      return { data: createdItem as ItemWithProfile | null, error }
     } catch (error) {
       console.error("Error creating item:", error)
       return {
@@ -105,21 +109,16 @@ export class ItemService {
   }
 
   /**
-   * Get items for a specific group
+   * Fetches all items for a group, including user profile info (via RPC)
    */
-  static async getGroupItems(
+  static async getGroupItemsWithProfiles(
     groupId: string,
-  ): Promise<{ data: Item[] | null; error: PostgrestError | null }> {
+  ): Promise<{ data: ItemWithProfile[] | null; error: PostgrestError | null }> {
     try {
-      const { data, error } = await supabase
-        .from("items")
-        .select("*")
-        .eq("group_id", groupId)
-        .order("created_at", { ascending: false })
-
-      return { data: data as Item[] | null, error }
+      const { data, error } = await supabase.rpc("get_group_items_with_profiles", { group_id: groupId })
+      return { data: data as ItemWithProfile[] | null, error }
     } catch (error) {
-      console.error("Error getting group items:", error)
+      console.error("Error getting group items with profiles:", error)
       return {
         data: null,
         error: error as PostgrestError,
@@ -132,11 +131,11 @@ export class ItemService {
    */
   static async getItemById(
     itemId: string,
-  ): Promise<{ data: Item | null; error: PostgrestError | null }> {
+  ): Promise<{ data: ItemWithProfile | null; error: PostgrestError | null }> {
     try {
       const { data, error } = await supabase.from("items").select("*").eq("id", itemId).single()
 
-      return { data: data as Item | null, error }
+      return { data: data as ItemWithProfile | null, error }
     } catch (error) {
       console.error("Error getting item by ID:", error)
       return {
@@ -152,7 +151,7 @@ export class ItemService {
   static async updateItem(
     itemId: string,
     data: Partial<CreateItemData>,
-  ): Promise<{ data: Item | null; error: PostgrestError | null }> {
+  ): Promise<{ data: ItemWithProfile | null; error: PostgrestError | null }> {
     try {
       const { data: updatedItem, error } = await supabase
         .from("items")
@@ -161,7 +160,7 @@ export class ItemService {
         .select()
         .single()
 
-      return { data: updatedItem as Item | null, error }
+      return { data: updatedItem as ItemWithProfile | null, error }
     } catch (error) {
       console.error("Error updating item:", error)
       return {
