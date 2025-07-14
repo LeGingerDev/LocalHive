@@ -21,6 +21,7 @@ import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
 import { useNavigation } from "@react-navigation/native"
 import { cameraService } from "@/services/cameraService"
+import { supabase } from "@/services/supabase/supabase"
 
 const windowHeight = Dimensions.get("window").height
 const estimatedContentHeight = 450 // Match GroupsScreen
@@ -160,40 +161,82 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
     setAlertVisible(true)
   }, [user?.id, selectedGroupId, title, selectedCategory, location, notes])
 
+  function sanitizeFileName(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "") // remove special chars
+      .trim()
+      .replace(/\s+/g, "-") // spaces to dashes
+  }
+
   const _handleConfirmSave = useCallback(async (): Promise<void> => {
     try {
       setIsSubmitting(true)
       setError(null)
       setAlertVisible(false)
 
-      const { data, error: createError } = await ItemService.createItem({
+      // 1. Create the item (without image_urls)
+      const { data: createdItem, error: createError } = await ItemService.createItem({
         group_id: selectedGroupId!,
         user_id: user!.id,
         title: title.trim(),
         category: selectedCategory!,
         location: location.trim() || undefined,
         notes: notes.trim() || undefined,
+        media_urls: [],
       })
 
-      if (createError) {
-        throw new Error(createError.message)
+      if (createError || !createdItem) {
+        throw new Error(createError?.message || "Failed to create item")
       }
 
-      if (data) {
-        console.log("Item created successfully:", data)
-        
-        // Clear the form
-        setTitle("")
-        setLocation("")
-        setNotes("")
-        setSelectedCategory(null)
-
-        // Show success modal
-        setAlertTitle("Success!")
-        setAlertMessage(`"${title.trim()}" has been added to your group successfully!`)
-        setAlertConfirmStyle("success")
-        setAlertVisible(true)
+      let imageUrl: string | null = null
+      if (photoUri) {
+        // 2. Upload the image to Supabase Storage
+        const fileExt = photoUri.split(".").pop()?.split("?")[0] || "jpg"
+        const fileName = sanitizeFileName(title.trim()) || "item"
+        const filePath = `items/${createdItem.id}/${fileName}.${fileExt}`
+        console.log('Uploading image:')
+        console.log('photoUri:', photoUri)
+        console.log('fileExt:', fileExt)
+        console.log('fileName:', fileName)
+        console.log('filePath:', filePath)
+        const response = await fetch(photoUri)
+        const blob = await response.blob()
+        console.log('blob type:', blob.type, 'blob size:', blob.size)
+        try {
+          const uploadResult = await supabase.storage.from("items").upload(filePath, blob, { upsert: true })
+          console.log('uploadResult:', uploadResult)
+          if (uploadResult.error) {
+            console.error('Upload error:', uploadResult.error)
+            throw new Error(uploadResult.error.message)
+          }
+        } catch (uploadError) {
+          console.error('Upload exception:', uploadError)
+          throw uploadError
+        }
+        // 3. Get the public URL
+        const { data: publicUrlData } = supabase.storage.from("items").getPublicUrl(filePath)
+        imageUrl = publicUrlData?.publicUrl || null
       }
+
+      // 4. Update the item with the image URL
+      if (imageUrl) {
+        await ItemService.updateItem(createdItem.id, { media_urls: [imageUrl] })
+      }
+
+      // Clear the form
+      setTitle("")
+      setLocation("")
+      setNotes("")
+      setSelectedCategory(null)
+      setPhotoUri(null)
+
+      // Show success modal
+      setAlertTitle("Success!")
+      setAlertMessage(`"${title.trim()}" has been added to your group successfully!`)
+      setAlertConfirmStyle("success")
+      setAlertVisible(true)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to save item"
       setError({ message: errorMessage })
@@ -201,7 +244,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
     } finally {
       setIsSubmitting(false)
     }
-  }, [user?.id, selectedGroupId, title, selectedCategory, location, notes])
+  }, [user?.id, selectedGroupId, title, selectedCategory, location, notes, photoUri])
 
   // Helper function to check if form is valid
   const isFormValid = useCallback((): boolean => {
@@ -266,10 +309,12 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
   // Handler for taking a photo
   const handleTakePhoto = async () => {
     try {
-      const result = await cameraService.takePhoto({ allowsEditing: true, aspect: [4, 3], quality: 0.8 })
+      const result = await cameraService.takePhoto({ allowsEditing: true, aspect: [1, 1], quality: 0.8 })
       if (result && result.uri) {
+        console.log('Camera image dimensions:', result.width, result.height)
         // Compress the image to quality 0.6
         const compressed = await cameraService.compressImage(result.uri, 0.6, 1024, 1024)
+        console.log('Compressed camera image dimensions:', compressed.width, compressed.height)
         setPhotoUri(compressed.compressedUri)
       }
     } catch (error) {
@@ -283,10 +328,12 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
   // Handler for picking from gallery
   const handlePickFromGallery = async () => {
     try {
-      const result = await cameraService.pickFromGallery({ allowsEditing: true, aspect: [4, 3], quality: 0.8 })
+      const result = await cameraService.pickFromGallery({ allowsEditing: true, aspect: [1, 1], quality: 0.8 })
       if (result && result.uri) {
+        console.log('Gallery image dimensions:', result.width, result.height)
         // Compress the image to quality 0.6
         const compressed = await cameraService.compressImage(result.uri, 0.6, 1024, 1024)
+        console.log('Compressed gallery image dimensions:', compressed.width, compressed.height)
         setPhotoUri(compressed.compressedUri)
       }
     } catch (error) {
@@ -389,28 +436,22 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
             <Text style={themed($label)} text="Photo" />
             <View style={[themed($photoBox), { width: "100%", alignSelf: "stretch" }]}>
               {photoUri ? (
-                <Image
-                  source={{ uri: photoUri }}
-                  style={{
-                    width: "100%",
-                    aspectRatio: 4/3,
-                    borderRadius: 8,
-                    resizeMode: "cover",
-                    alignSelf: "center",
-                    borderWidth: 3,
-                    borderColor: "#fff",
-                    marginBottom: 12,
-                  }}
-                />
+                <View style={{ width: "100%", aspectRatio: 1, borderRadius: 8, overflow: "hidden", borderWidth: 3, borderColor: "#fff", marginBottom: 12 }}>
+                  <Image
+                    source={{ uri: photoUri }}
+                    style={{ width: "100%", height: "100%" }}
+                    resizeMode="cover"
+                  />
+                </View>
               ) : (
                 <>
                   <Icon icon="menu" size={32} style={themed($photoIcon)} />
                   <Text style={themed($photoText)} text="Add a photo to help others find this item" />
                 </>
               )}
-              <View style={[themed($photoButtonRow), { width: "100%", alignSelf: "stretch", flexDirection: "row" }]}>
-                <Button text="Take Photo" style={[themed($photoButton), { flex: 1, marginRight: 6 }]} onPress={handleTakePhoto} />
-                <Button text="Gallery" style={[themed($photoButton), { flex: 1, marginLeft: 6 }]} onPress={handlePickFromGallery} />
+              <View style={[themed($photoButtonRow), { width: "100%", alignSelf: "stretch", flexDirection: "row" , gap: spacing.xs}]}>
+                <Button text="Take Photo" style={[themed($photoButton), { flex: 1 }]} onPress={handleTakePhoto} />
+                <Button text="Gallery" style={[themed($photoButton), { flex: 1 }]} onPress={handlePickFromGallery} />
               </View>
             </View>
             {/* Notes */}
@@ -567,7 +608,6 @@ const $photoButtonRow: ThemedStyle<ViewStyle> = ({ spacing }) => ({
 })
 const $photoButton: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flex: 1,
-  marginHorizontal: spacing.xs,
 })
 const $notesHint: ThemedStyle<TextStyle> = ({ colors, spacing }) => ({
   color: colors.textDim,

@@ -195,7 +195,7 @@ export function Button(props: ButtonProps) {
   }
 
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View style={[animatedStyle, $viewStyleOverride]}>
       <Pressable
         style={$viewStyle}
         accessibilityRole="button"
