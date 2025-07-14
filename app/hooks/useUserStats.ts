@@ -7,17 +7,18 @@ import { ItemService } from "@/services/supabase/itemService"
 export interface UserStats {
   groupsCount: number
   itemsCount: number
+  groupsCreatedCount: number
 }
 
 export const useUserStats = () => {
   const { user } = useAuth()
-  const [stats, setStats] = useState<UserStats>({ groupsCount: 0, itemsCount: 0 })
+  const [stats, setStats] = useState<UserStats>({ groupsCount: 0, itemsCount: 0, groupsCreatedCount: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const loadStats = useCallback(async () => {
     if (!user?.id) {
-      setStats({ groupsCount: 0, itemsCount: 0 })
+      setStats({ groupsCount: 0, itemsCount: 0, groupsCreatedCount: 0 })
       setLoading(false)
       return
     }
@@ -38,9 +39,16 @@ export const useUserStats = () => {
         console.error("Error loading items count for stats:", itemsError)
       }
 
+      // Fetch groups created count
+      const { count: groupsCreatedCount, error: groupsCreatedError } = await GroupService.getGroupsCreatedCount(user.id)
+      if (groupsCreatedError) {
+        console.error("Error loading groups created count for stats:", groupsCreatedError)
+      }
+
       setStats({
         groupsCount: groupsData?.length || 0,
         itemsCount: itemsCount || 0,
+        groupsCreatedCount: groupsCreatedCount || 0,
       })
     } catch (err) {
       console.error("Error loading user stats:", err)

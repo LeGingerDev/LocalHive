@@ -181,6 +181,13 @@ class GoogleAuthService {
           error: "PLAY_SERVICES_NOT_AVAILABLE",
           message: "Google Play Services is not available",
         }
+      } else if (error.message && error.message.includes("getTokens requires a user to be signed in")) {
+        // Treat getTokens errors as cancellations
+        return {
+          success: false,
+          error: "CANCELLED",
+          message: "Sign in was cancelled",
+        }
       } else {
         return {
           success: false,

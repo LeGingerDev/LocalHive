@@ -64,6 +64,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
     groups,
     invitations,
     loading,
+    refreshing,
     error,
     refresh,
     respondToInvitation,
@@ -176,7 +177,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
         contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.xl * 2 }}
         refreshControl={
           <RefreshControl
-            refreshing={loading}
+            refreshing={refreshing}
             onRefresh={handleRefresh}
             tintColor={themed($refreshControlColor)}
           />
@@ -184,13 +185,13 @@ export const GroupsScreen = ({ navigation, route }: any) => {
       >
         {!user && <AuthPrompt />}
 
-        {loading && user && (
+        {loading && !refreshing && user && (
           <View style={themed($loadingContainer)}>
             <LoadingSpinner text="Loading groups..." />
           </View>
         )}
 
-        {!loading && user && groups.length === 0 && invitations.length === 0 ? (
+        {!loading && !refreshing && user && groups.length === 0 && invitations.length === 0 ? (
           <View style={themed($emptyStateContainer)}>
             <View style={themed($emptyState)}>
               <Image
@@ -252,7 +253,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
           )
         )}
 
-        {!loading && user && invitations.length > 0 && (
+        {!loading && !refreshing && user && invitations.length > 0 && (
           <>
             <Text style={themed($sectionTitle)} text="Invitations" />
             {invitations.map((invite: GroupInvitation, index: number) => (
@@ -266,7 +267,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
           </>
         )}
 
-        {!loading && user && invitations.length === 0 && groups.length > 0 && (
+        {!loading && !refreshing && user && invitations.length === 0 && groups.length > 0 && (
           <View style={themed($noInvitationsContainer)}>
             <Text style={themed($noInvitationsText)} text="No pending invitations" />
             <Text

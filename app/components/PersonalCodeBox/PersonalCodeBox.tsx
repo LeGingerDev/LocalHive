@@ -4,7 +4,7 @@ import { View, TouchableOpacity, StyleProp, ViewStyle, TextStyle, Clipboard } fr
 import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { Text } from "@/components/Text"
-import { PersonalCodeService } from "@/services/supabase/personalCodeService"
+
 import { ShareService } from "@/services/supabase/shareService"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
@@ -16,7 +16,6 @@ export interface PersonalCodeBoxProps {
   userName?: string
   onCopy?: () => void
   onShare?: () => void
-  onRefresh?: () => void
   isLoading?: boolean
 }
 
@@ -27,11 +26,10 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
   userName,
   onCopy,
   onShare,
-  onRefresh,
   isLoading = false,
 }) => {
   const { themed } = useAppTheme()
-  const [isGenerating, setIsGenerating] = useState(false)
+
   // CustomAlert state
   const [alertVisible, setAlertVisible] = useState(false)
   const [alertTitle, setAlertTitle] = useState("")
@@ -63,45 +61,7 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
     setAlertVisible(true)
   }
 
-  const handleGenerateCode = async () => {
-    if (isGenerating) return
-
-    setIsGenerating(true)
-    try {
-      const result = await PersonalCodeService.generatePersonalCode()
-
-      if ("error" in result) {
-        // If the error is that user already has a code, try to fetch it from database
-        if (result.message?.includes("already has a personal code")) {
-          const existingCode = await PersonalCodeService.fetchPersonalCodeFromDatabase()
-          if (existingCode) {
-            // Call onRefresh to update the parent component with the existing code
-            onRefresh?.()
-            // Show existing code message
-            showCustomAlert("Code Found!", `Your existing personal code is: ${existingCode}`)
-            return
-          }
-        }
-
-        showCustomAlert(
-          "Error",
-          result.message || "Failed to generate personal code. Please try again.",
-        )
-      } else {
-        // Call onRefresh to update the parent component
-        onRefresh?.()
-        // Show success message
-        showCustomAlert("Success!", `Your new personal code is: ${result.personal_code}`)
-      }
-    } catch (error) {
-      showCustomAlert(
-        "Error",
-        "Failed to generate personal code. Please check your connection and try again.",
-      )
-    } finally {
-      setIsGenerating(false)
-    }
-  }
+  
 
   const handleCopyCode = async () => {
     if (!code) {
@@ -141,18 +101,6 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
           <Text text="Your Personal Code" style={themed($title)} accessibilityRole="header" />
           <View style={themed($headerButtons)}>
             <TouchableOpacity
-              style={themed($refreshButton)}
-              onPress={handleGenerateCode}
-              disabled={isGenerating || isLoading}
-              accessibilityRole="button"
-              accessibilityLabel="Generate new code"
-            >
-              <Text
-                text={isGenerating ? "Generating..." : "Refresh"}
-                style={themed($refreshText)}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
               style={themed($shareButton)}
               onPress={handleShareCode}
               accessibilityRole="button"
@@ -163,7 +111,7 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
           </View>
         </View>
         <View style={themed($codeBox)}>
-          {isLoading || isGenerating ? (
+          {isLoading ? (
             <Text
               text="Loading..."
               style={themed($code)}
@@ -179,7 +127,7 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
             />
           )}
           <Text
-            text={isLoading || isGenerating ? "Generating your personal code..." : subtitle}
+            text={isLoading ? "Loading your personal code..." : subtitle}
             style={themed($subtitle)}
             accessibilityLabel="Code subtitle"
           />
@@ -191,7 +139,7 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Copy code"
             activeOpacity={0.8}
-            disabled={!code || isLoading || isGenerating}
+            disabled={!code || isLoading}
           >
             <Text text="Copy Code" style={themed($copyButtonText)} />
           </TouchableOpacity>
@@ -242,20 +190,7 @@ const $title: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.text,
 })
 
-const $refreshButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  paddingHorizontal: spacing.sm,
-  paddingVertical: spacing.xs,
-  backgroundColor: colors.background,
-  borderRadius: 6,
-  borderWidth: 1,
-  borderColor: colors.sectionBorderColor,
-})
 
-const $refreshText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.medium,
-  fontSize: 12,
-  color: colors.textDim,
-})
 
 const $shareButton: ThemedStyle<ViewStyle> = () => ({
   paddingHorizontal: 4,

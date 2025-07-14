@@ -1,6 +1,16 @@
 import React, { FC, useState, useEffect, useCallback, useRef } from "react"
-import { ViewStyle, TextStyle, ActivityIndicator, View, ImageStyle, ScrollView, Image, Dimensions } from "react-native"
+import {
+  ViewStyle,
+  TextStyle,
+  ActivityIndicator,
+  View,
+  ImageStyle,
+  ScrollView,
+  Image,
+  Dimensions,
+} from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
+import { useNavigation } from "@react-navigation/native"
 
 import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { Button } from "@/components/Button"
@@ -15,13 +25,12 @@ import { useAuth } from "@/context/AuthContext"
 import { useGroups } from "@/hooks/useGroups"
 import { useItemCategories } from "@/hooks/useItemCategories"
 import type { BottomTabScreenProps, BottomTabParamList } from "@/navigators/BottomTabNavigator"
+import { cameraService } from "@/services/cameraService"
 import { ItemService } from "@/services/supabase/itemService"
+import { supabase } from "@/services/supabase/supabase"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
-import { useNavigation } from "@react-navigation/native"
-import { cameraService } from "@/services/cameraService"
-import { supabase } from "@/services/supabase/supabase"
 
 const windowHeight = Dimensions.get("window").height
 const estimatedContentHeight = 450 // Match GroupsScreen
@@ -192,37 +201,64 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
 
       let imageUrl: string | null = null
       if (photoUri) {
-        // 2. Upload the image to Supabase Storage
+        // 2. Upload the image to Supabase Storage using direct fetch (same as working HomeScreen)
         const fileExt = photoUri.split(".").pop()?.split("?")[0] || "jpg"
         const fileName = sanitizeFileName(title.trim()) || "item"
-        const filePath = `items/${createdItem.id}/${fileName}.${fileExt}`
-        console.log('Uploading image:')
-        console.log('photoUri:', photoUri)
-        console.log('fileExt:', fileExt)
-        console.log('fileName:', fileName)
-        console.log('filePath:', filePath)
+        const filePath = `${createdItem.id}/${fileName}.${fileExt}`
+        console.log("Uploading image (direct fetch):")
+        console.log("photoUri:", photoUri)
+        console.log("fileExt:", fileExt)
+        console.log("fileName:", fileName)
+        console.log("filePath:", filePath)
+
         const response = await fetch(photoUri)
         const blob = await response.blob()
-        console.log('blob type:', blob.type, 'blob size:', blob.size)
+        console.log("blob type:", blob.type, "blob size:", blob.size)
+
         try {
-          const uploadResult = await supabase.storage.from("items").upload(filePath, blob, { upsert: true })
-          console.log('uploadResult:', uploadResult)
-          if (uploadResult.error) {
-            console.error('Upload error:', uploadResult.error)
-            throw new Error(uploadResult.error.message)
+          // Use the same direct fetch method as HomeScreen (which works)
+          const supabaseUrl = "https://xnnobyeytyycngybinqj.supabase.co"
+          const bucket = "items"
+          const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${filePath}`
+          const anonKey =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhubm9ieWV5dHl5Y25neWJpbnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NjEyMDQsImV4cCI6MjA2NzIzNzIwNH0.bBO9iuzsMU1xUq_EJAi6esjWb0Jm1Arj2mQfXXqIEKw"
+
+          console.log("Uploading to:", uploadUrl)
+
+          const uploadResponse = await fetch(uploadUrl, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${anonKey}`,
+              "Content-Type": blob.type || `image/${fileExt}`,
+            },
+            body: blob,
+          })
+
+          console.log("Upload response status:", uploadResponse.status)
+          const result = await uploadResponse.text()
+          console.log("Upload response:", result)
+
+          if (uploadResponse.ok) {
+            // Get the public URL using the same method as HomeScreen
+            imageUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${filePath}`
+            console.log("imageUrl:", imageUrl)
+          } else {
+            throw new Error(`Upload failed: ${uploadResponse.status} - ${result}`)
           }
         } catch (uploadError) {
-          console.error('Upload exception:', uploadError)
+          console.error("Upload exception:", uploadError)
           throw uploadError
         }
-        // 3. Get the public URL
-        const { data: publicUrlData } = supabase.storage.from("items").getPublicUrl(filePath)
-        imageUrl = publicUrlData?.publicUrl || null
       }
 
       // 4. Update the item with the image URL
       if (imageUrl) {
-        await ItemService.updateItem(createdItem.id, { media_urls: [imageUrl] })
+        console.log('[AddScreen] Updating item with image URL:', imageUrl)
+        const updateResult = await ItemService.updateItem(createdItem.id, { image_urls: [imageUrl] })
+        console.log('[AddScreen] Update result:', updateResult)
+        if (updateResult.error) {
+          console.error('[AddScreen] Update error:', updateResult.error)
+        }
       }
 
       // Clear the form
@@ -280,7 +316,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
 
   // Auto-refresh groups when screen comes into focus
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
+    const unsubscribe = navigation.addListener("focus", () => {
       if (user && !groupsLoading) {
         refresh()
       }
@@ -309,12 +345,16 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
   // Handler for taking a photo
   const handleTakePhoto = async () => {
     try {
-      const result = await cameraService.takePhoto({ allowsEditing: true, aspect: [1, 1], quality: 0.8 })
+      const result = await cameraService.takePhoto({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      })
       if (result && result.uri) {
-        console.log('Camera image dimensions:', result.width, result.height)
+        console.log("Camera image dimensions:", result.width, result.height)
         // Compress the image to quality 0.6
         const compressed = await cameraService.compressImage(result.uri, 0.6, 1024, 1024)
-        console.log('Compressed camera image dimensions:', compressed.width, compressed.height)
+        console.log("Compressed camera image dimensions:", compressed.width, compressed.height)
         setPhotoUri(compressed.compressedUri)
       }
     } catch (error) {
@@ -328,12 +368,16 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
   // Handler for picking from gallery
   const handlePickFromGallery = async () => {
     try {
-      const result = await cameraService.pickFromGallery({ allowsEditing: true, aspect: [1, 1], quality: 0.8 })
+      const result = await cameraService.pickFromGallery({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      })
       if (result && result.uri) {
-        console.log('Gallery image dimensions:', result.width, result.height)
+        console.log("Gallery image dimensions:", result.width, result.height)
         // Compress the image to quality 0.6
         const compressed = await cameraService.compressImage(result.uri, 0.6, 1024, 1024)
-        console.log('Compressed gallery image dimensions:', compressed.width, compressed.height)
+        console.log("Compressed gallery image dimensions:", compressed.width, compressed.height)
         setPhotoUri(compressed.compressedUri)
       }
     } catch (error) {
@@ -366,12 +410,20 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
                 accessibilityLabel="No groups illustration"
               />
               <Text style={themed($emptyStateTitle)} text="No Groups Yet" />
-              <Text style={themed($emptyStateText)} text="Create or join a group first before adding an item" />
+              <Text
+                style={themed($emptyStateText)}
+                text="Create or join a group first before adding an item"
+              />
               <CustomGradient preset="primary" style={{ borderRadius: 8, marginTop: spacing.md }}>
                 <Button
                   text="Go to Groups"
                   style={{ backgroundColor: "transparent", borderRadius: 8 }}
-                  textStyle={{ color: "#fff", fontFamily: theme.typography.primary.medium, fontSize: 16, textAlign: "center" }}
+                  textStyle={{
+                    color: "#fff",
+                    fontFamily: theme.typography.primary.medium,
+                    fontSize: 16,
+                    textAlign: "center",
+                  }}
                   onPress={() => navigation.navigate("Groups")}
                   preset="reversed"
                 />
@@ -408,7 +460,11 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
             {/* Category */}
             <Text style={themed($label)} text="Category *" />
             {categoriesLoading ? (
-              <ActivityIndicator size="small" color={theme.colors.tint} style={{ marginBottom: 16 }} />
+              <ActivityIndicator
+                size="small"
+                color={theme.colors.tint}
+                style={{ marginBottom: 16 }}
+              />
             ) : (
               <CustomDropdown
                 options={categories.map((cat) => ({ label: cat.label, value: cat.value }))}
@@ -436,7 +492,17 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
             <Text style={themed($label)} text="Photo" />
             <View style={[themed($photoBox), { width: "100%", alignSelf: "stretch" }]}>
               {photoUri ? (
-                <View style={{ width: "100%", aspectRatio: 1, borderRadius: 8, overflow: "hidden", borderWidth: 3, borderColor: "#fff", marginBottom: 12 }}>
+                <View
+                  style={{
+                    width: "100%",
+                    aspectRatio: 1,
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    borderWidth: 3,
+                    borderColor: "#fff",
+                    marginBottom: 12,
+                  }}
+                >
                   <Image
                     source={{ uri: photoUri }}
                     style={{ width: "100%", height: "100%" }}
@@ -446,12 +512,28 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
               ) : (
                 <>
                   <Icon icon="menu" size={32} style={themed($photoIcon)} />
-                  <Text style={themed($photoText)} text="Add a photo to help others find this item" />
+                  <Text
+                    style={themed($photoText)}
+                    text="Add a photo to help others find this item"
+                  />
                 </>
               )}
-              <View style={[themed($photoButtonRow), { width: "100%", alignSelf: "stretch", flexDirection: "row" , gap: spacing.xs}]}>
-                <Button text="Take Photo" style={[themed($photoButton), { flex: 1 }]} onPress={handleTakePhoto} />
-                <Button text="Gallery" style={[themed($photoButton), { flex: 1 }]} onPress={handlePickFromGallery} />
+              <View
+                style={[
+                  themed($photoButtonRow),
+                  { width: "100%", alignSelf: "stretch", flexDirection: "row", gap: spacing.xs },
+                ]}
+              >
+                <Button
+                  text="Take Photo"
+                  style={[themed($photoButton), { flex: 1 }]}
+                  onPress={handleTakePhoto}
+                />
+                <Button
+                  text="Gallery"
+                  style={[themed($photoButton), { flex: 1 }]}
+                  onPress={handlePickFromGallery}
+                />
               </View>
             </View>
             {/* Notes */}
@@ -495,7 +577,9 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
         confirmText={alertConfirmStyle === "success" ? "OK" : "Save"}
         cancelText={alertConfirmStyle === "success" ? undefined : "Cancel"}
         confirmStyle={alertConfirmStyle}
-        onConfirm={alertConfirmStyle === "success" ? () => setAlertVisible(false) : _handleConfirmSave}
+        onConfirm={
+          alertConfirmStyle === "success" ? () => setAlertVisible(false) : _handleConfirmSave
+        }
         onCancel={alertConfirmStyle === "success" ? undefined : () => setAlertVisible(false)}
       />
     </Screen>
@@ -555,7 +639,7 @@ const $formContentWithTopMargin = ({ spacing }: any): ViewStyle => ({
   gap: 4,
   paddingBottom: spacing.xl * 2,
 })
-const $buttonRow = ({ spacing }: any): ViewStyle => ({ 
+const $buttonRow = ({ spacing }: any): ViewStyle => ({
   marginTop: spacing.md,
   marginBottom: spacing.xl,
 })

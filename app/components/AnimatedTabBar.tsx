@@ -155,13 +155,6 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
     if (tab.name === "Add") {
       return (
         <AnimatedView key={tab.name} style={[styles.addButtonContainer, animatedContainerStyle]}>
-          <AnimatedView
-            style={[
-              styles.addButtonGlow,
-              animatedGlowStyle,
-              { backgroundColor: isFocused ? theme.colors.palette.primary200 : "transparent" },
-            ]}
-          />
           <AnimatedTouchable
             onPress={onPress}
             style={[
@@ -286,7 +279,7 @@ const styles = StyleSheet.create({
   addButtonLabel: {
     fontSize: 13,
     fontWeight: "600",
-    marginTop: 4,
+    marginTop: 8,
     textAlign: "center",
   },
   container: {

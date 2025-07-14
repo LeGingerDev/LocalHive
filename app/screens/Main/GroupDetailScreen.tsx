@@ -49,6 +49,8 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [errorAlertMessage, setErrorAlertMessage] = useState("")
   const [successAlertMessage, setSuccessAlertMessage] = useState("")
   const [showMenuModal, setShowMenuModal] = useState(false)
+  const [showLeaveGroupAlert, setShowLeaveGroupAlert] = useState(false)
+  const [leavingGroup, setLeavingGroup] = useState(false)
   const [items, setItems] = useState<ItemWithProfile[]>([])
   const [itemsLoading, setItemsLoading] = useState(false)
 
@@ -88,7 +90,8 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           members_count: groupData.members?.length || 0,
           member_count: groupData.member_count,
           member_limit: groupData.member_limit,
-          capacity_check: groupData.member_limit && (groupData.member_count || 0) >= groupData.member_limit,
+          capacity_check:
+            groupData.member_limit && (groupData.member_count || 0) >= groupData.member_limit,
         })
 
         setGroup(groupData)
@@ -179,8 +182,6 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     setShowInviteModal(false)
   }
 
-
-
   const handleCloseGroup = () => {
     setShowCloseAlert(true)
   }
@@ -206,7 +207,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 
   const handleSuccessAlertConfirm = () => {
     setShowSuccessAlert(false)
-    console.log("🔍 [GroupDetailScreen] Group deleted successfully, navigating back to Groups with refresh")
+    console.log(
+      "🔍 [GroupDetailScreen] Group deleted successfully, navigating back to Groups with refresh",
+    )
     // Navigate back to main and then to groups tab with refresh parameter
     navigation.navigate("Main", { screen: "Groups", params: { refresh: true } })
   }
@@ -253,12 +256,44 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     setMemberToRemove(null)
   }
 
+  const handleLeaveGroup = () => {
+    setShowMenuModal(false)
+    setShowLeaveGroupAlert(true)
+  }
+
+  const handleConfirmLeaveGroup = async () => {
+    setShowLeaveGroupAlert(false)
+    setLeavingGroup(true)
+    try {
+      // Call the leave group service
+      const { error } = await GroupService.leaveGroup(groupId)
+      if (error) {
+        setErrorAlertMessage("Failed to leave group. Please try again.")
+        setShowErrorAlert(true)
+      } else {
+        setSuccessAlertMessage("You have successfully left the group.")
+        setShowMemberSuccessAlert(true)
+        // Navigate back to groups after a short delay
+        setTimeout(() => {
+          navigation.navigate("Main", { screen: "Groups", params: { refresh: true } })
+        }, 1500)
+      }
+    } catch (error) {
+      setErrorAlertMessage("An unexpected error occurred while leaving the group.")
+      setShowErrorAlert(true)
+    } finally {
+      setLeavingGroup(false)
+    }
+  }
+
+  const handleCancelLeaveGroup = () => {
+    setShowLeaveGroupAlert(false)
+  }
+
   // Collapsible section handlers
   const handleMembersToggle = useCallback(() => {
     setMembersCollapsed(!membersCollapsed)
   }, [membersCollapsed])
-
-
 
   const handleItemsToggle = useCallback(() => {
     setItemsCollapsed(!itemsCollapsed)
@@ -269,7 +304,6 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   }, [recentActivityCollapsed])
 
   // ItemCard component
-
 
   if (loading || !isDataReady) {
     return (
@@ -321,8 +355,6 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           />
         </View>
 
-
-
         {/* Collapsible Members Section */}
         <View style={themed($sectionHeader)}>
           <View style={themed($sectionHeaderContent)}>
@@ -331,24 +363,33 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
               onPress={handleMembersToggle}
               activeOpacity={0.7}
             >
-              <Text style={themed($sectionHeaderTitle)} text={`Members (${members.length}${group?.member_limit ? `/${group.member_limit}` : ''})`} />
+              <Text
+                style={themed($sectionHeaderTitle)}
+                text={`Members (${members.length}${group?.member_limit ? `/${group.member_limit}` : ""})`}
+              />
             </TouchableOpacity>
             <View style={themed($sectionHeaderRight)}>
               {membersCollapsed && (
-                <Text style={themed($collapsedSectionSummary)} text={`${members.length} member${members.length !== 1 ? "s" : ""} hidden`} />
+                <Text
+                  style={themed($collapsedSectionSummary)}
+                  text={`${members.length} member${members.length !== 1 ? "s" : ""} hidden`}
+                />
               )}
-              {!membersCollapsed && !(group?.member_limit && (group.member_count || 0) >= group.member_limit) && (
-                <TouchableOpacity
-                  style={themed($inviteButton)}
-                  onPress={handleInviteMembers}
-                  activeOpacity={0.8}
-                >
-                  <Text style={themed($inviteButtonText)} text="Invite" />
-                </TouchableOpacity>
-              )}
-              {!membersCollapsed && group?.member_limit && (group.member_count || 0) >= group.member_limit && (
-                <Text style={themed($inviteButtonDisabled)} text="Max Capacity" />
-              )}
+              {!membersCollapsed &&
+                !(group?.member_limit && (group.member_count || 0) >= group.member_limit) && (
+                  <TouchableOpacity
+                    style={themed($inviteButton)}
+                    onPress={handleInviteMembers}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={themed($inviteButtonText)} text="Invite" />
+                  </TouchableOpacity>
+                )}
+              {!membersCollapsed &&
+                group?.member_limit &&
+                (group.member_count || 0) >= group.member_limit && (
+                  <Text style={themed($inviteButtonDisabled)} text="Max Capacity" />
+                )}
               <TouchableOpacity
                 style={themed($caretButton)}
                 onPress={handleMembersToggle}
@@ -399,7 +440,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         </TouchableOpacity>
 
         {!recentActivityCollapsed && (
-          <RecentActivitySection 
+          <RecentActivitySection
             groupId={groupId}
             onItemPress={(item) => {
               // Handle item press - could navigate to item detail or edit
@@ -409,25 +450,45 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         )}
 
         {/* Collapsible Items Section */}
-        <TouchableOpacity
-          style={themed($sectionHeader)}
-          onPress={handleItemsToggle}
-          activeOpacity={0.7}
-        >
+        <View style={themed($sectionHeader)}>
           <View style={themed($sectionHeaderContent)}>
-            <Text style={themed($sectionHeaderTitle)} text={`Items (${items.length})`} />
+            <TouchableOpacity
+              style={themed($sectionHeaderLeft)}
+              onPress={handleItemsToggle}
+              activeOpacity={0.7}
+            >
+              <Text style={themed($sectionHeaderTitle)} text={`Items (${items.length})`} />
+            </TouchableOpacity>
             <View style={themed($sectionHeaderRight)}>
               {itemsCollapsed && (
-                <Text style={themed($collapsedSectionSummary)} text={`${items.length} item${items.length !== 1 ? "s" : ""} hidden`} />
+                <Text
+                  style={themed($collapsedSectionSummary)}
+                  text={`${items.length} item${items.length !== 1 ? "s" : ""} hidden`}
+                />
               )}
-              <Icon
-                icon={itemsCollapsed ? "caretRight" : "caretLeft"}
-                size={20}
-                color={theme.colors.text}
-              />
+              {!itemsCollapsed && (
+                <TouchableOpacity
+                  style={themed($addItemButtonSmall)}
+                  onPress={() => navigation.navigate("Main", { screen: "Add", params: { groupId } })}
+                  activeOpacity={0.8}
+                >
+                  <Text style={themed($addItemButtonSmallText)} text="Add" />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={themed($caretButton)}
+                onPress={handleItemsToggle}
+                activeOpacity={0.7}
+              >
+                <Icon
+                  icon={itemsCollapsed ? "caretRight" : "caretLeft"}
+                  size={20}
+                  color={theme.colors.text}
+                />
+              </TouchableOpacity>
             </View>
           </View>
-        </TouchableOpacity>
+        </View>
 
         {!itemsCollapsed && (
           <View style={themed($itemsSection)}>
@@ -442,7 +503,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             ) : (
               <View style={themed($emptyItemsContainer)}>
                 <Text style={themed($emptyItemsText)} text="No items yet" />
-                <Text style={themed($emptyItemsSubtext)} text="Add the first item to this group!" />
+                <Text style={themed($emptyItemsSubtext)} text="Click 'Add' above or use the button below to add your first item!" />
               </View>
             )}
           </View>
@@ -469,16 +530,22 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         transparent
         onRequestClose={() => setShowMenuModal(false)}
       >
-        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" }}>
-          <View
+        <TouchableOpacity
+          style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" }}
+          activeOpacity={1}
+          onPress={() => setShowMenuModal(false)}
+        >
+          <TouchableOpacity
             style={{
               backgroundColor: theme.colors.cardColor,
               borderTopLeftRadius: 16,
               borderTopRightRadius: 16,
               padding: 24,
             }}
+            activeOpacity={1}
+            onPress={() => {}} // Prevent closing when tapping the modal content
           >
-            {canManageGroup && (
+            {canManageGroup ? (
               <TouchableOpacity
                 style={themed($closeGroupButton)}
                 onPress={() => {
@@ -493,6 +560,18 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
                   text={deleting ? "Closing..." : "Close Group"}
                 />
               </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={themed($leaveGroupButton)}
+                onPress={handleLeaveGroup}
+                disabled={leavingGroup}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={themed($leaveGroupButtonText)}
+                  text={leavingGroup ? "Leaving..." : "Leave Group"}
+                />
+              </TouchableOpacity>
             )}
             <TouchableOpacity
               style={{ marginTop: 16, alignItems: "center" }}
@@ -500,8 +579,8 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             >
               <Text style={{ color: theme.colors.textDim, fontSize: 16 }}>Cancel</Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
       {/* Invitation Modal */}
@@ -551,8 +630,6 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         confirmStyle="destructive"
       />
 
-
-
       {/* Menu Alert */}
       <CustomAlert
         visible={showMenuAlert}
@@ -580,6 +657,18 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         confirmText="OK"
         confirmStyle="success"
         onConfirm={() => setShowMemberSuccessAlert(false)}
+      />
+
+      {/* Leave Group Alert */}
+      <CustomAlert
+        visible={showLeaveGroupAlert}
+        title="Leave Group"
+        message={`Are you sure you want to leave "${group?.name}"? You can rejoin if you're invited again.`}
+        confirmText={leavingGroup ? "Leaving..." : "Leave Group"}
+        cancelText="Cancel"
+        confirmStyle="destructive"
+        onConfirm={handleConfirmLeaveGroup}
+        onCancel={handleCancelLeaveGroup}
       />
     </Screen>
   )
@@ -718,6 +807,22 @@ const $closeGroupButtonText = ({ colors, typography }: any): TextStyle => ({
   fontSize: 16,
   textAlign: "center",
 })
+
+const $leaveGroupButton = ({ colors }: any): ViewStyle => ({
+  backgroundColor: colors.error,
+  borderRadius: 12,
+  paddingVertical: spacing.md,
+  paddingHorizontal: spacing.lg,
+  alignItems: "center",
+  justifyContent: "center",
+})
+
+const $leaveGroupButtonText = ({ colors, typography }: any): TextStyle => ({
+  color: colors.background,
+  fontFamily: typography.primary.bold,
+  fontSize: 16,
+  textAlign: "center",
+})
 const $errorContainer = ({ spacing }: any): ViewStyle => ({
   flex: 1,
   justifyContent: "center",
@@ -774,8 +879,6 @@ const $itemsSectionTitle = ({ typography, colors, spacing }: any): TextStyle => 
 const $itemsList = (): ViewStyle => ({
   // ItemCard components now have their own marginBottom
 })
-
-
 
 const $emptyItemsContainer = ({ spacing }: any): ViewStyle => ({
   alignItems: "center",
@@ -835,6 +938,19 @@ const $inviteButtonDisabled = ({ colors, typography }: any): TextStyle => ({
   fontFamily: typography.primary.normal,
   fontSize: 12,
   fontStyle: "italic",
+})
+
+const $addItemButtonSmall = ({ colors, spacing }: any): ViewStyle => ({
+  backgroundColor: colors.tint,
+  borderRadius: 6,
+  paddingVertical: spacing.xs,
+  paddingHorizontal: spacing.sm,
+})
+
+const $addItemButtonSmallText = ({ colors, typography }: any): TextStyle => ({
+  color: colors.background,
+  fontFamily: typography.primary.medium,
+  fontSize: 12,
 })
 const $caretButton = (): ViewStyle => ({
   padding: 4,

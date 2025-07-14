@@ -558,6 +558,50 @@ export class GroupService {
   }
 
   /**
+   * Leave a group (remove current user from group)
+   */
+  static async leaveGroup(groupId: string): Promise<{ error: PostgrestError | null }> {
+    console.log("🚪 [leaveGroup] groupId:", groupId)
+    try {
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      
+      if (authError || !user) {
+        console.error("❌ [leaveGroup] User not authenticated")
+        return {
+          error: {
+            message: "User not authenticated",
+            details: "",
+            hint: "",
+            code: "401",
+          } as PostgrestError,
+        }
+      }
+
+      console.log("➖ [leaveGroup] Removing user:", user.id, "from group:", groupId)
+      // Remove the current user from the group
+      const { error } = await supabase
+        .from("group_members")
+        .delete()
+        .eq("group_id", groupId)
+        .eq("user_id", user.id)
+
+      if (error) {
+        console.error("❌ [leaveGroup] Leave group error:", error)
+        return { error }
+      }
+      
+      console.log("✅ [leaveGroup] User successfully left group")
+      return { error: null }
+    } catch (error) {
+      console.error("Error leaving group:", error)
+      return {
+        error: error as PostgrestError,
+      }
+    }
+  }
+
+  /**
    * Update member role
    */
   static async updateMemberRole(
@@ -1300,6 +1344,22 @@ export class GroupService {
       }
     } finally {
       console.log("🧪 === RLS POLICY TEST END ===")
+    }
+  }
+
+  /**
+   * Get the count of groups created by a specific user
+   */
+  static async getGroupsCreatedCount(userId: string): Promise<{ count: number, error: PostgrestError | null }> {
+    try {
+      const { count, error } = await supabase
+        .from("groups")
+        .select("*", { count: "exact", head: true })
+        .eq("creator_id", userId)
+      return { count: count || 0, error }
+    } catch (error) {
+      console.error("Error getting groups created count:", error)
+      return { count: 0, error: error as PostgrestError }
     }
   }
 }

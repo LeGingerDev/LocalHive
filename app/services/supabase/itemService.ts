@@ -16,6 +16,7 @@ export interface CreateItemData {
   notes?: string
   content?: string
   media_urls?: string[]
+  image_urls?: string[]
 }
 
 export interface ItemWithProfile {
@@ -153,12 +154,33 @@ export class ItemService {
     data: Partial<CreateItemData>,
   ): Promise<{ data: ItemWithProfile | null; error: PostgrestError | null }> {
     try {
+      console.log("[ItemService] Updating item:", itemId, "with data:", data)
+      
+      // Map the data to match database field names
+      const updateData: any = { ...data }
+      
+      // Map media_urls to image_urls for database consistency
+      if (data.media_urls !== undefined) {
+        updateData.image_urls = data.media_urls
+        delete updateData.media_urls
+      }
+      
+      // Map notes to details for database consistency
+      if (data.notes !== undefined) {
+        updateData.details = data.notes
+        delete updateData.notes
+      }
+
+      console.log("[ItemService] Mapped update data:", updateData)
+
       const { data: updatedItem, error } = await supabase
         .from("items")
-        .update(data)
+        .update(updateData)
         .eq("id", itemId)
         .select()
         .single()
+
+      console.log("[ItemService] Update result:", { updatedItem, error })
 
       return { data: updatedItem as ItemWithProfile | null, error }
     } catch (error) {

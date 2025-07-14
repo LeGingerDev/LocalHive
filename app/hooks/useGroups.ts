@@ -9,6 +9,7 @@ export const useGroups = () => {
   const [groups, setGroups] = useState<Group[]>([])
   const [invitations, setInvitations] = useState<GroupInvitation[]>([])
   const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const lastUserIdRef = useRef<string | null>(null)
 
@@ -61,7 +62,12 @@ export const useGroups = () => {
 
   // Simple refresh function
   const refresh = useCallback(async () => {
-    await loadData()
+    setRefreshing(true)
+    try {
+      await loadData()
+    } finally {
+      setRefreshing(false)
+    }
   }, [loadData])
 
   // Create group
@@ -139,6 +145,7 @@ export const useGroups = () => {
     groups,
     invitations,
     loading,
+    refreshing,
     error,
     refresh,
     createGroup,

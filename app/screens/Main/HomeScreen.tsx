@@ -7,6 +7,9 @@ import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
+import { supabase } from "@/services/supabase/supabase"
+import { StorageService } from "@/services/supabase/storageService"
+import { Button } from "@/components/Button"
 
 const windowHeight = Dimensions.get("window").height;
 const estimatedContentHeight = 250;
@@ -68,6 +71,12 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
     loadData()
     return () => { isMounted = false }
   }, [fetchData])
+
+  useEffect(() => {
+    fetch('https://xnnobyeytyycngybinqj.supabase.co')
+      .then(res => console.log('Supabase reachable:', res.status))
+      .catch(err => console.error('Supabase NOT reachable:', err));
+  }, []);
   // #endregion
 
   // #region Render Helpers
@@ -86,6 +95,70 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
     </Screen>
   )
 
+  const handleUploadStaticImage = async () => {
+    try {
+      // Use a small static image from assets
+      const staticImage = require("../../../assets/images/logo.png")
+      // Get the URI for the static image
+      const uri = Image.resolveAssetSource(staticImage).uri
+      console.log("Static image URI:", uri)
+      const response = await fetch(uri)
+      const blob = await response.blob()
+      const fileName = `test-logo-${Date.now()}.png`
+      const filePath = `test/${fileName}`
+      console.log("Uploading static image to:", filePath)
+      const uploadResult = await StorageService.uploadImage(filePath, blob, { upsert: true, contentType: "image/png" })
+      console.log("Static image upload result:", uploadResult)
+      alert("Upload success! File path: " + filePath)
+    } catch (error) {
+      console.error("Static image upload exception:", error)
+      alert("Upload exception: " + error)
+    }
+  }
+
+  const handleUploadGoogleLogo = async () => {
+    try {
+      // 1. Download the image as a blob
+      const imageUrl = "https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png"
+      console.log("Downloading Google logo from:", imageUrl)
+      const response = await fetch(imageUrl)
+      const blob = await response.blob()
+
+      // 2. Prepare the upload URL and headers
+      const supabaseUrl = "https://xnnobyeytyycngybinqj.supabase.co"
+      const bucket = "items"
+      const filePath = `test/googlelogo-${Date.now()}.png`
+      const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${filePath}`
+      const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhubm9ieWV5dHl5Y25neWJpbnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NjEyMDQsImV4cCI6MjA2NzIzNzIwNH0.bBO9iuzsMU1xUq_EJAi6esjWb0Jm1Arj2mQfXXqIEKw"
+
+      console.log("Uploading Google logo to:", filePath)
+      console.log("Upload URL:", uploadUrl)
+
+      // 3. Upload using fetch
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${anonKey}`,
+          'Content-Type': 'image/png',
+        },
+        body: blob,
+      })
+
+      console.log("Upload response status:", uploadResponse.status)
+      const result = await uploadResponse.text()
+      console.log("Upload response:", result)
+
+      if (uploadResponse.ok) {
+        alert("Upload success! File path: " + filePath)
+      } else {
+        throw new Error(`Upload failed: ${uploadResponse.status} - ${result}`)
+      }
+    } catch (error) {
+      console.error("Google logo upload exception:", error)
+      alert("Upload exception: " + error)
+    }
+  }
+
   const renderContent = (): React.JSX.Element => (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top"]}>
       <Header title="Home" />
@@ -98,6 +171,8 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
           />
                   <Text style={themed($emptyStateTitle)}>Home isn't ready yet</Text>
         <Text style={themed($emptyStateText)}>This feature is coming soon!</Text>
+        <Button text="Test Upload Static Image" onPress={handleUploadStaticImage} style={{ marginTop: 24 }} />
+        <Button text="Test Upload Google Logo" onPress={handleUploadGoogleLogo} style={{ marginTop: 12 }} />
         </View>
       </View>
     </Screen>

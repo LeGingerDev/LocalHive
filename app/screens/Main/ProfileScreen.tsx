@@ -20,21 +20,10 @@ const ProfileScreen = () => {
   const { themeContext, theme } = useAppTheme()
   const navigation = useNavigation<any>()
   const { refreshUser, userProfile } = useAuth()
-  const [isLoadingCode, setIsLoadingCode] = useState(false)
-
   // Set the status bar background color to match the header
   useEffect(() => {
     setSystemUIBackgroundColor(theme.colors.headerBackground)
   }, [theme.colors.headerBackground])
-
-  const handleRefreshPersonalCode = async () => {
-    setIsLoadingCode(true)
-    try {
-      await refreshUser()
-    } finally {
-      setIsLoadingCode(false)
-    }
-  }
 
   // Remove the unnecessary refreshUser call that was causing loading state interference
   // The user data is already loaded by the AuthContext and doesn't need to be refreshed
@@ -66,8 +55,6 @@ const ProfileScreen = () => {
           <PersonalCodeBox
             style={styles.personalCodeBox}
             code={userProfile?.personal_code}
-            isLoading={isLoadingCode}
-            onRefresh={handleRefreshPersonalCode}
           />
           <SubContainer style={styles.subContainer} />
         </View>

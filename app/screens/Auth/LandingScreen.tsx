@@ -104,7 +104,26 @@ export const LandingScreen = () => {
         }
       }
     } catch (error) {
-      console.error("Google sign-in error:", error)
+      // Log the error in detail for debugging
+      try {
+        console.error("Google sign-in error (full):", JSON.stringify(error, null, 2))
+      } catch (e) {
+        console.error("Google sign-in error (stringify failed):", error)
+      }
+      console.error("Google sign-in error (raw):", error)
+      console.error("Google sign-in error (type):", typeof error)
+      // If the error is a cancellation, do not show an alert
+      const err = error as any;
+      if (
+        err &&
+        (err.code === 'SIGN_IN_CANCELLED' ||
+          (typeof err.message === 'string' && (
+            err.message.toLowerCase().includes('cancelled') ||
+            err.message.toLowerCase().includes('gettokens')
+          )))
+      ) {
+        return
+      }
       showAlert("Sign-In Error", "An unexpected error occurred. Please try again.")
     } finally {
       setIsGoogleSigningIn(false)
@@ -134,7 +153,7 @@ export const LandingScreen = () => {
           <View style={styles.logoContainer}>
             <View style={styles.logoBox}>
               <Image
-                source={require("@assets/images/logo.png")}
+                source={require("@assets/Visu/VisuHead.png")}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -142,8 +161,8 @@ export const LandingScreen = () => {
           </View>
 
           {/* App Title and Tagline */}
-          <Text style={styles.title}>Local Hive</Text>
-          <Text style={styles.subtitle}>Build shared local knowledge with{"\n"}your group</Text>
+          <Text style={styles.title}>Visu</Text>
+          <Text style={styles.subtitle}>See what you need{"\n"}Share what you know</Text>
 
           {/* Auth Buttons */}
           <View style={styles.authContainer}>
@@ -178,29 +197,43 @@ export const LandingScreen = () => {
             <View style={styles.featureItem}>
               <View style={styles.featureIconContainer}>
                 <View style={styles.featureIconCircle}>
-                  <FontAwesome name="users" size={16} color="white" />
+                  <FontAwesome name="eye" size={16} color="white" />
                 </View>
               </View>
-              <Text style={styles.featureText}>Connect with your local community</Text>
+              <Text style={styles.featureText}>Stop asking "what does it look like?"</Text>
             </View>
 
             <View style={styles.featureItem}>
               <View style={styles.featureIconContainer}>
                 <View style={styles.featureIconCircle}>
-                  <FontAwesome name="lightbulb-o" size={16} color="white" />
+                  <FontAwesome name="check-circle" size={16} color="white" />
                 </View>
               </View>
-              <Text style={styles.featureText}>Share knowledge and insights</Text>
+              <Text style={styles.featureText}>Never buy the wrong item again</Text>
             </View>
 
             <View style={styles.featureItem}>
               <View style={styles.featureIconContainer}>
                 <View style={styles.featureIconCircle}>
-                  <FontAwesome name="map-marker" size={16} color="white" />
+                  <FontAwesome name="search" size={16} color="white" />
                 </View>
               </View>
-              <Text style={styles.featureText}>Discover local resources and events</Text>
+              <Text style={styles.featureText}>Smart search finds exactly what you need</Text>
             </View>
+          </View>
+
+          {/* Terms and Privacy Links */}
+          <View style={styles.legalContainer}>
+            <Text style={styles.legalText}>
+              By continuing, you agree to our{"\n"}
+              <Text style={styles.legalLink} onPress={() => {}}>
+                Terms of Service
+              </Text>{" "}
+              and{" "}
+              <Text style={styles.legalLink} onPress={() => {}}>
+                Privacy Policy
+              </Text>
+            </Text>
           </View>
         </Animated.View>
       </CustomGradient>
@@ -281,21 +314,14 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   logo: {
-    height: 40,
-    width: 40,
+    height: 150,
+    width: 150,
   },
   logoBox: {
     alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 16,
-    elevation: 3,
-    height: 80,
+    height: 150,
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    width: 80,
+    width: 150,
   },
   logoContainer: {
     alignItems: "center",
@@ -313,9 +339,25 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "white",
-    fontSize: 32,
+    fontSize: 50,
     fontWeight: "bold",
     marginBottom: 8,
+    paddingBottom: 16,
     textAlign: "center",
+  },
+  legalContainer: {
+    marginTop: 20,
+    marginBottom: 30,
+    paddingHorizontal: 20,
+  },
+  legalText: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: 12,
+    textAlign: "center",
+    lineHeight: 16,
+  },
+  legalLink: {
+    color: "rgba(255, 255, 255, 0.9)",
+    textDecorationLine: "underline",
   },
 })

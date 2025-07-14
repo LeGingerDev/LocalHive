@@ -172,7 +172,6 @@ export const CreateGroupScreen = ({ navigation }: any) => {
                   ]}
                   onPress={() => setFormData((prev) => ({ ...prev, is_public: opt.value }))}
                   text={opt.label}
-                  preset="filled"
                 />
               </View>
             ))}

@@ -24,21 +24,31 @@ export default StatVisual
 
 const $container: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   alignItems: "center",
-  justifyContent: "center",
+  justifyContent: "flex-start",
   paddingVertical: spacing.xs,
   paddingHorizontal: spacing.sm,
   width: 100, // Fixed width for even alignment
+  height: 60, // Reduced height for tighter spacing
 })
 
 const $value: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.bold,
   fontSize: 22,
   color: colors.text,
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  textAlign: "center",
 })
 
 const $label: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   fontFamily: typography.primary.medium,
   fontSize: 13,
   color: colors.textDim,
-  marginTop: spacing.xxs,
+  textAlign: "center",
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  right: 0,
 })

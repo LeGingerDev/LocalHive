@@ -271,6 +271,7 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
           stats={[
             { value: userStats.stats.groupsCount, label: "Groups" },
             { value: userStats.stats.itemsCount, label: "Items Added" },
+            { value: userStats.stats.groupsCreatedCount, label: "Groups Created" },
           ]}
         />
       </View>
