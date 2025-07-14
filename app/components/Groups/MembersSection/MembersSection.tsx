@@ -78,7 +78,7 @@ export const MembersSection = ({
 }
 
 // Styles
-const $container = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.xl })
+const $container = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.sm })
 const $sectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({
   fontFamily: typography.primary.medium,
   fontSize: 18,

@@ -760,7 +760,7 @@ const $infoText = ({ typography, colors }: any): TextStyle => ({
 
 // Items Section Styles
 const $itemsSection = ({ spacing }: any): ViewStyle => ({
-  marginTop: spacing.lg,
+  marginTop: spacing.xs,
   marginBottom: spacing.md,
 })
 
@@ -803,7 +803,7 @@ const $sectionHeader = ({ colors, spacing }: any): ViewStyle => ({
   paddingVertical: spacing.sm,
   backgroundColor: colors.primary100,
   borderRadius: 8,
-  marginBottom: spacing.sm,
+  marginBottom: spacing.xs,
 })
 const $sectionHeaderContent = (): ViewStyle => ({
   flexDirection: "row",

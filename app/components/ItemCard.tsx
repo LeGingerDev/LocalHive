@@ -3,6 +3,7 @@ import { View, ViewStyle, TextStyle, Image, TouchableOpacity, ImageStyle } from 
 import { ItemWithProfile } from "@/services/supabase/itemService"
 import { useAppTheme } from "@/theme/context"
 import { Text } from "@/components/Text"
+import { getCategoryColor } from "@/theme/categoryColors"
 
 interface ItemCardProps {
   item: ItemWithProfile
@@ -10,13 +11,20 @@ interface ItemCardProps {
 }
 
 export const ItemCard = ({ item, onPress }: ItemCardProps) => {
-  const { themed, theme } = useAppTheme()
+  const { themed, theme, themeContext } = useAppTheme()
   const imageUrls = item.image_urls ?? [];
   const hasImage = imageUrls.length > 0;
+  const categoryColor = getCategoryColor(item.category, themeContext === "dark")
 
   return (
     <TouchableOpacity
-      style={themed($card)}
+      style={[
+        themed($card), 
+        { 
+          borderColor: categoryColor,
+          shadowColor: categoryColor,
+        }
+      ]}
       activeOpacity={0.85}
       onPress={onPress ? () => onPress(item) : undefined}
       accessibilityRole={onPress ? "button" : undefined}
@@ -60,10 +68,8 @@ const $card = ({ colors, spacing }: any): ViewStyle => ({
   backgroundColor: colors.background,
   borderRadius: spacing.md,
   borderWidth: 1,
-  borderColor: colors.border,
-  shadowColor: colors.palette.neutral800,
   shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.08,
+  shadowOpacity: 0.15,
   shadowRadius: 8,
   elevation: 4,
   minHeight: 64, // slightly more compact
@@ -95,10 +101,10 @@ const $imagePlaceholder = ({ colors }: any): ViewStyle => ({
   width: "100%",
   height: "100%",
   borderRadius: 12,
-  backgroundColor: colors.cardColor,
+  backgroundColor: colors.background,
   alignItems: "center",
   justifyContent: "center",
-  
+  opacity: 0.8,
 })
 
 

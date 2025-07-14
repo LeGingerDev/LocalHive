@@ -397,7 +397,7 @@ const $sectionHeader = ({ colors, spacing }: any): ViewStyle => ({
   paddingHorizontal: spacing.md,
   backgroundColor: colors.primary100,
   borderRadius: 8,
-  marginBottom: spacing.sm,
+  marginBottom: spacing.xs,
 })
 const $sectionHeaderContent = (): ViewStyle => ({
   flexDirection: "row",
