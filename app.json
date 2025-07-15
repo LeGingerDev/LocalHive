@@ -25,7 +25,9 @@
     "edgeToEdgeEnabled": true,
     "softwareNavBarColor": "transparent",
     "navigationBarColor": "transparent",
-    "windowSoftInputMode": "adjustResize"
+    "windowSoftInputMode": "adjustResize",
+    "enableProguardInReleaseBuilds": false,
+    "enableShrinkResourcesInReleaseBuilds": false
   },
   "ios": {
     "icon": "./assets/images/app-icon-ios.png",

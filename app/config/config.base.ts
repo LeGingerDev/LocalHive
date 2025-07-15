@@ -6,6 +6,7 @@ export interface ConfigBaseProps {
   SUPABASE_URL: string
   SUPABASE_KEY: string
   SUPABASE_SERVICE_ROLE_KEY: string
+  OPENAI_API_KEY: string
 }
 
 export type PersistNavigationConfig = ConfigBaseProps["persistNavigation"]
@@ -31,6 +32,7 @@ const BaseConfig: ConfigBaseProps = {
   SUPABASE_URL: "",
   SUPABASE_KEY: "",
   SUPABASE_SERVICE_ROLE_KEY: "",
+  OPENAI_API_KEY: "",
 }
 
 export default BaseConfig

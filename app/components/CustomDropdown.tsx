@@ -27,6 +27,7 @@ export interface CustomDropdownProps {
   placeholder?: string
   style?: StyleProp<ViewStyle>
   testID?: string
+  disabled?: boolean
 }
 
 export const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -36,6 +37,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   placeholder = "Select...",
   style,
   testID = "customDropdownComponent",
+  disabled = false,
 }) => {
   const { themed, theme } = useAppTheme()
   const [modalVisible, setModalVisible] = useState(false)
@@ -62,6 +64,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   }, [modalVisible, scaleAnim])
 
   const handleSelect = (val: string) => {
+    if (disabled) return
     onChange(val)
     setModalVisible(false)
   }
@@ -69,17 +72,31 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   return (
     <>
       <Pressable
-        style={[themed($dropdownContainer), style]}
-        onPress={() => setModalVisible(true)}
+        style={[
+          themed($dropdownContainer), 
+          style, 
+          disabled && themed($dropdownDisabled)
+        ]}
+        onPress={() => !disabled && setModalVisible(true)}
         accessibilityRole="button"
         testID={testID}
+        disabled={disabled}
       >
         <Text
-          style={themed($dropdownText)}
+          style={[
+            themed($dropdownText),
+            disabled && themed($dropdownTextDisabled)
+          ]}
           text={selectedOption ? selectedOption.label : placeholder}
           numberOfLines={1}
         />
-        <Text style={themed($chevron)} text={modalVisible ? "▲" : "▼"} />
+        <Text 
+          style={[
+            themed($chevron),
+            disabled && themed($chevronDisabled)
+          ]} 
+          text={modalVisible ? "▲" : "▼"} 
+        />
       </Pressable>
       <Modal
         visible={modalVisible}
@@ -185,4 +202,17 @@ const $optionText = ({ colors, typography }: any): TextStyle => ({
 const $optionTextSelected = ({ colors, typography }: any): TextStyle => ({
   color: colors.orange || "#FFA500",
   fontFamily: typography.primary.bold,
+})
+
+const $dropdownDisabled = ({ colors }: any): ViewStyle => ({
+  opacity: 0.5,
+  backgroundColor: colors.palette?.neutral200 || colors.input,
+})
+
+const $dropdownTextDisabled = ({ colors }: any): TextStyle => ({
+  color: colors.textDim || colors.text,
+})
+
+const $chevronDisabled = ({ colors }: any): TextStyle => ({
+  color: colors.textDim || colors.text,
 })

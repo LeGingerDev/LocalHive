@@ -8,8 +8,8 @@ import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
 import { supabase } from "@/services/supabase/supabase"
-import { StorageService } from "@/services/supabase/storageService"
 import { Button } from "@/components/Button"
+import { EmbeddingRegenerationService } from "@/services/embeddingRegenerationService"
 
 const windowHeight = Dimensions.get("window").height;
 const estimatedContentHeight = 250;
@@ -95,67 +95,27 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
     </Screen>
   )
 
-  const handleUploadStaticImage = async () => {
+
+
+  const [isRegenerating, setIsRegenerating] = useState<boolean>(false)
+
+  const handleRegenerateAllEmbeddings = async () => {
     try {
-      // Use a small static image from assets
-      const staticImage = require("../../../assets/images/logo.png")
-      // Get the URI for the static image
-      const uri = Image.resolveAssetSource(staticImage).uri
-      console.log("Static image URI:", uri)
-      const response = await fetch(uri)
-      const blob = await response.blob()
-      const fileName = `test-logo-${Date.now()}.png`
-      const filePath = `test/${fileName}`
-      console.log("Uploading static image to:", filePath)
-      const uploadResult = await StorageService.uploadImage(filePath, blob, { upsert: true, contentType: "image/png" })
-      console.log("Static image upload result:", uploadResult)
-      alert("Upload success! File path: " + filePath)
-    } catch (error) {
-      console.error("Static image upload exception:", error)
-      alert("Upload exception: " + error)
-    }
-  }
-
-  const handleUploadGoogleLogo = async () => {
-    try {
-      // 1. Download the image as a blob
-      const imageUrl = "https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png"
-      console.log("Downloading Google logo from:", imageUrl)
-      const response = await fetch(imageUrl)
-      const blob = await response.blob()
-
-      // 2. Prepare the upload URL and headers
-      const supabaseUrl = "https://xnnobyeytyycngybinqj.supabase.co"
-      const bucket = "items"
-      const filePath = `test/googlelogo-${Date.now()}.png`
-      const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${filePath}`
-      const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhubm9ieWV5dHl5Y25neWJpbnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NjEyMDQsImV4cCI6MjA2NzIzNzIwNH0.bBO9iuzsMU1xUq_EJAi6esjWb0Jm1Arj2mQfXXqIEKw"
-
-      console.log("Uploading Google logo to:", filePath)
-      console.log("Upload URL:", uploadUrl)
-
-      // 3. Upload using fetch
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${anonKey}`,
-          'Content-Type': 'image/png',
-        },
-        body: blob,
-      })
-
-      console.log("Upload response status:", uploadResponse.status)
-      const result = await uploadResponse.text()
-      console.log("Upload response:", result)
-
-      if (uploadResponse.ok) {
-        alert("Upload success! File path: " + filePath)
+      setIsRegenerating(true)
+      console.log("Starting embedding regeneration...")
+      
+      const result = await EmbeddingRegenerationService.regenerateAllEmbeddings()
+      
+      if (result.success) {
+        alert(`✅ Embedding regeneration completed!\n\nProcessed: ${result.processed} out of ${result.totalItems} items${result.errors.length > 0 ? `\n\nErrors: ${result.errors.length}` : ''}`)
       } else {
-        throw new Error(`Upload failed: ${uploadResponse.status} - ${result}`)
+        alert(`❌ Embedding regeneration failed: ${result.error}`)
       }
     } catch (error) {
-      console.error("Google logo upload exception:", error)
-      alert("Upload exception: " + error)
+      console.error("Error during embedding regeneration:", error)
+      alert(`❌ Error during embedding regeneration: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsRegenerating(false)
     }
   }
 
@@ -171,8 +131,12 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
           />
                   <Text style={themed($emptyStateTitle)}>Home isn't ready yet</Text>
         <Text style={themed($emptyStateText)}>This feature is coming soon!</Text>
-        <Button text="Test Upload Static Image" onPress={handleUploadStaticImage} style={{ marginTop: 24 }} />
-        <Button text="Test Upload Google Logo" onPress={handleUploadGoogleLogo} style={{ marginTop: 12 }} />
+        <Button 
+          text={isRegenerating ? "Regenerating..." : "Regenerate All Embeddings"} 
+          onPress={handleRegenerateAllEmbeddings} 
+          disabled={isRegenerating}
+          style={{ marginTop: 24 }} 
+        />
         </View>
       </View>
     </Screen>

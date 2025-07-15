@@ -497,7 +497,18 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             ) : items.length > 0 ? (
               <View style={themed($itemsList)}>
                 {items.map((item) => (
-                  <ItemCard key={item.id} item={item} />
+                  <ItemCard 
+                    key={item.id} 
+                    item={item} 
+                    onItemUpdated={(updatedItem) => {
+                      // Update the item in the local state
+                      setItems(prevItems => 
+                        prevItems.map(prevItem => 
+                          prevItem.id === updatedItem.id ? updatedItem : prevItem
+                        )
+                      )
+                    }}
+                  />
                 ))}
               </View>
             ) : (

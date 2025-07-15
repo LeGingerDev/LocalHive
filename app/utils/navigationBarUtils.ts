@@ -8,12 +8,28 @@ import * as NavigationBar from "expo-navigation-bar"
 export const hideNavigationBar = async (): Promise<void> => {
   if (Platform.OS === "android") {
     try {
+      // Suppress console warnings for unsupported methods
+      const originalWarn = console.warn
+      console.warn = (...args) => {
+        // Filter out navigation bar warnings when edge-to-edge is enabled
+        const message = args[0]
+        if (typeof message === 'string' && 
+            (message.includes('setBehaviorAsync') || message.includes('setBackgroundColorAsync')) &&
+            message.includes('edge-to-edge')) {
+          return // Suppress this warning
+        }
+        originalWarn.apply(console, args)
+      }
+
       // Set the navigation bar to hidden
       await NavigationBar.setVisibilityAsync("hidden")
-      // Set behavior to overlay-swipe so it doesn't reappear easily
-      await NavigationBar.setBehaviorAsync("overlay-swipe")
-      // Make it transparent for good measure (in case it briefly appears)
-      await NavigationBar.setBackgroundColorAsync("transparent")
+      
+      // Note: setBehaviorAsync and setBackgroundColorAsync are not supported with edge-to-edge enabled
+      // These calls are removed to prevent warnings
+      // The edge-to-edge configuration in app.json handles the navigation bar styling
+
+      // Restore original console.warn
+      console.warn = originalWarn
     } catch (error) {
       console.warn("Failed to hide navigation bar:", error)
     }

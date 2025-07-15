@@ -96,11 +96,11 @@ const $leftColumn = ({ spacing }: any): ViewStyle => ({
 })
 
 const $centerColumn = (): ViewStyle => ({
-  flex: 0.5,
+  flex: 0.2,
 })
 
 const $rightColumn = ({ spacing }: any): ViewStyle => ({
-  flex: 1,
+  flex: 1.5,
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "flex-end",

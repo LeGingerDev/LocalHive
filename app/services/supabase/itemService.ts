@@ -1,6 +1,7 @@
 import { PostgrestError } from "@supabase/supabase-js"
 
 import { supabase } from "./supabase"
+import { EdgeFunctionService } from "../edgeFunctionService"
 
 export interface ItemCategory {
   value: string
@@ -99,7 +100,26 @@ export class ItemService {
         .select()
         .single()
 
-      return { data: createdItem as ItemWithProfile | null, error }
+      if (error || !createdItem) {
+        return { data: null, error }
+      }
+
+      // Generate embedding for the item (fire and forget - don't block item creation)
+      try {
+        await EdgeFunctionService.generateItemEmbedding(
+          createdItem.id,
+          data.title,
+          data.notes || undefined,
+          data.category,
+          data.location || undefined
+        )
+        console.log(`[ItemService] Generated embedding for item: ${createdItem.id}`)
+      } catch (embeddingError) {
+        // Log error but don't fail the item creation
+        console.error(`[ItemService] Failed to generate embedding for item ${createdItem.id}:`, embeddingError)
+      }
+
+      return { data: createdItem as ItemWithProfile | null, error: null }
     } catch (error) {
       console.error("Error creating item:", error)
       return {
@@ -182,7 +202,30 @@ export class ItemService {
 
       console.log("[ItemService] Update result:", { updatedItem, error })
 
-      return { data: updatedItem as ItemWithProfile | null, error }
+      if (error || !updatedItem) {
+        return { data: null, error }
+      }
+
+      // Regenerate embedding for the updated item (fire and forget)
+      try {
+        const title = data.title || updatedItem.title
+        const details = data.notes || updatedItem.details
+        const category = data.category || updatedItem.category
+        const location = data.location || updatedItem.location
+        await EdgeFunctionService.generateItemEmbedding(
+          itemId,
+          title,
+          details || undefined,
+          category,
+          location || undefined
+        )
+        console.log(`[ItemService] Regenerated embedding for updated item: ${itemId}`)
+      } catch (embeddingError) {
+        // Log error but don't fail the item update
+        console.error(`[ItemService] Failed to regenerate embedding for item ${itemId}:`, embeddingError)
+      }
+
+      return { data: updatedItem as ItemWithProfile | null, error: null }
     } catch (error) {
       console.error("Error updating item:", error)
       return {
@@ -223,6 +266,71 @@ export class ItemService {
       return { data: count, error }
     } catch (error) {
       console.error("Error getting user items count:", error)
+      return {
+        data: null,
+        error: error as PostgrestError,
+      }
+    }
+  }
+
+  /**
+   * Get all items for the current user across all their groups
+   */
+  static async getAllUserItemsWithProfiles(
+    userId: string,
+  ): Promise<{ data: ItemWithProfile[] | null; error: PostgrestError | null }> {
+    try {
+      // First get all groups the user is a member of
+      const { data: userGroups, error: groupsError } = await supabase
+        .from("group_members")
+        .select("group_id")
+        .eq("user_id", userId)
+
+      if (groupsError) {
+        console.error("Error getting user groups:", groupsError)
+        return { data: null, error: groupsError }
+      }
+
+      if (!userGroups || userGroups.length === 0) {
+        return { data: [], error: null }
+      }
+
+      const groupIds = userGroups.map(g => g.group_id)
+      
+      // Get all items from all groups the user is a member of (without profile join)
+      const { data: items, error } = await supabase
+        .from("items")
+        .select("*")
+        .in("group_id", groupIds)
+        .order("created_at", { ascending: false })
+
+      if (error) {
+        console.error("Error getting all user items:", error)
+        return { data: null, error }
+      }
+
+      // Transform the data to match ItemWithProfile interface (without profile data)
+      const itemsWithProfiles: ItemWithProfile[] = (items || []).map(item => ({
+        id: item.id,
+        group_id: item.group_id,
+        user_id: item.user_id,
+        title: item.title,
+        category: item.category,
+        location: item.location,
+        details: item.details,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        image_urls: item.image_urls,
+        // Profile fields will be undefined since we're not joining with profiles
+        profile_id: undefined,
+        full_name: undefined,
+        email: undefined,
+        avatar_url: undefined,
+      }))
+
+      return { data: itemsWithProfiles, error: null }
+    } catch (error) {
+      console.error("Error getting all user items with profiles:", error)
       return {
         data: null,
         error: error as PostgrestError,

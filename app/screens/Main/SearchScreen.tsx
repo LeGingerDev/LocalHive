@@ -1,217 +1,295 @@
-import React, { FC, useState, useEffect, useCallback } from "react"
-import { ViewStyle, TextStyle, ActivityIndicator, ScrollView, View, Text, Image, Dimensions } from "react-native"
-
+import React, { FC, useState, useCallback, useRef } from "react"
+import { View, TextInput, ActivityIndicator, FlatList, ViewStyle, TextStyle, TouchableOpacity } from "react-native"
 import { Header } from "@/components/Header"
 import { Screen } from "@/components/Screen"
-import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
+import { ItemCard } from "@/components/ItemCard"
+import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
 
-const windowHeight = Dimensions.get("window").height;
-const estimatedContentHeight = 250;
-const verticalPadding = Math.max((windowHeight - estimatedContentHeight) / 2, 0);
+import { Switch } from "@/components/Toggle/Switch"
+import { searchItemsByVector } from "@/services/vectorSearchService"
+import { askAIAboutItems, AIQueryResponse } from "@/services/openaiService"
+import { ItemWithProfile, ItemService } from "@/services/supabase/itemService"
+import { supabase } from "@/services/supabase/supabase"
 
-// #region Types & Interfaces
-interface SearchScreenProps extends BottomTabScreenProps<"Search"> {}
-
-interface SearchData {
-  id?: string
-  name?: string
-}
-
-interface SearchError {
-  message: string
-  code?: string
-}
-// #endregion
-
-// #region Screen Component
-export const SearchScreen: FC<SearchScreenProps> = () => {
-  // #region Private State Variables
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [data, setData] = useState<SearchData | null>(null)
-  const [error, setError] = useState<SearchError | null>(null)
-  // #endregion
-
-  // #region Hooks & Context
+export const SearchScreen: FC = () => {
   const { themed } = useAppTheme()
-  // #endregion
+  const [query, setQuery] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [results, setResults] = useState<ItemWithProfile[]>([])
+  const [isAIMode, setIsAIMode] = useState(false)
+  const [aiResponse, setAiResponse] = useState<AIQueryResponse | null>(null)
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
 
-  // #region Data Fetching Functions
-  const fetchData = useCallback(async (): Promise<void> => {
+  // Debounced search using the vector service
+  const handleChange = useCallback((text: string) => {
+    setQuery(text)
+    setError(null)
+    setAiResponse(null)
+    
+    // Only auto-search for vector search mode
+    if (!isAIMode) {
+      setIsLoading(true)
+      setResults([])
+      if (debounceTimeout.current) clearTimeout(debounceTimeout.current)
+      debounceTimeout.current = setTimeout(async () => {
+        if (!text) {
+          setResults([])
+          setIsLoading(false)
+          return
+        }
+        
+        try {
+          console.log("[SearchScreen] Searching for:", text)
+          const items = await searchItemsByVector(text)
+          console.log("[SearchScreen] Search results:", items)
+          console.log("[SearchScreen] Number of results:", items.length)
+          setResults(items)
+        } catch (e) {
+          console.error("[SearchScreen] Search error:", e)
+          setError("Failed to search. Please try again.")
+        } finally {
+          setIsLoading(false)
+        }
+      }, 400)
+    }
+  }, [isAIMode])
+
+  // Manual search for AI mode
+  const handleAISearch = useCallback(async () => {
+    if (!query.trim()) return
+    
+    setError(null)
+    setAiResponse(null)
+    setIsLoading(true)
+    setResults([])
+    
     try {
-      setError(null)
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      const mockData: SearchData = { id: "1", name: "search data" }
-      setData(mockData)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
-      setError({ message: errorMessage })
-      console.error("[SearchScreen] Error fetching data:", error)
+      console.log("[SearchScreen] AI Query:", query)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setError("User not authenticated")
+        setIsLoading(false)
+        return
+      }
+      
+      const { data: allItems, error: itemsError } = await ItemService.getAllUserItemsWithProfiles(user.id)
+      if (itemsError || !allItems) {
+        setError("Failed to load items for AI analysis")
+        setIsLoading(false)
+        return
+      }
+      
+      const aiResponse = await askAIAboutItems(query, allItems)
+      setAiResponse(aiResponse)
+      setResults(aiResponse.relatedItems || [])
+    } catch (e) {
+      console.error("[SearchScreen] AI error:", e)
+      setError("Failed to get AI response. Please try again.")
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [query])
 
-  const handleRetry = useCallback((): void => {
-    setIsLoading(true)
-    setError(null)
-    fetchData()
-  }, [fetchData])
-  // #endregion
-
-  // #region Lifecycle Effects
-  useEffect(() => {
-    let isMounted = true
-    const loadData = async () => { if (isMounted) { await fetchData() } }
-    loadData()
-    return () => { isMounted = false }
-  }, [fetchData])
-  // #endregion
-
-  // #region Render Helpers
-  const renderLoadingState = (): React.JSX.Element => (
-    <Screen style={themed($loadingContainer)} preset="fixed">
-      <ActivityIndicator size="large" color={themed($activityIndicator).color} />
-      <Text style={themed($loadingText)}>{"Loading..."}</Text>
-    </Screen>
-  )
-
-  const renderErrorState = (): React.JSX.Element => (
-    <Screen style={themed($errorContainer)} preset="fixed">
-      <Text style={themed($errorTitle)}>{"Oops! Something went wrong"}</Text>
-      <Text style={themed($errorMessage)}>{error?.message ?? "Unknown error"}</Text>
-      <Text style={themed($retryButton)} onPress={handleRetry}>{"Tap to retry"}</Text>
-    </Screen>
-  )
-
-  const renderContent = (): React.JSX.Element => (
+  return (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top"]}>
-      <Header title="Search" />
-      <View style={themed($emptyStateContainer)}>
-        <View style={themed($emptyState)}>
-          <Image
-            source={require("../../../assets/Visu/Visu_Searching.png")}
-            style={{ width: 160, height: 160, resizeMode: "contain", marginBottom: spacing.lg }}
-            accessibilityLabel="Search not ready illustration"
-          />
-          <Text style={themed($emptyStateTitle)}>Search isn't ready yet</Text>
-          <Text style={themed($emptyStateText)}>This feature is coming soon!</Text>
+      <Header 
+        title="Search" 
+        rightActions={[
+          {
+            text: isAIMode ? "Quick Search" : "Ask AI",
+            onPress: () => {
+              setIsAIMode(!isAIMode)
+              setQuery("") // Clear input
+              setResults([]) // Clear results
+              setError(null) // Clear any errors
+              setAiResponse(null) // Clear AI response
+            },
+          }
+        ]}
+      />
+      <View style={themed($content)}>
+        <View style={themed($searchContainer)}>
+          <View style={themed($inputWrapper)}>
+            <TextInput
+              placeholder={isAIMode ? "Ask about your items..." : "Search items..."}
+              placeholderTextColor={themed($placeholderText).color}
+              style={themed($textInput)}
+              value={query}
+              onChangeText={handleChange}
+              autoCapitalize="none"
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+            />
+          </View>
+          {isAIMode && (
+            <TouchableOpacity 
+              style={themed($searchButton)} 
+              onPress={handleAISearch}
+              disabled={!query.trim() || isLoading}
+            >
+              <Text style={themed($searchButtonText)} text="Search" />
+            </TouchableOpacity>
+          )}
+        </View>
+        
+        {isLoading && (
+          <ActivityIndicator style={themed($loading)} size="small" color={themed($activityIndicator).color} />
+        )}
+        
+        {error && <View style={themed($errorContainer)}><Text style={themed($errorText)} text={error} /></View>}
+        
+        {/* AI Response - Hidden, just show filtered items */}
+        
+        {!isLoading && !error && results.length === 0 && query.length > 0 && !aiResponse && (
+          <View style={themed($emptyContainer)}>
+            <Text style={themed($emptyText)} text={isAIMode ? "No AI response available." : "No results found."} />
+          </View>
+        )}
+        
+        {!isLoading && !error && results.length > 0 && (
+          <View style={themed($resultsHeader)}>
+            <Text style={themed($resultsCount)} text={`${results.length} result${results.length === 1 ? '' : 's'} found`} />
+          </View>
+        )}
+        
+        <View style={themed($resultsContainer)}>
+          {results.map((item) => (
+            <ItemCard 
+              key={item.id} 
+              item={item} 
+              onItemUpdated={(updatedItem) => {
+                // Update the item in the local results state
+                setResults(prevResults => 
+                  prevResults.map(prevItem => 
+                    prevItem.id === updatedItem.id ? updatedItem : prevItem
+                  )
+                )
+              }}
+            />
+          ))}
         </View>
       </View>
     </Screen>
   )
-  // #endregion
-
-  // #region Main Render
-  if (isLoading && !data) {
-    return renderLoadingState()
-  }
-  if (error && !data) {
-    return renderErrorState()
-  }
-  return renderContent()
-  // #endregion
 }
-// #endregion
 
-// #region Styles
 const $root: ThemedStyle<ViewStyle> = ({ colors }) => ({
   flex: 1,
   backgroundColor: colors.background,
 })
-const $loadingContainer: ThemedStyle<ViewStyle> = () => ({
+const $content: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flex: 1,
+  paddingHorizontal: spacing.md,
+  paddingTop: spacing.md,
+})
+const $inputWrapper: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.palette.neutral200,
+  borderColor: colors.palette.neutral400,
+  borderWidth: 1,
+  borderRadius: 8,
+  paddingHorizontal: spacing.md,
+  height: 48,
   flex: 1,
   justifyContent: "center",
-  alignItems: "center",
 })
-const $errorContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  flex: 1,
-  justifyContent: "center",
-  alignItems: "center",
-  padding: spacing.lg,
-})
-const $title: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
-  fontFamily: typography.primary.bold,
-  fontSize: 24,
+
+const $textInput: ThemedStyle<TextStyle> = ({ typography, colors }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 16,
   color: colors.text,
-  marginBottom: spacing.md,
-  textAlign: "center",
+  padding: 0,
+  margin: 0,
+  height: 46, // Slightly less than wrapper to account for border
+  textAlignVertical: 'center',
+  includeFontPadding: false,
 })
-const $dataText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 16,
+
+const $placeholderText: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.textDim,
-  marginBottom: spacing.sm,
 })
-const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 16,
-  color: colors.textDim,
-  marginTop: spacing.md,
-})
-const $errorTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
-  fontFamily: typography.primary.bold,
-  fontSize: 18,
-  color: colors.error,
-  marginBottom: spacing.sm,
-  textAlign: "center",
-})
-const $errorMessage: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 14,
-  color: colors.textDim,
-  marginBottom: spacing.lg,
-  textAlign: "center",
-})
-const $retryButton: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.medium,
-  fontSize: 16,
-  color: colors.tint,
-  textDecorationLine: "underline",
+const $loading: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  marginVertical: spacing.xs,
 })
 const $activityIndicator: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.tint,
 })
-const $contentContainer: ThemedStyle<ViewStyle> = ({ colors }) => ({
-  flex: 1,
-  justifyContent: "flex-start",
+const $errorContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  marginVertical: spacing.md,
   alignItems: "center",
-  backgroundColor: colors.background,
-  paddingTop: verticalPadding,
-  paddingBottom: verticalPadding,
 })
-const $placeholderText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  color: "white",
-  fontSize: 22,
-  fontWeight: "bold",
-  textAlign: "center",
-  marginTop: 8,
+const $errorText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.error,
+  fontFamily: typography.primary.normal,
+  fontSize: 15,
 })
-const $emptyStateContainer = (): ViewStyle => ({
-  flex: 1,
-  justifyContent: "flex-start",
+const $emptyContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  marginVertical: spacing.lg,
   alignItems: "center",
-  paddingTop: verticalPadding,
-  paddingBottom: verticalPadding,
 })
-const $emptyState = ({ spacing }: any): ViewStyle => ({
+const $emptyText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.textDim,
+  fontFamily: typography.primary.normal,
+  fontSize: 15,
+})
+
+const $resultsHeader: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  marginTop: spacing.xs,
+  marginBottom: spacing.xs,
+  alignItems: "center",
+})
+const $resultsCount: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.textDim,
+  fontFamily: typography.primary.normal,
+  fontSize: 15,
+})
+const $resultsContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  paddingBottom: spacing.xl,
+})
+
+
+
+const $aiResponseContainer: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
+  backgroundColor: colors.palette.neutral100,
+  borderRadius: 8,
+  padding: spacing.md,
+  marginVertical: spacing.sm,
+  borderLeftWidth: 4,
+  borderLeftColor: colors.tint,
+})
+
+const $aiResponseText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.text,
+  fontFamily: typography.primary.normal,
+  fontSize: 15,
+  lineHeight: 22,
+})
+
+const $searchContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: spacing.sm,
+  marginTop: spacing.md,
+  marginBottom: spacing.md,
+})
+
+const $searchButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.tint,
+  paddingHorizontal: spacing.md,
+  borderRadius: 8,
+  height: 48, // Match input height
+  minWidth: 80,
   alignItems: "center",
   justifyContent: "center",
-  paddingVertical: spacing.xl * 2,
+  flexShrink: 0,
 })
-const $emptyStateTitle = ({ typography, colors }: any): TextStyle => ({
+
+const $searchButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.background,
   fontFamily: typography.primary.medium,
-  fontSize: 18,
-  color: colors.text,
-  marginBottom: spacing.md,
+  fontSize: 16,
+  fontWeight: "600",
 })
-const $emptyStateText = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 14,
-  color: colors.textDim,
-  textAlign: "center",
-  marginBottom: spacing.md,
-})
-// #endregion

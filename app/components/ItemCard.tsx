@@ -6,10 +6,9 @@ import {
   Image,
   TouchableOpacity,
   ImageStyle,
-  Modal,
-  Pressable,
 } from "react-native"
 
+import { ItemModal } from "@/components/ItemModal"
 import { Text } from "@/components/Text"
 import { ItemWithProfile } from "@/services/supabase/itemService"
 import { getCategoryColor } from "@/theme/categoryColors"
@@ -18,9 +17,10 @@ import { useAppTheme } from "@/theme/context"
 interface ItemCardProps {
   item: ItemWithProfile
   onPress?: (item: ItemWithProfile) => void
+  onItemUpdated?: (updatedItem: ItemWithProfile) => void
 }
 
-export const ItemCard = ({ item, onPress }: ItemCardProps) => {
+export const ItemCard = ({ item, onPress, onItemUpdated }: ItemCardProps) => {
   const { themed, themeContext } = useAppTheme()
   const imageUrls = item.image_urls ?? []
   const hasImage = imageUrls.length > 0
@@ -36,6 +36,7 @@ export const ItemCard = ({ item, onPress }: ItemCardProps) => {
   const [modalVisible, setModalVisible] = useState(false)
 
   const handlePress = () => {
+    console.log("[ItemCard] Opening modal for item:", item.title)
     setModalVisible(true)
   }
 
@@ -80,99 +81,21 @@ export const ItemCard = ({ item, onPress }: ItemCardProps) => {
             />
             <Text
               style={themed($userText)}
-              text={item.full_name || item.email || "Unknown"}
+              text={item.full_name || item.email || "Unknown user"}
               numberOfLines={1}
               ellipsizeMode="tail"
             />
           </View>
         </View>
       </TouchableOpacity>
-      {/* Modal for item details */}
-      <Modal
+      
+      {/* Item Modal */}
+      <ItemModal
+        item={item}
         visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <Pressable style={themed($modalOverlay)} onPress={() => setModalVisible(false)}>
-          <View style={themed($modalContainer)}>
-            <Pressable onPress={() => {}} style={themed($modalContent)}>
-              {/* Header with close button */}
-              <View style={themed($modalHeader)}>
-                <Text style={themed($modalTitle)} text="Item Details" />
-                <TouchableOpacity
-                  onPress={() => setModalVisible(false)}
-                  style={themed($closeButton)}
-                >
-                  <Text style={themed($closeButtonText)} text="✕" />
-                </TouchableOpacity>
-              </View>
-
-              {/* Image section */}
-              {hasImage && (
-                <View style={themed($modalImageContainer)}>
-                  <Image
-                    source={{ uri: imageUrls[0] }}
-                    style={themed($modalImage)}
-                    resizeMode="cover"
-                  />
-                </View>
-              )}
-
-              {/* Content section */}
-              <View style={themed($modalDetailsContainer)}>
-                {/* Title */}
-                <View style={themed($detailRow)}>
-                  <Text style={themed($detailLabel)} text="Title" />
-                  <Text style={themed($detailValue)} text={item.title} />
-                </View>
-
-                {/* Category */}
-                <View style={themed($detailRow)}>
-                  <Text style={themed($detailLabel)} text="Category" />
-                  <View style={[themed($categoryBadge), { backgroundColor: categoryColor }]}>
-                    <Text style={themed($categoryBadgeText)} text={item.category} />
-                  </View>
-                </View>
-
-                {/* Location */}
-                {item.location && (
-                  <View style={themed($detailRow)}>
-                    <Text style={themed($detailLabel)} text="Location" />
-                    <Text style={themed($detailValue)} text={item.location} />
-                  </View>
-                )}
-
-                {/* Notes/Details */}
-                {item.details && (
-                  <View style={themed($detailRow)}>
-                    <Text style={themed($detailLabel)} text="Notes" />
-                    <Text style={themed($detailValue)} text={item.details} />
-                  </View>
-                )}
-
-                {/* Added by */}
-                <View style={themed($detailRow)}>
-                  <Text style={themed($detailLabel)} text="Added by" />
-                  <Text
-                    style={themed($detailValue)}
-                    text={item.full_name || item.email || "Unknown"}
-                  />
-                </View>
-
-                {/* Date */}
-                <View style={themed($detailRow)}>
-                  <Text style={themed($detailLabel)} text="Added on" />
-                  <Text
-                    style={themed($detailValue)}
-                    text={new Date(item.created_at).toLocaleDateString()}
-                  />
-                </View>
-              </View>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
+        onClose={() => setModalVisible(false)}
+        onItemUpdated={onItemUpdated}
+      />
     </>
   )
 }
@@ -272,104 +195,4 @@ const $userText = ({ typography, colors }: any): TextStyle => ({
   maxWidth: "50%",
 })
 
-// Modal styles
-const $modalOverlay = (): ViewStyle => ({
-  flex: 1,
-  backgroundColor: "rgba(0,0,0,0.7)",
-  justifyContent: "center",
-  alignItems: "center",
-})
 
-const $modalContainer = ({ spacing }: any): ViewStyle => ({
-  maxWidth: "90%",
-  maxHeight: "85%",
-  width: "100%",
-})
-
-const $modalContent = ({ colors, spacing }: any): ViewStyle => ({
-  backgroundColor: colors.background,
-  borderRadius: spacing.lg,
-  overflow: "hidden",
-  maxHeight: "100%",
-})
-
-const $modalHeader = ({ spacing }: any): ViewStyle => ({
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: spacing.sm,
-  borderBottomWidth: 1,
-  borderBottomColor: "rgba(0,0,0,0.1)",
-})
-
-const $modalTitle = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.bold,
-  fontSize: 18,
-  color: colors.text,
-})
-
-const $closeButton = ({ spacing }: any): ViewStyle => ({
-  padding: spacing.xs,
-  borderRadius: spacing.xs,
-})
-
-const $closeButtonText = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.bold,
-  fontSize: 18,
-  color: colors.textDim,
-})
-
-const $modalImageContainer = ({ spacing }: any): ViewStyle => ({
-  height: 300,
-  width: 300,
-  alignSelf: "center",
-  margin: spacing.sm,
-  borderRadius: spacing.md,
-  overflow: "hidden",
-})
-
-const $modalImage = (): ImageStyle => ({
-  width: "100%",
-  height: "100%",
-  borderRadius: 12,
-})
-
-const $modalDetailsContainer = ({ spacing }: any): ViewStyle => ({
-  padding: spacing.sm,
-})
-
-const $detailRow = ({ spacing }: any): ViewStyle => ({
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  marginBottom: spacing.xs,
-  paddingVertical: spacing.xxs,
-})
-
-const $detailLabel = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.medium,
-  fontSize: 14,
-  color: colors.textDim,
-  flex: 1,
-})
-
-const $detailValue = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 14,
-  color: colors.text,
-  flex: 2,
-  textAlign: "right",
-})
-
-const $categoryBadge = ({ spacing }: any): ViewStyle => ({
-  paddingHorizontal: spacing.sm,
-  paddingVertical: spacing.xs,
-  borderRadius: spacing.xs,
-})
-
-const $categoryBadgeText = ({ typography }: any): TextStyle => ({
-  fontFamily: typography.primary.medium,
-  fontSize: 12,
-  color: "#fff",
-  textTransform: "capitalize",
-})

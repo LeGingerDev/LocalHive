@@ -9,6 +9,7 @@ import {
   Image,
   Dimensions,
 } from "react-native"
+
 import { useFocusEffect } from "@react-navigation/native"
 import { useNavigation } from "@react-navigation/native"
 
@@ -106,6 +107,8 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
       }
     }
   }, [groupsLoading, groups, groupIdFromParams, selectedGroupId])
+
+
   // #endregion
 
   // #region Hooks & Context
@@ -199,9 +202,41 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
         throw new Error(createError?.message || "Failed to create item")
       }
 
+      // 2. Trigger embedding generation asynchronously (don't wait for it)
+      const triggerEmbedding = async () => {
+        try {
+          console.log('[AddScreen] Triggering embedding generation for item:', createdItem.id)
+          const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/generate-item-embedding`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              item_id: createdItem.id,
+              title: title.trim(),
+              details: notes.trim() || undefined,
+              category: selectedCategory!,
+              location: location.trim() || undefined,
+            }),
+          })
+          
+          if (response.ok) {
+            console.log('[AddScreen] Embedding generation triggered successfully')
+          } else {
+            console.warn('[AddScreen] Embedding generation failed:', await response.text())
+          }
+        } catch (embeddingError) {
+          console.warn('[AddScreen] Embedding generation error (non-blocking):', embeddingError)
+        }
+      }
+      
+      // Fire and forget - don't await this
+      triggerEmbedding()
+
       let imageUrl: string | null = null
       if (photoUri) {
-        // 2. Upload the image to Supabase Storage using direct fetch (same as working HomeScreen)
+        // 3. Upload the image to Supabase Storage using direct fetch (same as working HomeScreen)
         const fileExt = photoUri.split(".").pop()?.split("?")[0] || "jpg"
         const fileName = sanitizeFileName(title.trim()) || "item"
         const filePath = `${createdItem.id}/${fileName}.${fileExt}`
@@ -426,6 +461,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
                   }}
                   onPress={() => navigation.navigate("Groups")}
                   preset="reversed"
+                  disabled={isSubmitting}
                 />
               </CustomGradient>
             </View>
@@ -441,6 +477,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
               onChange={setSelectedGroupId}
               placeholder="Select group..."
               style={themed($pickerContainer)}
+              disabled={isSubmitting}
             />
           </>
         )}
@@ -456,6 +493,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
               containerStyle={themed($inputContainerFlat)}
               value={title}
               onChangeText={setTitle}
+              editable={!isSubmitting}
             />
             {/* Category */}
             <Text style={themed($label)} text="Category *" />
@@ -472,6 +510,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
                 onChange={setSelectedCategory}
                 placeholder="Select a category..."
                 style={themed($pickerContainer)}
+                disabled={isSubmitting}
               />
             )}
             <Text
@@ -486,8 +525,13 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
               containerStyle={themed($inputContainerFlat)}
               value={location}
               onChangeText={setLocation}
+              editable={!isSubmitting}
             />
-            <Text style={themed($locationLink)} text="Use current location" onPress={() => {}} />
+            <Text 
+              style={themed($locationLink)} 
+              text="Use current location" 
+              onPress={() => {}} 
+            />
             {/* Photo Picker */}
             <Text style={themed($label)} text="Photo" />
             <View style={[themed($photoBox), { width: "100%", alignSelf: "stretch" }]}>
@@ -528,11 +572,13 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
                   text="Take Photo"
                   style={[themed($photoButton), { flex: 1 }]}
                   onPress={handleTakePhoto}
+                  disabled={isSubmitting}
                 />
                 <Button
                   text="Gallery"
                   style={[themed($photoButton), { flex: 1 }]}
                   onPress={handlePickFromGallery}
+                  disabled={isSubmitting}
                 />
               </View>
             </View>
@@ -545,6 +591,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
               multiline
               value={notes}
               onChangeText={setNotes}
+              editable={!isSubmitting}
             />
             <Text
               style={themed($notesHint)}
@@ -569,6 +616,16 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
           </View>
         )}
       </ScrollView>
+
+              {/* Upload Alert - Shows during submission */}
+        <CustomAlert
+          visible={isSubmitting}
+          title="Saving Item"
+          message="Please wait while we save your item and generate search embeddings. Don't leave this screen."
+          confirmText="Please Wait..."
+          onConfirm={() => {}} // No action needed, just prevents dismissal
+          confirmStyle="default"
+        />
 
       <CustomAlert
         visible={alertVisible}
@@ -815,8 +872,10 @@ const $createFirstGroupButton = ({ colors, typography }: any): ViewStyle => ({
   marginTop: spacing.md,
 })
 const $createFirstGroupButtonText = ({ colors, typography }: any): TextStyle => ({
-  color: colors.tint,
+  color: colors.text,
   fontFamily: typography.primary.medium,
   fontSize: 16,
   textAlign: "center",
 })
+
+
