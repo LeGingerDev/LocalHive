@@ -23,6 +23,7 @@ import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
 import { useGroups } from "@/hooks/useGroups"
+import { useSubscription } from "@/hooks/useSubscription"
 import { Group, GroupInvitation } from "@/services/api/types"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
@@ -59,6 +60,7 @@ const AuthPrompt = () => {
 export const GroupsScreen = ({ navigation, route }: any) => {
   const { themed, theme } = useAppTheme()
   const { user, isLoading: authLoading } = useAuth()
+  const subscription = useSubscription(user?.id || null)
 
   const { groups, invitations, loading, refreshing, error, refresh, respondToInvitation } =
     useGroups()
@@ -115,6 +117,16 @@ export const GroupsScreen = ({ navigation, route }: any) => {
       setAlertVisible(true)
       return
     }
+
+    // Check subscription limits
+    if (!subscription.canCreateGroupNow) {
+      setAlertTitle("Group Limit Reached")
+      setAlertMessage("You've reached your group limit. Upgrade to Pro for unlimited groups!")
+      setAlertConfirmStyle("destructive")
+      setAlertVisible(true)
+      return
+    }
+
     navigation.navigate("CreateGroup")
   }
 
@@ -214,6 +226,15 @@ export const GroupsScreen = ({ navigation, route }: any) => {
           user &&
           groups.length > 0 && (
             <>
+              {/* Group Limit Warning */}
+              {!subscription.canCreateGroupNow && (
+                <View style={themed($limitWarningContainer)}>
+                  <Text style={themed($limitWarningText)}>
+                    ⚠️ You've reached your group limit. Upgrade to Pro for unlimited groups!
+                  </Text>
+                </View>
+              )}
+
               {/* Collapsible Groups Section Header */}
               <TouchableOpacity
                 style={themed($sectionHeader)}
@@ -425,4 +446,21 @@ const $collapsedGroupsSummary = ({ typography, colors }: any): TextStyle => ({
   fontSize: 14,
   color: colors.textDim,
   fontStyle: "italic",
+})
+
+const $limitWarningContainer = ({ colors, spacing }: any): ViewStyle => ({
+  backgroundColor: colors.error + "20",
+  borderWidth: 1,
+  borderColor: colors.error,
+  padding: spacing.sm,
+  borderRadius: 8,
+  marginTop: spacing.sm,
+  marginBottom: spacing.sm,
+})
+
+const $limitWarningText = ({ colors, typography }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.error,
+  textAlign: "center",
 })

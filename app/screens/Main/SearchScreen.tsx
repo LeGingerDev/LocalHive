@@ -22,15 +22,16 @@ import { searchItemsByVector } from "@/services/vectorSearchService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
+import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 
-export const SearchScreen: FC = () => {
+export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
   const { themed } = useAppTheme()
   const { trackEvent, events } = useAnalytics()
   const [query, setQuery] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [results, setResults] = useState<ItemWithProfile[]>([])
-  const [isAIMode, setIsAIMode] = useState(false)
+  const [isAIMode, setIsAIMode] = useState(route.params?.enableAI || false)
   const [aiResponse, setAiResponse] = useState<AIQueryResponse | null>(null)
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
 
@@ -149,8 +150,12 @@ export const SearchScreen: FC = () => {
         title="Search"
         rightActions={[
           {
-            text: isAIMode ? "Quick Search" : "Ask AI",
-            onPress: handleModeSwitch,
+            customComponent: (
+              <View style={themed($aiToggleContainer)}>
+                <Text style={themed($aiToggleText)}>Use AI</Text>
+                <Switch value={isAIMode} onValueChange={handleModeSwitch} />
+              </View>
+            ),
           },
         ]}
       />
@@ -353,4 +358,24 @@ const $searchButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.medium,
   fontSize: 16,
   fontWeight: "600",
+})
+
+const $aiToggleSection: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: spacing.md,
+  paddingHorizontal: spacing.sm,
+})
+
+const $aiToggleContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: spacing.sm,
+})
+
+const $aiToggleText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 14,
+  color: colors.text,
 })

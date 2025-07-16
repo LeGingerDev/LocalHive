@@ -102,7 +102,7 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
                 end={{ x: 1, y: 0 }}
                 style={themed($gradientStyle)}
               >
-                <Text style={themed($buttonText)}>Start 7-Day Free Trial</Text>
+                <Text style={themed($buttonText)}>Start 3-Day Free Trial</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>

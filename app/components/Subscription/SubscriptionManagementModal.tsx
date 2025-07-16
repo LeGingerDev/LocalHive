@@ -1,0 +1,397 @@
+import React from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+  Alert,
+} from "react-native"
+
+
+import { Icon } from "@/components/Icon"
+import { useAppTheme } from "@/theme/context"
+import type { ThemedStyle } from "@/theme/types"
+import { useSubscription } from "@/hooks/useSubscription"
+import { SubscriptionService } from "@/services/subscriptionService"
+
+export interface SubscriptionManagementModalProps {
+  visible: boolean
+  onClose: () => void
+  userId: string | null
+  style?: StyleProp<ViewStyle>
+}
+
+export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalProps> = ({
+  visible,
+  onClose,
+  userId,
+  style,
+}) => {
+  const { themed, theme } = useAppTheme()
+  const subscription = useSubscription(userId)
+
+  const handleCancelSubscription = async () => {
+    Alert.alert(
+      "Cancel Subscription",
+      "Are you sure you want to cancel your Pro subscription? You'll lose access to unlimited features at the end of your current billing period.",
+      [
+        { text: "Keep Subscription", style: "cancel" },
+        { 
+          text: "Cancel Subscription", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // For now, just set to free - in a real app you'd integrate with payment provider
+              if (userId) {
+                const { success, error } = await SubscriptionService.updateSubscriptionStatus(userId, "free")
+                if (error) {
+                  Alert.alert("Error", "Failed to cancel subscription. Please try again.")
+                } else {
+                  Alert.alert("Success", "Your subscription has been cancelled. You'll keep Pro access until the end of your billing period.")
+                  onClose()
+                }
+              }
+            } catch (err) {
+              Alert.alert("Error", "Something went wrong. Please try again.")
+            }
+          }
+        },
+      ]
+    )
+  }
+
+
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  const getTimeRemaining = (endDate: string) => {
+    const now = new Date()
+    const end = new Date(endDate)
+    const diff = end.getTime() - now.getTime()
+    
+    if (diff <= 0) {
+      return "Expired"
+    }
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    
+    if (days > 0) {
+      return `${days} days, ${hours} hours`
+    } else {
+      return `${hours} hours`
+    }
+  }
+
+  if (subscription.loading) {
+    return (
+      <Modal visible={visible} transparent animationType="fade">
+        <View style={themed($overlay)}>
+          <View style={[themed($modalContainer), style]}>
+            <Text style={themed($loadingText)}>Loading subscription details...</Text>
+          </View>
+        </View>
+      </Modal>
+    )
+  }
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={themed($overlay)}>
+        <View style={[themed($modalContainer), style]}>
+          {/* Close button */}
+          <TouchableOpacity style={themed($closeButton)} onPress={onClose}>
+            <Icon icon="x" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+
+          <ScrollView
+            contentContainerStyle={themed($contentContainer)}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header */}
+            <View style={themed($headerContainer)}>
+              <View style={themed($statusBadge)}>
+                <Icon icon="lightning" size={24} color={theme.colors.success} />
+                <Text style={themed($statusText)}>Pro Subscription</Text>
+              </View>
+              <Text style={themed($subtitle)}>Manage your subscription and billing</Text>
+            </View>
+
+            {/* Current Plan Details */}
+            <View style={themed($sectionContainer)}>
+              <Text style={themed($sectionTitle)}>Current Plan</Text>
+              <View style={themed($planDetails)}>
+                <View style={themed($planRow)}>
+                  <Text style={themed($planLabel)}>Plan:</Text>
+                  <Text style={themed($planValue)}>Visu Pro</Text>
+                </View>
+                <View style={themed($planRow)}>
+                  <Text style={themed($planLabel)}>Price:</Text>
+                  <Text style={themed($planValue)}>$5.99/month</Text>
+                </View>
+                {subscription.subscriptionInfo?.subscription_expires_at && (
+                  <View style={themed($planRow)}>
+                    <Text style={themed($planLabel)}>Next Billing:</Text>
+                    <Text style={themed($planValue)}>
+                      {formatDate(subscription.subscriptionInfo.subscription_expires_at)}
+                    </Text>
+                  </View>
+                )}
+                {subscription.subscriptionInfo?.subscription_expires_at && (
+                  <View style={themed($planRow)}>
+                    <Text style={themed($planLabel)}>Time Remaining:</Text>
+                    <Text style={themed($planValue)}>
+                      {getTimeRemaining(subscription.subscriptionInfo.subscription_expires_at)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Usage Summary */}
+            <View style={themed($sectionContainer)}>
+              <Text style={themed($sectionTitle)}>Usage Summary</Text>
+              <View style={themed($usageContainer)}>
+                <View style={themed($usageRow)}>
+                  <Text style={themed($usageLabel)}>Groups Created:</Text>
+                  <Text style={themed($usageValue)}>{subscription.groupsUsed}</Text>
+                </View>
+                <View style={themed($usageRow)}>
+                  <Text style={themed($usageLabel)}>Items Created:</Text>
+                  <Text style={themed($usageValue)}>{subscription.itemsUsed}</Text>
+                </View>
+                <View style={themed($usageRow)}>
+                  <Text style={themed($usageLabel)}>AI Search:</Text>
+                  <Text style={themed($usageValue)}>
+                    {subscription.canUseAISearchNow ? "Available" : "Unavailable"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Pro Features */}
+            <View style={themed($sectionContainer)}>
+              <Text style={themed($sectionTitle)}>Pro Features</Text>
+              <View style={themed($featuresContainer)}>
+                <View style={themed($featureItem)}>
+                  <Icon icon="check" size={16} color={theme.colors.success} />
+                  <Text style={themed($featureText)}>Unlimited Groups</Text>
+                </View>
+                <View style={themed($featureItem)}>
+                  <Icon icon="check" size={16} color={theme.colors.success} />
+                  <Text style={themed($featureText)}>Unlimited Items</Text>
+                </View>
+                <View style={themed($featureItem)}>
+                  <Icon icon="check" size={16} color={theme.colors.success} />
+                  <Text style={themed($featureText)}>AI-Powered Search</Text>
+                </View>
+                <View style={themed($featureItem)}>
+                  <Icon icon="check" size={16} color={theme.colors.success} />
+                  <Text style={themed($featureText)}>Priority Support</Text>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Action Buttons */}
+          <View style={themed($buttonContainer)}>
+            <TouchableOpacity style={themed($cancelButton)} onPress={handleCancelSubscription}>
+              <Text style={themed($cancelButtonText)}>Cancel Subscription</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const $overlay: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  flex: 1,
+  backgroundColor: colors.palette.overlay50,
+  justifyContent: "center",
+  alignItems: "center",
+  paddingHorizontal: 20,
+})
+
+const $modalContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.cardColor,
+  borderRadius: 20,
+  width: "100%",
+  maxWidth: 400,
+  maxHeight: "85%",
+  position: "relative",
+  shadowColor: colors.palette.neutral900,
+  shadowOffset: { width: 0, height: 10 },
+  shadowOpacity: 0.25,
+  shadowRadius: 20,
+  elevation: 10,
+})
+
+const $closeButton: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  position: "absolute",
+  top: spacing.md,
+  right: spacing.md,
+  zIndex: 1,
+  padding: spacing.xs,
+})
+
+const $contentContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  padding: spacing.xl,
+  paddingTop: spacing.xl + spacing.lg,
+})
+
+const $headerContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  alignItems: "center",
+  marginBottom: spacing.xl,
+})
+
+const $statusBadge: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: spacing.sm,
+  marginBottom: spacing.sm,
+})
+
+const $statusText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 20,
+  color: colors.text,
+})
+
+const $subtitle: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.textDim,
+  textAlign: "center",
+})
+
+const $sectionContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  marginBottom: spacing.md,
+})
+
+const $sectionTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 16,
+  color: colors.text,
+  marginBottom: spacing.md,
+})
+
+const $planDetails: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  backgroundColor: "rgba(0,0,0,0.05)",
+  borderRadius: 12,
+  padding: spacing.md,
+})
+
+const $planRow: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: spacing.sm,
+})
+
+const $planLabel: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 14,
+  color: colors.textDim,
+})
+
+const $planValue: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 14,
+  color: colors.text,
+})
+
+const $usageContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  backgroundColor: "rgba(0,0,0,0.05)",
+  borderRadius: 12,
+  padding: spacing.md,
+})
+
+const $usageRow: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: spacing.sm,
+})
+
+const $usageLabel: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 14,
+  color: colors.textDim,
+})
+
+const $usageValue: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 14,
+  color: colors.text,
+})
+
+const $featuresContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  backgroundColor: "rgba(0,0,0,0.05)",
+  borderRadius: 12,
+  padding: spacing.md,
+})
+
+const $featureItem: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  marginBottom: spacing.sm,
+  gap: spacing.sm,
+})
+
+const $featureText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.text,
+})
+
+const $buttonContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  padding: spacing.xl,
+  paddingTop: 0,
+  gap: spacing.md,
+})
+
+
+
+const $cancelButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  borderWidth: 1,
+  borderColor: colors.error,
+  borderRadius: 12,
+  paddingVertical: spacing.lg,
+  paddingHorizontal: spacing.xl,
+  alignItems: "center",
+  justifyContent: "center",
+})
+
+const $cancelButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
+  color: colors.error,
+  textAlign: "center",
+})
+
+const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 16,
+  color: colors.textDim,
+  textAlign: "center",
+  padding: 40,
+})
+
+export default SubscriptionManagementModal 

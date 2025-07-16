@@ -13,12 +13,14 @@ export interface HeaderProps {
   rightActions?: Array<{
     icon?: IconTypes
     text?: string
-    onPress: () => void
+    onPress?: () => void
+    customComponent?: React.ReactNode
   }>
   rightAction?: {
     icon?: IconTypes
     text?: string
-    onPress: () => void
+    onPress?: () => void
+    customComponent?: React.ReactNode
   }
 }
 
@@ -50,18 +52,19 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Third column: Right actions */}
       <View style={themed($rightColumn)}>
         {actions.map((action, index) => (
-          <TouchableOpacity
-            key={index}
-            style={themed($actionButton)}
-            onPress={action.onPress}
-            activeOpacity={0.8}
-          >
-            {action.icon ? (
-              <Icon icon={action.icon} size={20} style={themed($actionIcon)} />
+          <View key={index} style={themed($actionButton)}>
+            {action.customComponent ? (
+              action.customComponent
             ) : (
-              <Text style={themed($actionText)} text={action.text || ""} />
+              <TouchableOpacity onPress={action.onPress} activeOpacity={0.8}>
+                {action.icon ? (
+                  <Icon icon={action.icon} size={20} style={themed($actionIcon)} />
+                ) : (
+                  <Text style={themed($actionText)} text={action.text || ""} />
+                )}
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
+          </View>
         ))}
       </View>
     </View>

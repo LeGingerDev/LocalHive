@@ -24,6 +24,7 @@ import { TextField } from "@/components/TextField"
 import { useAuth } from "@/context/AuthContext"
 import { useGroups } from "@/hooks/useGroups"
 import { useItemCategories } from "@/hooks/useItemCategories"
+import { useSubscription } from "@/hooks/useSubscription"
 import type { BottomTabScreenProps, BottomTabParamList } from "@/navigators/BottomTabNavigator"
 import { cameraService } from "@/services/cameraService"
 import { ItemService } from "@/services/supabase/itemService"
@@ -80,6 +81,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
   const { groups, loading: groupsLoading, error: groupsError, refresh } = useGroups()
   const { categories, loading: categoriesLoading, error: categoriesError } = useItemCategories()
   const { user } = useAuth()
+  const subscription = useSubscription(user?.id || null)
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(groupIdFromParams ?? null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [title, setTitle] = useState<string>("")
@@ -106,6 +108,16 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
       }
     }
   }, [groupsLoading, groups, groupIdFromParams, selectedGroupId])
+
+  // Check subscription limits when screen loads
+  useEffect(() => {
+    if (user && !subscription.loading && subscription.subscriptionInfo && !subscription.canCreateItemNow) {
+      setAlertTitle("Item Limit Reached")
+      setAlertMessage("You've reached your item limit. Upgrade to Pro for unlimited items!")
+      setAlertConfirmStyle("destructive")
+      setAlertVisible(true)
+    }
+  }, [user, subscription.loading, subscription.subscriptionInfo, subscription.canCreateItemNow])
 
   // #endregion
 
@@ -438,6 +450,8 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+
+
         {/* Add to group - Only show header and dropdown when groups exist */}
         {!groupsLoading && groups.length === 0 ? (
           <View style={themed($emptyStateContainer)}>
@@ -630,13 +644,24 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
         visible={alertVisible}
         title={alertTitle}
         message={alertMessage}
-        confirmText={alertConfirmStyle === "success" ? "OK" : "Save"}
-        cancelText={alertConfirmStyle === "success" ? undefined : "Cancel"}
+        confirmText={alertConfirmStyle === "success" ? "OK" : alertTitle === "Item Limit Reached" ? "OK" : "Save"}
+        cancelText={alertConfirmStyle === "success" || alertTitle === "Item Limit Reached" ? undefined : "Cancel"}
         confirmStyle={alertConfirmStyle}
         onConfirm={
-          alertConfirmStyle === "success" ? () => setAlertVisible(false) : _handleConfirmSave
+          alertConfirmStyle === "success" 
+            ? () => setAlertVisible(false) 
+            : alertTitle === "Item Limit Reached"
+            ? () => {
+                setAlertVisible(false)
+                navigation.goBack()
+              }
+            : _handleConfirmSave
         }
-        onCancel={alertConfirmStyle === "success" ? undefined : () => setAlertVisible(false)}
+        onCancel={
+          alertConfirmStyle === "success" || alertTitle === "Item Limit Reached" 
+            ? undefined 
+            : () => setAlertVisible(false)
+        }
       />
     </Screen>
   )
@@ -876,3 +901,5 @@ const $createFirstGroupButtonText = ({ colors, typography }: any): TextStyle => 
   fontSize: 16,
   textAlign: "center",
 })
+
+

@@ -20,7 +20,7 @@ import { useAppTheme } from "../theme/context"
 
 export type BottomTabParamList = {
   Home: undefined
-  Search: undefined
+  Search: { enableAI?: boolean } | undefined
   Add: { groupId?: string } | undefined
   Groups: { refresh?: boolean } | undefined
   Profile: undefined
