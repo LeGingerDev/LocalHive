@@ -17,6 +17,8 @@
   "android": {
     "icon": "./assets/images/app-icon-android-legacy.png",
     "package": "com.legingerdev.visu",
+    "versionCode": 1,
+    "googleServicesFile": "./android/app/google-services.json",
     "adaptiveIcon": {
       "foregroundImage": "./assets/images/app-icon-android-adaptive-foreground.png",
       "backgroundImage": "./assets/images/app-icon-android-adaptive-background.png"
@@ -33,6 +35,7 @@
     "icon": "./assets/images/app-icon-ios.png",
     "supportsTablet": true,
     "bundleIdentifier": "com.legingerdev.visu",
+    "buildNumber": "1",
     "privacyManifests": {
       "NSPrivacyAccessedAPITypes": [
         {
@@ -44,7 +47,9 @@
       ]
     },
     "infoPlist": {
-      "ITSAppUsesNonExemptEncryption": false
+      "ITSAppUsesNonExemptEncryption": false,
+      "FIRDebugEnabled": true,
+      "FIRAnalyticsDebugEnabled": true
     }
   },
   "web": {
@@ -73,7 +78,8 @@
         }
       }
     ],
-    "@react-native-google-signin/google-signin"
+    "@react-native-google-signin/google-signin",
+    "@react-native-firebase/app"
   ],
   "experiments": {
     "tsconfigPaths": true

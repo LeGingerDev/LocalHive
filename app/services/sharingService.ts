@@ -1,4 +1,5 @@
-import * as Sharing from 'expo-sharing'
+import { Share } from "react-native"
+import * as Sharing from "expo-sharing"
 
 /**
  * Service for handling content sharing functionality
@@ -11,73 +12,63 @@ export class SharingService {
     try {
       return await Sharing.isAvailableAsync()
     } catch (error) {
-      console.error('Error checking sharing availability:', error)
+      console.error("Error checking sharing availability:", error)
       return false
     }
   }
 
   /**
-   * Share text content
+   * Share text content using React Native's Share API
    */
   static async shareText(text: string, title?: string): Promise<boolean> {
     try {
-      const isAvailable = await this.isAvailable()
-      if (!isAvailable) {
-        console.log('Sharing not available on this device')
-        return false
-      }
-
-      await Sharing.shareAsync(text, {
-        mimeType: 'text/plain',
-        dialogTitle: title || 'Share',
+      const result = await Share.share({
+        message: text,
+        title: title || "Share",
       })
-      return true
+
+      return result.action !== Share.dismissedAction
     } catch (error) {
-      console.error('Error sharing text:', error)
+      console.error("Error sharing text:", error)
       return false
     }
   }
 
   /**
-   * Share a URL
+   * Share a URL using React Native's Share API
    */
   static async shareUrl(url: string, title?: string): Promise<boolean> {
     try {
-      const isAvailable = await this.isAvailable()
-      if (!isAvailable) {
-        console.log('Sharing not available on this device')
-        return false
-      }
-
-      await Sharing.shareAsync(url, {
-        mimeType: 'text/plain',
-        dialogTitle: title || 'Share Link',
+      const result = await Share.share({
+        message: url,
+        title: title || "Share Link",
       })
-      return true
+
+      return result.action !== Share.dismissedAction
     } catch (error) {
-      console.error('Error sharing URL:', error)
+      console.error("Error sharing URL:", error)
       return false
     }
   }
 
   /**
-   * Share a file from a local URI
+   * Share a file from a local URI using expo-sharing
    */
   static async shareFile(fileUri: string, mimeType: string, title?: string): Promise<boolean> {
     try {
       const isAvailable = await this.isAvailable()
       if (!isAvailable) {
-        console.log('Sharing not available on this device')
+        console.log("Sharing not available on this device")
         return false
       }
 
       await Sharing.shareAsync(fileUri, {
         mimeType,
-        dialogTitle: title || 'Share File',
+        dialogTitle: title || "Share File",
       })
       return true
     } catch (error) {
-      console.error('Error sharing file:', error)
+      console.error("Error sharing file:", error)
       return false
     }
   }
@@ -85,40 +76,38 @@ export class SharingService {
   /**
    * Share app-specific content (like personal codes, group invites, etc.)
    */
-  static async shareAppContent(content: string, type: 'personal_code' | 'group_invite' | 'item'): Promise<boolean> {
+  static async shareAppContent(
+    content: string,
+    type: "personal_code" | "group_invite" | "item",
+  ): Promise<boolean> {
     try {
-      const isAvailable = await this.isAvailable()
-      if (!isAvailable) {
-        console.log('Sharing not available on this device')
-        return false
-      }
-
-      let title = 'Share'
+      let title = "Share"
       let message = content
 
       switch (type) {
-        case 'personal_code':
-          title = 'Share Personal Code'
+        case "personal_code":
+          title = "Share Personal Code"
           message = `Add me to your group with this code: ${content}`
           break
-        case 'group_invite':
-          title = 'Share Group Invite'
+        case "group_invite":
+          title = "Share Group Invite"
           message = `Join my group: ${content}`
           break
-        case 'item':
-          title = 'Share Item'
+        case "item":
+          title = "Share Item"
           message = `Check out this item: ${content}`
           break
       }
 
-      await Sharing.shareAsync(message, {
-        mimeType: 'text/plain',
-        dialogTitle: title,
+      const result = await Share.share({
+        message,
+        title,
       })
-      return true
+
+      return result.action !== Share.dismissedAction
     } catch (error) {
-      console.error('Error sharing app content:', error)
+      console.error("Error sharing app content:", error)
       return false
     }
   }
-} 
+}

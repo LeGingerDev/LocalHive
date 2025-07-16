@@ -2,10 +2,10 @@ import React, { ReactNode } from "react"
 import { FC, memo, useCallback, useMemo } from "react"
 import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator } from "react-native"
 
-import { Text } from "@/components/Text"
-import { useAppTheme } from "@/theme/context"
 import { ItemCard } from "@/components/ItemCard"
+import { Text } from "@/components/Text"
 import { useItems } from "@/hooks/useItems"
+import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
 // #region Types & Interfaces
@@ -49,6 +49,21 @@ export interface RecentActivitySectionProps {
    * Optional callback when an item is pressed
    */
   onItemPress?: (item: any) => void
+
+  /**
+   * Optional callback when an item is deleted
+   */
+  onItemDeleted?: (itemId: string) => void
+
+  /**
+   * Items to display in the recent activity section (overrides hook)
+   */
+  items?: any[]
+
+  /**
+   * Whether items are deletable (default false)
+   */
+  deletable?: boolean
 
   /**
    * Test ID for testing purposes
@@ -104,13 +119,16 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
     onPress,
     onRetry,
     onItemPress,
+    onItemDeleted,
+    items: itemsProp,
+    deletable = false,
     testID = "recentActivitySectionComponent",
   } = props
   // #endregion
 
   // #region Hooks & Context
   const { themed } = useAppTheme()
-  const { items, loading: itemsLoading, error: itemsError, getRecentItems } = useItems(groupId)
+  const { items: hookItems, loading: itemsLoading, error: itemsError, getRecentItems } = useItems(groupId)
   // #endregion
 
   // #region Memoized Values
@@ -177,6 +195,9 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
   }, [onPress, _handlePress])
   // #endregion
 
+  // Use items from props if provided, otherwise from hook
+  const itemsToShow = itemsProp ?? getRecentItems(3)
+
   const _renderContent = (): React.ReactNode => (
     <View style={_containerStyles} testID={testID} {..._getPressableProps()}>
       {/* Recent Items Section */}
@@ -191,15 +212,10 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
             <Text style={themed($errorText)} text={itemsError} />
           ) : (
             <>
-              {getRecentItems(3).map((item, index) => (
-                <ItemCard
-                  key={item.id}
-                  item={item}
-                  onPress={onItemPress}
-                />
+              {itemsToShow.map((item, index) => (
+                <ItemCard key={item.id} item={item} onPress={onItemPress} onItemDeleted={onItemDeleted} deletable={deletable} />
               ))}
-              
-              {getRecentItems(3).length === 0 && (
+              {itemsToShow.length === 0 && (
                 <Text style={themed($emptyText)} text="No recent items" />
               )}
             </>
@@ -237,8 +253,13 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
   // #endregion
 
   // #region Main Render Logic
-  console.log("RecentActivitySection render check:", { groupId, isLoading, error, hasValidData: _hasValidData })
-  
+  console.log("RecentActivitySection render check:", {
+    groupId,
+    isLoading,
+    error,
+    hasValidData: _hasValidData,
+  })
+
   if (isLoading) {
     return _renderLoadingState()
   }
@@ -271,8 +292,6 @@ const $container: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
   borderRadius: 8,
   marginBottom: spacing.sm,
 })
-
-
 
 const $description: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.normal,
@@ -343,13 +362,10 @@ const $itemsSection: ThemedStyle<ViewStyle> = () => ({
   // No padding to avoid indentation
 })
 
-
-
 const $loadingContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flexDirection: "row",
   alignItems: "center",
   paddingVertical: spacing.sm,
 })
-
 
 // #endregion

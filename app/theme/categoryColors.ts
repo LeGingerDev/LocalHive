@@ -81,7 +81,7 @@ export function getCategoryColor(category: string, isDark: boolean): string {
     // Fallback to "other" category if category not found
     return isDark ? categoryColors.other.dark : categoryColors.other.light
   }
-  
+
   return isDark ? categoryColor.dark : categoryColor.light
 }
 
@@ -93,17 +93,17 @@ export function getCategoryColor(category: string, isDark: boolean): string {
  * @returns The color string with opacity
  */
 export function getCategoryColorWithOpacity(
-  category: string, 
-  isDark: boolean, 
-  opacity: number
+  category: string,
+  isDark: boolean,
+  opacity: number,
 ): string {
   const baseColor = getCategoryColor(category, isDark)
-  
+
   // Convert hex to rgba
-  const hex = baseColor.replace('#', '')
+  const hex = baseColor.replace("#", "")
   const r = parseInt(hex.substr(0, 2), 16)
   const g = parseInt(hex.substr(2, 2), 16)
   const b = parseInt(hex.substr(4, 2), 16)
-  
+
   return `rgba(${r}, ${g}, ${b}, ${opacity})`
-} 
+}

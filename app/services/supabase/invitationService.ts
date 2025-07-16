@@ -289,7 +289,7 @@ export class InvitationService {
         // Enrich the invitation with related data for the response
         const enrichedInvitation = await this._enrichSingleInvitation({
           ...invitation,
-          status: "accepted" // Set the status for the response
+          status: "accepted", // Set the status for the response
         })
         return { data: enrichedInvitation, error: null }
       }

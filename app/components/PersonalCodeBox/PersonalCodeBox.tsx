@@ -4,7 +4,6 @@ import { View, TouchableOpacity, StyleProp, ViewStyle, TextStyle, Clipboard } fr
 import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { Text } from "@/components/Text"
-
 import { ShareService } from "@/services/supabase/shareService"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
@@ -60,8 +59,6 @@ export const PersonalCodeBox: FC<PersonalCodeBoxProps> = ({
     })
     setAlertVisible(true)
   }
-
-  
 
   const handleCopyCode = async () => {
     if (!code) {
@@ -189,8 +186,6 @@ const $title: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontSize: 15,
   color: colors.text,
 })
-
-
 
 const $shareButton: ThemedStyle<ViewStyle> = () => ({
   paddingHorizontal: 4,

@@ -15,8 +15,25 @@ require("ts-node/register")
 module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
   const existingPlugins = config.plugins ?? []
 
+  // Debug: Log what environment variables are available during build
+  console.log("🔍 Build-time environment variables:", {
+    SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL ? "✅ Found" : "❌ Missing",
+    SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? "✅ Found" : "❌ Missing", 
+    OPENAI_API_KEY: process.env.EXPO_PUBLIC_OPENAI_API_KEY ? "✅ Found" : "❌ Missing",
+    GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ? "✅ Found" : "❌ Missing",
+  })
+
   return {
     ...config,
+    // Environment-specific configuration
+    extra: {
+      ...config.extra,
+      // Add environment variables that will be available in the app
+      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
+      supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      openaiApiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY,
+      googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    },
     ios: {
       ...config.ios,
       bundleIdentifier: "com.legingerdev.visu",
@@ -34,6 +51,26 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
           },
         ],
       },
+      // Add required permissions for production
+      infoPlist: {
+        ...config.ios?.infoPlist,
+        ITSAppUsesNonExemptEncryption: false,
+        NSCameraUsageDescription: "This app uses the camera to scan items and add them to your groups.",
+        NSPhotoLibraryUsageDescription: "This app accesses your photo library to select images for items.",
+        NSMicrophoneUsageDescription: "This app may use the microphone for voice input.",
+      },
+    },
+    android: {
+      ...config.android,
+      // Add required permissions for production
+      permissions: [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+      ],
     },
     plugins: [...existingPlugins, require("./plugins/withSplashScreen").withSplashScreen],
   }

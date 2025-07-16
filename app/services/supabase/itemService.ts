@@ -111,12 +111,15 @@ export class ItemService {
           data.title,
           data.notes || undefined,
           data.category,
-          data.location || undefined
+          data.location || undefined,
         )
         console.log(`[ItemService] Generated embedding for item: ${createdItem.id}`)
       } catch (embeddingError) {
         // Log error but don't fail the item creation
-        console.error(`[ItemService] Failed to generate embedding for item ${createdItem.id}:`, embeddingError)
+        console.error(
+          `[ItemService] Failed to generate embedding for item ${createdItem.id}:`,
+          embeddingError,
+        )
       }
 
       return { data: createdItem as ItemWithProfile | null, error: null }
@@ -136,7 +139,9 @@ export class ItemService {
     groupId: string,
   ): Promise<{ data: ItemWithProfile[] | null; error: PostgrestError | null }> {
     try {
-      const { data, error } = await supabase.rpc("get_group_items_with_profiles", { group_id: groupId })
+      const { data, error } = await supabase.rpc("get_group_items_with_profiles", {
+        group_id: groupId,
+      })
       return { data: data as ItemWithProfile[] | null, error }
     } catch (error) {
       console.error("Error getting group items with profiles:", error)
@@ -175,16 +180,16 @@ export class ItemService {
   ): Promise<{ data: ItemWithProfile | null; error: PostgrestError | null }> {
     try {
       console.log("[ItemService] Updating item:", itemId, "with data:", data)
-      
+
       // Map the data to match database field names
       const updateData: any = { ...data }
-      
+
       // Map media_urls to image_urls for database consistency
       if (data.media_urls !== undefined) {
         updateData.image_urls = data.media_urls
         delete updateData.media_urls
       }
-      
+
       // Map notes to details for database consistency
       if (data.notes !== undefined) {
         updateData.details = data.notes
@@ -217,12 +222,15 @@ export class ItemService {
           title,
           details || undefined,
           category,
-          location || undefined
+          location || undefined,
         )
         console.log(`[ItemService] Regenerated embedding for updated item: ${itemId}`)
       } catch (embeddingError) {
         // Log error but don't fail the item update
-        console.error(`[ItemService] Failed to regenerate embedding for item ${itemId}:`, embeddingError)
+        console.error(
+          `[ItemService] Failed to regenerate embedding for item ${itemId}:`,
+          embeddingError,
+        )
       }
 
       return { data: updatedItem as ItemWithProfile | null, error: null }
@@ -295,9 +303,9 @@ export class ItemService {
         return { data: [], error: null }
       }
 
-      const groupIds = userGroups.map(g => g.group_id)
-      
-      // Get all items from all groups the user is a member of (without profile join)
+      const groupIds = userGroups.map((g) => g.group_id)
+
+      // Get all items from all groups the user is a member of
       const { data: items, error } = await supabase
         .from("items")
         .select("*")
@@ -309,8 +317,8 @@ export class ItemService {
         return { data: null, error }
       }
 
-      // Transform the data to match ItemWithProfile interface (without profile data)
-      const itemsWithProfiles: ItemWithProfile[] = (items || []).map(item => ({
+      // Transform the data to match ItemWithProfile interface (without profile data for now)
+      const itemsWithProfiles: ItemWithProfile[] = (items || []).map((item) => ({
         id: item.id,
         group_id: item.group_id,
         user_id: item.user_id,

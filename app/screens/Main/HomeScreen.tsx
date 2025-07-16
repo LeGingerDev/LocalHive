@@ -1,5 +1,14 @@
 import React, { FC, useState, useEffect, useCallback } from "react"
-import { ViewStyle, TextStyle, ActivityIndicator, ScrollView, View, Text, Image, Dimensions } from "react-native"
+import {
+  ViewStyle,
+  TextStyle,
+  ActivityIndicator,
+  ScrollView,
+  View,
+  Text,
+  Image,
+  Dimensions,
+} from "react-native"
 
 import { Header } from "@/components/Header"
 import { Screen } from "@/components/Screen"
@@ -7,13 +16,11 @@ import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
-import { supabase } from "@/services/supabase/supabase"
-import { Button } from "@/components/Button"
-import { EmbeddingRegenerationService } from "@/services/embeddingRegenerationService"
+import { useAnalytics } from "@/hooks/useAnalytics"
 
-const windowHeight = Dimensions.get("window").height;
-const estimatedContentHeight = 250;
-const verticalPadding = Math.max((windowHeight - estimatedContentHeight) / 2, 0);
+const windowHeight = Dimensions.get("window").height
+const estimatedContentHeight = 250
+const verticalPadding = Math.max((windowHeight - estimatedContentHeight) / 2, 0)
 
 // #region Types & Interfaces
 interface HomeScreenProps extends BottomTabScreenProps<"Home"> {}
@@ -39,6 +46,7 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
 
   // #region Hooks & Context
   const { themed } = useAppTheme()
+  const { trackScreenView } = useAnalytics()
   // #endregion
 
   // #region Data Fetching Functions
@@ -67,16 +75,21 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
   // #region Lifecycle Effects
   useEffect(() => {
     let isMounted = true
-    const loadData = async () => { if (isMounted) { await fetchData() } }
+    const loadData = async () => {
+      if (isMounted) {
+        await fetchData()
+      }
+    }
     loadData()
-    return () => { isMounted = false }
+    return () => {
+      isMounted = false
+    }
   }, [fetchData])
 
+  // Track screen view when component mounts
   useEffect(() => {
-    fetch('https://xnnobyeytyycngybinqj.supabase.co')
-      .then(res => console.log('Supabase reachable:', res.status))
-      .catch(err => console.error('Supabase NOT reachable:', err));
-  }, []);
+    trackScreenView({ screenName: 'Home' })
+  }, [trackScreenView])
   // #endregion
 
   // #region Render Helpers
@@ -91,33 +104,11 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
     <Screen style={themed($errorContainer)} preset="fixed">
       <Text style={themed($errorTitle)}>{"Oops! Something went wrong"}</Text>
       <Text style={themed($errorMessage)}>{error?.message ?? "Unknown error"}</Text>
-      <Text style={themed($retryButton)} onPress={handleRetry}>{"Tap to retry"}</Text>
+      <Text style={themed($retryButton)} onPress={handleRetry}>
+        {"Tap to retry"}
+      </Text>
     </Screen>
   )
-
-
-
-  const [isRegenerating, setIsRegenerating] = useState<boolean>(false)
-
-  const handleRegenerateAllEmbeddings = async () => {
-    try {
-      setIsRegenerating(true)
-      console.log("Starting embedding regeneration...")
-      
-      const result = await EmbeddingRegenerationService.regenerateAllEmbeddings()
-      
-      if (result.success) {
-        alert(`✅ Embedding regeneration completed!\n\nProcessed: ${result.processed} out of ${result.totalItems} items${result.errors.length > 0 ? `\n\nErrors: ${result.errors.length}` : ''}`)
-      } else {
-        alert(`❌ Embedding regeneration failed: ${result.error}`)
-      }
-    } catch (error) {
-      console.error("Error during embedding regeneration:", error)
-      alert(`❌ Error during embedding regeneration: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setIsRegenerating(false)
-    }
-  }
 
   const renderContent = (): React.JSX.Element => (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top"]}>
@@ -129,14 +120,8 @@ export const HomeScreen: FC<HomeScreenProps> = () => {
             style={{ width: 160, height: 160, resizeMode: "contain", marginBottom: spacing.lg }}
             accessibilityLabel="Home not ready illustration"
           />
-                  <Text style={themed($emptyStateTitle)}>Home isn't ready yet</Text>
-        <Text style={themed($emptyStateText)}>This feature is coming soon!</Text>
-        <Button 
-          text={isRegenerating ? "Regenerating..." : "Regenerate All Embeddings"} 
-          onPress={handleRegenerateAllEmbeddings} 
-          disabled={isRegenerating}
-          style={{ marginTop: 24 }} 
-        />
+          <Text style={themed($emptyStateTitle)}>Home isn't ready yet</Text>
+          <Text style={themed($emptyStateText)}>This feature is coming soon!</Text>
         </View>
       </View>
     </Screen>

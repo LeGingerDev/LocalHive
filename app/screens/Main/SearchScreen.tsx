@@ -1,21 +1,31 @@
 import React, { FC, useState, useCallback, useRef } from "react"
-import { View, TextInput, ActivityIndicator, FlatList, ViewStyle, TextStyle, TouchableOpacity } from "react-native"
+import {
+  View,
+  TextInput,
+  ActivityIndicator,
+  FlatList,
+  ViewStyle,
+  TextStyle,
+  TouchableOpacity,
+} from "react-native"
+
 import { Header } from "@/components/Header"
-import { Screen } from "@/components/Screen"
 import { ItemCard } from "@/components/ItemCard"
+import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
+import { Switch } from "@/components/Toggle/Switch"
+import { useAnalytics } from "@/hooks/useAnalytics"
+import { askAIAboutItems, AIQueryResponse } from "@/services/openaiService"
+import { ItemWithProfile, ItemService } from "@/services/supabase/itemService"
+import { supabase } from "@/services/supabase/supabase"
+import { searchItemsByVector } from "@/services/vectorSearchService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
 
-import { Switch } from "@/components/Toggle/Switch"
-import { searchItemsByVector } from "@/services/vectorSearchService"
-import { askAIAboutItems, AIQueryResponse } from "@/services/openaiService"
-import { ItemWithProfile, ItemService } from "@/services/supabase/itemService"
-import { supabase } from "@/services/supabase/supabase"
-
 export const SearchScreen: FC = () => {
   const { themed } = useAppTheme()
+  const { trackEvent, events } = useAnalytics()
   const [query, setQuery] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,65 +34,82 @@ export const SearchScreen: FC = () => {
   const [aiResponse, setAiResponse] = useState<AIQueryResponse | null>(null)
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
 
+  // Track screen view on mount
+  React.useEffect(() => {
+    trackEvent({
+      name: events.SCREEN_VIEWED,
+      properties: {
+        screen_name: "SearchScreen",
+      },
+    })
+  }, [trackEvent, events.SCREEN_VIEWED])
+
   // Debounced search using the vector service
-  const handleChange = useCallback((text: string) => {
-    setQuery(text)
-    setError(null)
-    setAiResponse(null)
-    
-    // Only auto-search for vector search mode
-    if (!isAIMode) {
-      setIsLoading(true)
-      setResults([])
-      if (debounceTimeout.current) clearTimeout(debounceTimeout.current)
-      debounceTimeout.current = setTimeout(async () => {
-        if (!text) {
-          setResults([])
-          setIsLoading(false)
-          return
-        }
-        
-        try {
-          console.log("[SearchScreen] Searching for:", text)
-          const items = await searchItemsByVector(text)
-          console.log("[SearchScreen] Search results:", items)
-          console.log("[SearchScreen] Number of results:", items.length)
-          setResults(items)
-        } catch (e) {
-          console.error("[SearchScreen] Search error:", e)
-          setError("Failed to search. Please try again.")
-        } finally {
-          setIsLoading(false)
-        }
-      }, 400)
-    }
-  }, [isAIMode])
+  const handleChange = useCallback(
+    (text: string) => {
+      setQuery(text)
+      setError(null)
+      setAiResponse(null)
+
+      // Only auto-search for vector search mode
+      if (!isAIMode) {
+        setIsLoading(true)
+        setResults([])
+        if (debounceTimeout.current) clearTimeout(debounceTimeout.current)
+        debounceTimeout.current = setTimeout(async () => {
+          if (!text) {
+            setResults([])
+            setIsLoading(false)
+            return
+          }
+
+          try {
+            console.log("[SearchScreen] Searching for:", text)
+            const items = await searchItemsByVector(text)
+            console.log("[SearchScreen] Search results:", items)
+            console.log("[SearchScreen] Number of results:", items.length)
+            setResults(items)
+          } catch (e) {
+            console.error("[SearchScreen] Search error:", e)
+            setError("Failed to search. Please try again.")
+          } finally {
+            setIsLoading(false)
+          }
+        }, 400)
+      }
+    },
+    [isAIMode],
+  )
 
   // Manual search for AI mode
   const handleAISearch = useCallback(async () => {
     if (!query.trim()) return
-    
+
     setError(null)
     setAiResponse(null)
     setIsLoading(true)
     setResults([])
-    
+
     try {
       console.log("[SearchScreen] AI Query:", query)
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
         setError("User not authenticated")
         setIsLoading(false)
         return
       }
-      
-      const { data: allItems, error: itemsError } = await ItemService.getAllUserItemsWithProfiles(user.id)
+
+      const { data: allItems, error: itemsError } = await ItemService.getAllUserItemsWithProfiles(
+        user.id,
+      )
       if (itemsError || !allItems) {
         setError("Failed to load items for AI analysis")
         setIsLoading(false)
         return
       }
-      
+
       const aiResponse = await askAIAboutItems(query, allItems)
       setAiResponse(aiResponse)
       setResults(aiResponse.relatedItems || [])
@@ -94,21 +121,37 @@ export const SearchScreen: FC = () => {
     }
   }, [query])
 
+  // Handle search mode switch
+  const handleModeSwitch = useCallback(() => {
+    const newMode = !isAIMode
+
+    // Track mode switch
+    trackEvent({
+      name: events.SEARCH_MODE_SWITCHED,
+      properties: {
+        from_mode: isAIMode ? "ai" : "vector",
+        to_mode: newMode ? "ai" : "vector",
+        had_query: query.length > 0,
+        query_length: query.length,
+      },
+    })
+
+    setIsAIMode(newMode)
+    setQuery("") // Clear input
+    setResults([]) // Clear results
+    setError(null) // Clear any errors
+    setAiResponse(null) // Clear AI response
+  }, [isAIMode, query, trackEvent, events.SEARCH_MODE_SWITCHED])
+
   return (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top"]}>
-      <Header 
-        title="Search" 
+      <Header
+        title="Search"
         rightActions={[
           {
             text: isAIMode ? "Quick Search" : "Ask AI",
-            onPress: () => {
-              setIsAIMode(!isAIMode)
-              setQuery("") // Clear input
-              setResults([]) // Clear results
-              setError(null) // Clear any errors
-              setAiResponse(null) // Clear AI response
-            },
-          }
+            onPress: handleModeSwitch,
+          },
         ]}
       />
       <View style={themed($content)}>
@@ -126,8 +169,8 @@ export const SearchScreen: FC = () => {
             />
           </View>
           {isAIMode && (
-            <TouchableOpacity 
-              style={themed($searchButton)} 
+            <TouchableOpacity
+              style={themed($searchButton)}
               onPress={handleAISearch}
               disabled={!query.trim() || isLoading}
             >
@@ -135,38 +178,58 @@ export const SearchScreen: FC = () => {
             </TouchableOpacity>
           )}
         </View>
-        
+
         {isLoading && (
-          <ActivityIndicator style={themed($loading)} size="small" color={themed($activityIndicator).color} />
+          <ActivityIndicator
+            style={themed($loading)}
+            size="small"
+            color={themed($activityIndicator).color}
+          />
         )}
-        
-        {error && <View style={themed($errorContainer)}><Text style={themed($errorText)} text={error} /></View>}
-        
+
+        {error && (
+          <View style={themed($errorContainer)}>
+            <Text style={themed($errorText)} text={error} />
+          </View>
+        )}
+
         {/* AI Response - Hidden, just show filtered items */}
-        
+
         {!isLoading && !error && results.length === 0 && query.length > 0 && !aiResponse && (
           <View style={themed($emptyContainer)}>
-            <Text style={themed($emptyText)} text={isAIMode ? "No AI response available." : "No results found."} />
+            <Text
+              style={themed($emptyText)}
+              text={isAIMode ? "No AI response available." : "No results found."}
+            />
           </View>
         )}
-        
+
         {!isLoading && !error && results.length > 0 && (
           <View style={themed($resultsHeader)}>
-            <Text style={themed($resultsCount)} text={`${results.length} result${results.length === 1 ? '' : 's'} found`} />
+            <Text
+              style={themed($resultsCount)}
+              text={`${results.length} result${results.length === 1 ? "" : "s"} found`}
+            />
           </View>
         )}
-        
+
         <View style={themed($resultsContainer)}>
           {results.map((item) => (
-            <ItemCard 
-              key={item.id} 
-              item={item} 
+            <ItemCard
+              key={item.id}
+              item={item}
               onItemUpdated={(updatedItem) => {
                 // Update the item in the local results state
-                setResults(prevResults => 
-                  prevResults.map(prevItem => 
-                    prevItem.id === updatedItem.id ? updatedItem : prevItem
-                  )
+                setResults((prevResults) =>
+                  prevResults.map((prevItem) =>
+                    prevItem.id === updatedItem.id ? updatedItem : prevItem,
+                  ),
+                )
+              }}
+              onItemDeleted={(itemId) => {
+                // Remove the item from the local results state
+                setResults((prevResults) =>
+                  prevResults.filter((prevItem) => prevItem.id !== itemId),
                 )
               }}
             />
@@ -204,7 +267,7 @@ const $textInput: ThemedStyle<TextStyle> = ({ typography, colors }) => ({
   padding: 0,
   margin: 0,
   height: 46, // Slightly less than wrapper to account for border
-  textAlignVertical: 'center',
+  textAlignVertical: "center",
   includeFontPadding: false,
 })
 
@@ -249,8 +312,6 @@ const $resultsCount: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
 const $resultsContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   paddingBottom: spacing.xl,
 })
-
-
 
 const $aiResponseContainer: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
   backgroundColor: colors.palette.neutral100,

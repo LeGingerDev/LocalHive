@@ -19,6 +19,7 @@ import { GroupService } from "@/services/supabase/groupService"
 import { ItemService, ItemWithProfile } from "@/services/supabase/itemService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
+import { useMemo } from "react"
 
 interface GroupDetailScreenProps {
   route: { params: { groupId: string } }
@@ -52,6 +53,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [showLeaveGroupAlert, setShowLeaveGroupAlert] = useState(false)
   const [leavingGroup, setLeavingGroup] = useState(false)
   const [items, setItems] = useState<ItemWithProfile[]>([])
+  const [recentItems, setRecentItems] = useState<ItemWithProfile[]>([])
   const [itemsLoading, setItemsLoading] = useState(false)
 
   // Collapsible sections state
@@ -69,6 +71,13 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     loadGroupDetails()
     loadGroupItems()
   }, [groupId])
+
+  // Update recentItems whenever items change
+  useEffect(() => {
+    // Get the 3 most recent items (by created_at desc)
+    const sorted = [...items].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    setRecentItems(sorted.slice(0, 3))
+  }, [items])
 
   const loadGroupDetails = async () => {
     try {
@@ -290,6 +299,12 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     setShowLeaveGroupAlert(false)
   }
 
+  // Handler to delete item from both lists
+  const handleItemDeleted = (itemId: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== itemId))
+    setRecentItems((prev) => prev.filter((item) => item.id !== itemId))
+  }
+
   // Collapsible section handlers
   const handleMembersToggle = useCallback(() => {
     setMembersCollapsed(!membersCollapsed)
@@ -442,10 +457,13 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         {!recentActivityCollapsed && (
           <RecentActivitySection
             groupId={groupId}
+            items={recentItems}
             onItemPress={(item) => {
               // Handle item press - could navigate to item detail or edit
               console.log("Item pressed:", item)
             }}
+            onItemDeleted={handleItemDeleted}
+            deletable={false}
           />
         )}
 
@@ -469,7 +487,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
               {!itemsCollapsed && (
                 <TouchableOpacity
                   style={themed($addItemButtonSmall)}
-                  onPress={() => navigation.navigate("Main", { screen: "Add", params: { groupId } })}
+                  onPress={() =>
+                    navigation.navigate("Main", { screen: "Add", params: { groupId } })
+                  }
                   activeOpacity={0.8}
                 >
                   <Text style={themed($addItemButtonSmallText)} text="Add" />
@@ -497,24 +517,29 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             ) : items.length > 0 ? (
               <View style={themed($itemsList)}>
                 {items.map((item) => (
-                  <ItemCard 
-                    key={item.id} 
-                    item={item} 
+                  <ItemCard
+                    key={item.id}
+                    item={item}
                     onItemUpdated={(updatedItem) => {
                       // Update the item in the local state
-                      setItems(prevItems => 
-                        prevItems.map(prevItem => 
-                          prevItem.id === updatedItem.id ? updatedItem : prevItem
-                        )
+                      setItems((prevItems) =>
+                        prevItems.map((prevItem) =>
+                          prevItem.id === updatedItem.id ? updatedItem : prevItem,
+                        ),
                       )
                     }}
+                    onItemDeleted={handleItemDeleted}
+                    deletable={true}
                   />
                 ))}
               </View>
             ) : (
               <View style={themed($emptyItemsContainer)}>
                 <Text style={themed($emptyItemsText)} text="No items yet" />
-                <Text style={themed($emptyItemsSubtext)} text="Click 'Add' above or use the button below to add your first item!" />
+                <Text
+                  style={themed($emptyItemsSubtext)}
+                  text="Click 'Add' above or use the button below to add your first item!"
+                />
               </View>
             )}
           </View>

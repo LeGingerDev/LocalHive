@@ -1,5 +1,6 @@
-import type { Theme } from "./types"
 import { Platform } from "react-native"
+
+import type { Theme } from "./types"
 
 const systemui = require("expo-system-ui")
 
@@ -17,7 +18,7 @@ export const setSystemUIBackgroundColor = (color: string) => {
     // Edge-to-edge is enabled in app.json, so we skip this call
     return
   }
-  
+
   if (systemui) {
     systemui.setBackgroundColorAsync(color)
   }

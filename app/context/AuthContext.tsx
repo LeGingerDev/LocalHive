@@ -10,6 +10,7 @@ import {
   setupAppStateListener,
   cleanupAppStateListener,
 } from "@/services/supabase/supabase"
+import { AnalyticsService, AnalyticsEvents } from "@/services/analyticsService"
 
 interface UserProfile {
   id: string
@@ -127,6 +128,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true)
 
+      // Track sign-out event
+      AnalyticsService.trackEvent({
+        name: AnalyticsEvents.USER_SIGNED_OUT,
+      })
+
+      // Clear user ID for analytics
+      AnalyticsService.clearUserId()
+
       // Clear all caches before signing out
       CacheService.clearAllCaches()
 
@@ -167,6 +176,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (event === "SIGNED_IN" && session?.user) {
           // Clear all caches when a new user signs in to prevent showing stale data
           CacheService.clearAllCaches()
+
+          // Track sign-in event
+          AnalyticsService.trackEvent({
+            name: AnalyticsEvents.USER_SIGNED_IN,
+            properties: {
+              user_id: session.user.id,
+              email: session.user.email,
+              provider: 'google',
+            },
+          })
+
+          // Set user ID for analytics
+          AnalyticsService.setUserId(session.user.id)
 
           setUser(session.user)
           // Also check for Google user
@@ -217,11 +239,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Clear all caches when user signs out
           CacheService.clearAllCaches()
 
+          // Track sign-out event
+          AnalyticsService.trackEvent({
+            name: AnalyticsEvents.USER_SIGNED_OUT,
+          })
+
+          // Clear user ID for analytics
+          AnalyticsService.clearUserId()
+
           setUser(null)
           setGoogleUser(null)
           setUserProfile(null)
         }
-        
+
         // Set loading to false for all auth state changes
         // The initial session will be handled by the refreshUser function
         setIsLoading(false)

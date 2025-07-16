@@ -10,6 +10,10 @@
  * The app navigation resides in ./app/navigators, so head over there
  * if you're interested in adding screens and navigators.
  */
+
+// Suppress Firebase deprecation warnings
+;(globalThis as any).RNFB_SILENCE_MODULAR_DEPRECATION_WARNINGS = true
+
 if (__DEV__) {
   // Load Reactotron in development only.
   // Note that you must be using metro's `inlineRequires` for this to work.
@@ -19,7 +23,7 @@ if (__DEV__) {
 import "./utils/gestureHandler"
 
 import { useEffect, useState } from "react"
-import { AppState, AppStateStatus } from "react-native"
+import { AppState, AppStateStatus, Platform } from "react-native"
 import { useFonts } from "expo-font"
 import * as Linking from "expo-linking"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
@@ -38,6 +42,9 @@ import { customFontsToLoad } from "./theme/typography"
 import { loadDateFnsLocale } from "./utils/formatDate"
 import { hideNavigationBar, setupNavigationBarHidingInterval } from "./utils/navigationBarUtils"
 import * as storage from "./utils/storage"
+import { AnalyticsService, AnalyticsEvents } from "./services/analyticsService"
+import { getApp } from '@react-native-firebase/app'
+import { getAnalytics, setAnalyticsCollectionEnabled, setSessionTimeoutDuration } from '@react-native-firebase/analytics'
 
 export const NAVIGATION_PERSISTENCE_KEY = "NAVIGATION_STATE"
 
@@ -94,12 +101,22 @@ export function App() {
     return cleanupInterval
   }, [])
 
-  // Re-hide navigation bar when app regains focus
+  // Re-hide navigation bar when app regains focus and track app opens
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
       if (nextAppState === "active") {
         // App has come to the foreground - hide navigation bar again
         hideNavigationBar()
+        
+        // Track app opened event
+        AnalyticsService.trackEvent({
+          name: AnalyticsEvents.APP_OPENED,
+        })
+      } else if (nextAppState === "background") {
+        // Track app backgrounded event
+        AnalyticsService.trackEvent({
+          name: AnalyticsEvents.APP_BACKGROUNDED,
+        })
       }
     })
 
@@ -111,6 +128,68 @@ export function App() {
   // Set up Supabase app state listener for session refresh
   useEffect(() => {
     setupAppStateListener()
+  }, [])
+
+  // Initialize Firebase Analytics
+  useEffect(() => {
+    const initAnalytics = async () => {
+      try {
+        // Check if Firebase is available
+        if (typeof getApp === 'undefined') {
+          console.warn('[App] Firebase not available, skipping analytics initialization')
+          return
+        }
+
+        const app = getApp()
+        const analytics = getAnalytics(app)
+        
+        // Force enable analytics in development
+        if (__DEV__) {
+          await setAnalyticsCollectionEnabled(analytics, true)
+          console.log('[App] Analytics enabled for development')
+          
+          // Set debug mode
+          await setAnalyticsCollectionEnabled(analytics, true)
+          
+          // Force immediate event sending
+          await setSessionTimeoutDuration(analytics, 1800000)
+        }
+        
+        // Track app initialization
+        await AnalyticsService.trackEvent({
+          name: AnalyticsEvents.APP_OPENED,
+          properties: {
+            platform: Platform.OS,
+            version: '1.0.0',
+            build: '1',
+            debug_mode: __DEV__ ? 'true' : 'false',
+          },
+        })
+        
+        // Get debug info
+        if (__DEV__) {
+          await AnalyticsService.getDebugInfo()
+        }
+        
+        // Force flush events
+        if (__DEV__) {
+          setTimeout(async () => {
+            try {
+              await setAnalyticsCollectionEnabled(analytics, true)
+              console.log('[App] Forced analytics flush')
+            } catch (flushError) {
+              console.error('[App] Failed to flush analytics:', flushError)
+            }
+          }, 1000)
+        }
+      } catch (error) {
+        console.error('[App] Failed to initialize analytics:', error)
+      }
+    }
+    
+    // Delay analytics initialization to ensure Firebase is ready
+    const timer = setTimeout(initAnalytics, 1000)
+    return () => clearTimeout(timer)
   }, [])
 
   // Before we show the app, we have to wait for our state to be ready.

@@ -1,5 +1,5 @@
-import { supabase } from "./supabase/supabase"
 import { EdgeFunctionService } from "./edgeFunctionService"
+import { supabase } from "./supabase/supabase"
 
 /**
  * Service for regenerating embeddings for existing items
@@ -49,7 +49,7 @@ export class EmbeddingRegenerationService {
     title: string,
     details?: string,
     category?: string,
-    location?: string
+    location?: string,
   ): Promise<{
     success: boolean
     error?: string
@@ -59,7 +59,7 @@ export class EmbeddingRegenerationService {
       title,
       details,
       category,
-      location
+      location,
     )
   }
 
@@ -83,14 +83,14 @@ export class EmbeddingRegenerationService {
           processed: 0,
           totalItems: 0,
           errors: [itemsResult.error || "Failed to fetch items"],
-          error: itemsResult.error
+          error: itemsResult.error,
         }
       }
 
       const items = itemsResult.items
       const results = {
         processed: 0,
-        errors: [] as string[]
+        errors: [] as string[],
       }
 
       console.log(`Starting regeneration for ${items.length} items`)
@@ -103,7 +103,7 @@ export class EmbeddingRegenerationService {
             item.title,
             item.details,
             item.category,
-            item.location
+            item.location,
           )
 
           if (result.success) {
@@ -115,8 +115,7 @@ export class EmbeddingRegenerationService {
           }
 
           // Add delay between requests to avoid rate limits
-          await new Promise(resolve => setTimeout(resolve, 500))
-
+          await new Promise((resolve) => setTimeout(resolve, 500))
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : "Unknown error"
           results.errors.push(`${item.title}: ${errorMsg}`)
@@ -129,9 +128,8 @@ export class EmbeddingRegenerationService {
         processed: results.processed,
         totalItems: items.length,
         errors: results.errors,
-        message: `Processed ${results.processed} out of ${items.length} items`
+        message: `Processed ${results.processed} out of ${items.length} items`,
       }
-
     } catch (error) {
       console.error("Error in regenerateAllEmbeddings:", error)
       return {
@@ -139,8 +137,8 @@ export class EmbeddingRegenerationService {
         processed: 0,
         totalItems: 0,
         errors: [],
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       }
     }
   }
-} 
+}

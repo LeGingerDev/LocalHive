@@ -1,6 +1,8 @@
 // Try to import GoogleSignin, but handle the case where it's not available
 import { AuthService } from "./authService"
 import { supabase } from "./supabase"
+import Config from "@/config"
+import Constants from "expo-constants"
 
 let GoogleSignin: any = null
 let statusCodes: any = null
@@ -45,6 +47,7 @@ export interface CheckSignInResult {
 // Google Auth Service Class
 class GoogleAuthService {
   private signInSilentlyPromise: Promise<any> | null = null
+  private isConfigured: boolean = false
 
   constructor() {
     if (GoogleSignin) {
@@ -61,16 +64,63 @@ class GoogleAuthService {
       return
     }
 
-    GoogleSignin.configure({
-      // TODO: Update this webClientId with the new OAuth 2.0 Client ID for com.legingerdev.visu
-      // Go to https://console.cloud.google.com/ and create a new OAuth 2.0 Client ID
-      // Package name: com.legingerdev.visu
-      // SHA-1: Get this from your debug keystore or production keystore
-      webClientId: "1059094099801-n0dvupob4kiers1dupmvu8su8io63e4s.apps.googleusercontent.com", // OLD - needs updating
-      offlineAccess: true,
-      hostedDomain: "",
-      forceCodeForRefreshToken: true,
-    })
+    // Debug: Log what we're trying to access
+    console.log("🔍 Debugging Google Sign-In configuration:")
+    console.log("  - Config.GOOGLE_WEB_CLIENT_ID:", Config.GOOGLE_WEB_CLIENT_ID)
+    console.log("  - process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID:", process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID)
+    console.log("  - Constants.manifest?.extra?.googleWebClientId:", (Constants.manifest as any)?.extra?.googleWebClientId)
+    console.log("  - Config object keys:", Object.keys(Config))
+
+    // Try to get the client ID from multiple sources
+    const clientId = Config.GOOGLE_WEB_CLIENT_ID || 
+                    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 
+                    (Constants.manifest as any)?.extra?.googleWebClientId
+    
+    if (!clientId) {
+      console.warn("EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID not found in environment variables")
+      console.log("  - Available Config values:", {
+        SUPABASE_URL: Config.SUPABASE_URL ? "✅ Set" : "❌ Missing",
+        SUPABASE_KEY: Config.SUPABASE_KEY ? "✅ Set" : "❌ Missing",
+        OPENAI_API_KEY: Config.OPENAI_API_KEY ? "✅ Set" : "❌ Missing",
+        GOOGLE_WEB_CLIENT_ID: Config.GOOGLE_WEB_CLIENT_ID ? "✅ Set" : "❌ Missing",
+      })
+      return
+    }
+
+    console.log("  - Using clientId:", clientId.substring(0, 20) + "...")
+
+    try {
+      GoogleSignin.configure({
+        webClientId: clientId,
+        offlineAccess: true,
+        hostedDomain: "",
+        forceCodeForRefreshToken: true,
+      })
+      this.isConfigured = true
+      console.log("✅ Google Sign-In configured successfully")
+      console.log("  - Using client ID type:", clientId.includes('.apps.googleusercontent.com') ? 'Web Client ID' : 'Unknown type')
+    } catch (error) {
+      console.error("❌ Failed to configure Google Sign-In:", error)
+      this.isConfigured = false
+    }
+  }
+
+  /**
+   * Check if Google Sign-In is properly configured
+   */
+  private isGoogleSignInAvailable(): boolean {
+    return GoogleSignin !== null && this.isConfigured
+  }
+
+  /**
+   * Get the configuration status of Google Sign-In
+   */
+  getConfigurationStatus(): { isConfigured: boolean; hasModule: boolean; hasWebClientId: boolean } {
+    return {
+      isConfigured: this.isConfigured,
+      hasModule: GoogleSignin !== null,
+      hasWebClientId: !!(Config.GOOGLE_WEB_CLIENT_ID || process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID),
+    }
   }
 
   /**
@@ -78,11 +128,11 @@ class GoogleAuthService {
    * @returns Promise<SignInResult>
    */
   async signInWithGoogle(): Promise<SignInResult> {
-    if (!GoogleSignin) {
+    if (!this.isGoogleSignInAvailable()) {
       return {
         success: false,
         error: "MODULE_NOT_AVAILABLE",
-        message: "Google Sign-In module is not available in this build",
+        message: "Google Sign-In is not properly configured. Please check your environment variables.",
       }
     }
 
@@ -161,6 +211,9 @@ class GoogleAuthService {
       }
     } catch (error: any) {
       console.error("Google sign-in error:", error)
+      console.error("  - Error code:", error.code)
+      console.error("  - Error message:", error.message)
+      console.error("  - Full error object:", JSON.stringify(error, null, 2))
 
       // Handle specific Google Sign-In errors
       if (statusCodes && error.code === statusCodes.SIGN_IN_CANCELLED) {
@@ -181,7 +234,22 @@ class GoogleAuthService {
           error: "PLAY_SERVICES_NOT_AVAILABLE",
           message: "Google Play Services is not available",
         }
-      } else if (error.message && error.message.includes("getTokens requires a user to be signed in")) {
+      } else if (error.code === "DEVELOPER_ERROR") {
+        return {
+          success: false,
+          error: "DEVELOPER_ERROR",
+          message: "Developer error - You're likely using a Web Client ID instead of an Android OAuth 2.0 Client ID. Create an Android OAuth 2.0 Client ID in Google Cloud Console with package name 'com.legingerdev.visu' and your SHA-1 fingerprint.",
+        }
+      } else if (error.code === "SIGN_IN_FAILED") {
+        return {
+          success: false,
+          error: "SIGN_IN_FAILED",
+          message: "Sign in failed - check client ID and OAuth configuration",
+        }
+      } else if (
+        error.message &&
+        error.message.includes("getTokens requires a user to be signed in")
+      ) {
         // Treat getTokens errors as cancellations
         return {
           success: false,
@@ -208,7 +276,7 @@ class GoogleAuthService {
       await supabase.auth.signOut()
 
       // Then sign out from Google Sign-In
-      if (GoogleSignin) {
+      if (this.isGoogleSignInAvailable()) {
         await GoogleSignin.signOut()
       }
     } catch (error) {
@@ -227,7 +295,7 @@ class GoogleAuthService {
    * @returns Promise<any>
    */
   async getCurrentUser(): Promise<any> {
-    if (!GoogleSignin) {
+    if (!this.isGoogleSignInAvailable()) {
       return null
     }
 
@@ -272,7 +340,7 @@ class GoogleAuthService {
       }
 
       // STEP 2: No Supabase session - attempt restoration from Google
-      if (!GoogleSignin) {
+      if (!this.isGoogleSignInAvailable()) {
         return { isAuthenticated: false }
       }
 
@@ -322,7 +390,7 @@ class GoogleAuthService {
    */
   async revokeAccess(): Promise<void> {
     try {
-      if (GoogleSignin) {
+      if (this.isGoogleSignInAvailable()) {
         await GoogleSignin.revokeAccess()
         await GoogleSignin.signOut()
       }

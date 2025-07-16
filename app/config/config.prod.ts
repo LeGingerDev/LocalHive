@@ -1,3 +1,5 @@
+import Constants from "expo-constants"
+
 /**
  * These are configuration settings for the production environment.
  *
@@ -8,9 +10,10 @@
 export default {
   API_URL: "https://api.rss2json.com/v1/",
 
-  // Supabase configuration
-  SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL || "https://xnnobyeytyycngybinqj.supabase.co",
-  SUPABASE_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhubm9ieWV5dHl5Y25neWJpbnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NjEyMDQsImV4cCI6MjA2NzIzNzIwNH0.bBO9iuzsMU1xUq_EJAi6esjWb0Jm1Arj2mQfXXqIEKw",
+  // Supabase configuration - read from Constants.expoConfig.extra
+  SUPABASE_URL: Constants.expoConfig?.extra?.supabaseUrl || "",
+  SUPABASE_KEY: Constants.expoConfig?.extra?.supabaseAnonKey || "",
   SUPABASE_SERVICE_ROLE_KEY: "", // Keep empty - this should never be in client-side code
-  OPENAI_API_KEY: process.env.EXPO_PUBLIC_OPENAI_API_KEY || "",
+  OPENAI_API_KEY: Constants.expoConfig?.extra?.openaiApiKey || "",
+  GOOGLE_WEB_CLIENT_ID: Constants.expoConfig?.extra?.googleWebClientId || "",
 }

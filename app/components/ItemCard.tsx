@@ -1,16 +1,11 @@
 import { useState } from "react"
-import {
-  View,
-  ViewStyle,
-  TextStyle,
-  Image,
-  TouchableOpacity,
-  ImageStyle,
-} from "react-native"
+import { View, ViewStyle, TextStyle, Image, TouchableOpacity, ImageStyle } from "react-native"
 
+import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { ItemModal } from "@/components/ItemModal"
 import { Text } from "@/components/Text"
 import { ItemWithProfile } from "@/services/supabase/itemService"
+import { ItemService } from "@/services/supabase/itemService"
 import { getCategoryColor } from "@/theme/categoryColors"
 import { useAppTheme } from "@/theme/context"
 
@@ -18,9 +13,11 @@ interface ItemCardProps {
   item: ItemWithProfile
   onPress?: (item: ItemWithProfile) => void
   onItemUpdated?: (updatedItem: ItemWithProfile) => void
+  onItemDeleted?: (itemId: string) => void
+  deletable?: boolean // NEW
 }
 
-export const ItemCard = ({ item, onPress, onItemUpdated }: ItemCardProps) => {
+export const ItemCard = ({ item, onPress, onItemUpdated, onItemDeleted, deletable = false }: ItemCardProps) => {
   const { themed, themeContext } = useAppTheme()
   const imageUrls = item.image_urls ?? []
   const hasImage = imageUrls.length > 0
@@ -34,10 +31,41 @@ export const ItemCard = ({ item, onPress, onItemUpdated }: ItemCardProps) => {
 
   // Modal state
   const [modalVisible, setModalVisible] = useState(false)
+  const [deleteAlertVisible, setDeleteAlertVisible] = useState(false)
 
   const handlePress = () => {
     console.log("[ItemCard] Opening modal for item:", item.title)
     setModalVisible(true)
+  }
+
+  const handleLongPress = () => {
+    if (!deletable) return // Only allow delete if deletable
+    console.log("[ItemCard] Long press detected for item:", item.title)
+    setDeleteAlertVisible(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    try {
+      console.log("[ItemCard] Deleting item:", item.id)
+      const { error } = await ItemService.deleteItem(item.id)
+
+      if (error) {
+        console.error("[ItemCard] Error deleting item:", error)
+        // You might want to show an error toast here
+        return
+      }
+
+      console.log("[ItemCard] Item deleted successfully:", item.id)
+      onItemDeleted?.(item.id)
+    } catch (error) {
+      console.error("[ItemCard] Exception while deleting item:", error)
+    } finally {
+      setDeleteAlertVisible(false)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteAlertVisible(false)
   }
 
   return (
@@ -52,6 +80,7 @@ export const ItemCard = ({ item, onPress, onItemUpdated }: ItemCardProps) => {
         ]}
         activeOpacity={0.85}
         onPress={handlePress}
+        onLongPress={handleLongPress}
         accessibilityRole={onPress ? "button" : undefined}
       >
         {/* Image section */}
@@ -88,13 +117,25 @@ export const ItemCard = ({ item, onPress, onItemUpdated }: ItemCardProps) => {
           </View>
         </View>
       </TouchableOpacity>
-      
+
       {/* Item Modal */}
       <ItemModal
         item={item}
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onItemUpdated={onItemUpdated}
+      />
+
+      {/* Delete Confirmation Alert */}
+      <CustomAlert
+        visible={deleteAlertVisible}
+        title="Delete Item"
+        message={`Are you sure you want to delete "${item.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        confirmStyle="destructive"
       />
     </>
   )
@@ -177,7 +218,7 @@ const $category = ({ typography, colors }: any): TextStyle => ({
   textTransform: "capitalize",
 })
 
-const $metaRow = ({ spacing }: any): ViewStyle => ({
+const $metaRow = (): ViewStyle => ({
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "space-between",
@@ -194,5 +235,3 @@ const $userText = ({ typography, colors }: any): TextStyle => ({
   flexGrow: 0,
   maxWidth: "50%",
 })
-
-

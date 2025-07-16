@@ -10,7 +10,8 @@ const supabaseKey = Config.SUPABASE_KEY
 
 // Check if the Supabase URL and key are defined
 if (!supabaseUrl || !supabaseKey) {
-  console.error("Supabase URL or key is missing. Please check your configuration.")
+  console.warn("⚠️  Supabase URL or key is missing. This is expected during build time.")
+  console.warn("   - These will be available in EAS builds via EAS environment variables.")
 }
 
 // Create MMKV storage instance for Supabase session persistence
@@ -30,7 +31,11 @@ const supabaseStorage = {
 }
 
 // Create a single, shared Supabase client instance
-export const supabase = createClient(supabaseUrl, supabaseKey, {
+// Use fallback values during build time to prevent crashes
+export const supabase = createClient(
+  supabaseUrl || "https://placeholder.supabase.co", 
+  supabaseKey || "placeholder-key", 
+  {
   auth: {
     storage: supabaseStorage,
     autoRefreshToken: true,

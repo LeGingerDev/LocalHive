@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
-import { NotificationService, type NotificationData } from '@/services/notificationService'
+import { useEffect, useState } from "react"
+
+import { NotificationService, type NotificationData } from "@/services/notificationService"
 
 export const useNotifications = () => {
   const [isEnabled, setIsEnabled] = useState<boolean | null>(null)
@@ -15,7 +16,7 @@ export const useNotifications = () => {
       const enabled = await NotificationService.areEnabled()
       setIsEnabled(enabled)
     } catch (error) {
-      console.error('Error checking notification status:', error)
+      console.error("Error checking notification status:", error)
       setIsEnabled(false)
     }
   }
@@ -27,7 +28,7 @@ export const useNotifications = () => {
       setIsEnabled(granted)
       return granted
     } catch (error) {
-      console.error('Error requesting notification permissions:', error)
+      console.error("Error requesting notification permissions:", error)
       return false
     } finally {
       setIsLoading(false)
@@ -36,17 +37,23 @@ export const useNotifications = () => {
 
   const sendNotification = async (notification: NotificationData): Promise<string | null> => {
     if (!isEnabled) {
-      console.log('Notifications not enabled')
+      console.log("Notifications not enabled")
       return null
     }
     return NotificationService.sendLocalNotification(notification)
   }
 
-  const sendGroupInviteNotification = async (groupName: string, inviterName: string): Promise<string | null> => {
+  const sendGroupInviteNotification = async (
+    groupName: string,
+    inviterName: string,
+  ): Promise<string | null> => {
     return NotificationService.sendGroupInviteNotification(groupName, inviterName)
   }
 
-  const sendNewItemNotification = async (itemName: string, groupName: string): Promise<string | null> => {
+  const sendNewItemNotification = async (
+    itemName: string,
+    groupName: string,
+  ): Promise<string | null> => {
     return NotificationService.sendNewItemNotification(itemName, groupName)
   }
 
@@ -64,4 +71,4 @@ export const useNotifications = () => {
     sendReminderNotification,
     checkNotificationStatus,
   }
-} 
+}

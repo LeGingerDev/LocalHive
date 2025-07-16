@@ -24,15 +24,15 @@ export const useGroups = () => {
       // Load groups and invitations in parallel for better performance
       const [groupsResult, invitationsResult] = await Promise.all([
         GroupService.getUserGroups(),
-        GroupService.getPendingInvitations()
+        GroupService.getPendingInvitations(),
       ])
-      
+
       // Check for errors in either call
       if (groupsResult.error) {
         setError(groupsResult.error.message)
         return
       }
-      
+
       if (invitationsResult.error) {
         setError(invitationsResult.error.message)
         return
@@ -71,75 +71,84 @@ export const useGroups = () => {
   }, [loadData])
 
   // Create group
-  const createGroup = useCallback(async (groupData: CreateGroupData) => {
-    if (!user) return null
+  const createGroup = useCallback(
+    async (groupData: CreateGroupData) => {
+      if (!user) return null
 
-    try {
-      setError(null)
-      const { data, error } = await GroupService.createGroup(groupData)
+      try {
+        setError(null)
+        const { data, error } = await GroupService.createGroup(groupData)
 
-      if (error) {
-        setError(error.message)
+        if (error) {
+          setError(error.message)
+          return null
+        }
+
+        if (data) {
+          setGroups((prev) => [data, ...prev])
+        }
+
+        return data
+      } catch (err) {
+        setError("Failed to create group")
         return null
       }
-
-      if (data) {
-        setGroups(prev => [data, ...prev])
-      }
-
-      return data
-    } catch (err) {
-      setError("Failed to create group")
-      return null
-    }
-  }, [user])
+    },
+    [user],
+  )
 
   // Respond to invitation
-  const respondToInvitation = useCallback(async (invitationId: string, status: "accepted" | "declined") => {
-    if (!user) return false
+  const respondToInvitation = useCallback(
+    async (invitationId: string, status: "accepted" | "declined") => {
+      if (!user) return false
 
-    try {
-      const { data, error } = await GroupService.respondToInvitation(invitationId, status)
+      try {
+        const { data, error } = await GroupService.respondToInvitation(invitationId, status)
 
-      if (error) {
-        setError(error.message)
+        if (error) {
+          setError(error.message)
+          return false
+        }
+
+        // Remove invitation from list
+        setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId))
+
+        // Add group to list if accepted
+        if (status === "accepted" && data?.group) {
+          setGroups((prev) => [data.group!, ...prev])
+        }
+
+        return true
+      } catch (err) {
+        setError("Failed to respond to invitation")
         return false
       }
-
-      // Remove invitation from list
-      setInvitations(prev => prev.filter(inv => inv.id !== invitationId))
-
-      // Add group to list if accepted
-      if (status === "accepted" && data?.group) {
-        setGroups(prev => [data.group!, ...prev])
-      }
-
-      return true
-    } catch (err) {
-      setError("Failed to respond to invitation")
-      return false
-    }
-  }, [user])
+    },
+    [user],
+  )
 
   // Delete group
-  const deleteGroup = useCallback(async (groupId: string) => {
-    if (!user) return false
+  const deleteGroup = useCallback(
+    async (groupId: string) => {
+      if (!user) return false
 
-    try {
-      const { error } = await GroupService.deleteGroup(groupId)
+      try {
+        const { error } = await GroupService.deleteGroup(groupId)
 
-      if (error) {
-        setError(error.message)
+        if (error) {
+          setError(error.message)
+          return false
+        }
+
+        setGroups((prev) => prev.filter((group) => group.id !== groupId))
+        return true
+      } catch (err) {
+        setError("Failed to delete group")
         return false
       }
-
-      setGroups(prev => prev.filter(group => group.id !== groupId))
-      return true
-    } catch (err) {
-      setError("Failed to delete group")
-      return false
-    }
-  }, [user])
+    },
+    [user],
+  )
 
   return {
     groups,

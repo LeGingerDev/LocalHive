@@ -1,6 +1,6 @@
-import * as ImagePicker from 'expo-image-picker'
-import * as ImageManipulator from 'expo-image-manipulator'
-import { Camera, CameraType } from 'expo-camera'
+import { Camera, CameraType } from "expo-camera"
+import * as ImageManipulator from "expo-image-manipulator"
+import * as ImagePicker from "expo-image-picker"
 
 export interface ImageResult {
   uri: string
@@ -35,7 +35,7 @@ export class CameraService {
    */
   async requestCameraPermission(): Promise<boolean> {
     const { status } = await Camera.requestCameraPermissionsAsync()
-    return status === 'granted'
+    return status === "granted"
   }
 
   /**
@@ -44,7 +44,7 @@ export class CameraService {
    */
   async requestMediaLibraryPermission(): Promise<boolean> {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    return status === 'granted'
+    return status === "granted"
   }
 
   /**
@@ -53,7 +53,7 @@ export class CameraService {
    */
   async hasCameraPermission(): Promise<boolean> {
     const { status } = await Camera.getCameraPermissionsAsync()
-    return status === 'granted'
+    return status === "granted"
   }
 
   /**
@@ -62,7 +62,7 @@ export class CameraService {
    */
   async hasMediaLibraryPermission(): Promise<boolean> {
     const { status } = await ImagePicker.getMediaLibraryPermissionsAsync()
-    return status === 'granted'
+    return status === "granted"
   }
 
   /**
@@ -73,7 +73,7 @@ export class CameraService {
   async takePhoto(options: ImagePicker.ImagePickerOptions = {}): Promise<ImageResult | null> {
     const hasPermission = await this.requestCameraPermission()
     if (!hasPermission) {
-      throw new Error('Camera permission not granted')
+      throw new Error("Camera permission not granted")
     }
 
     const result = await ImagePicker.launchCameraAsync({
@@ -90,7 +90,7 @@ export class CameraService {
         uri: asset.uri,
         width: asset.width,
         height: asset.height,
-        type: asset.type || 'image',
+        type: asset.type || "image",
         size: asset.fileSize,
       }
     }
@@ -106,7 +106,7 @@ export class CameraService {
   async pickFromGallery(options: ImagePicker.ImagePickerOptions = {}): Promise<ImageResult | null> {
     const hasPermission = await this.requestMediaLibraryPermission()
     if (!hasPermission) {
-      throw new Error('Media library permission not granted')
+      throw new Error("Media library permission not granted")
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -123,7 +123,7 @@ export class CameraService {
         uri: asset.uri,
         width: asset.width,
         height: asset.height,
-        type: asset.type || 'image',
+        type: asset.type || "image",
         size: asset.fileSize,
       }
     }
@@ -143,7 +143,7 @@ export class CameraService {
     imageUri: string,
     quality: number = 0.7,
     maxWidth: number = 1024,
-    maxHeight: number = 1024
+    maxHeight: number = 1024,
   ): Promise<CompressedImageResult> {
     const originalSize = await this.getFileSize(imageUri)
 
@@ -160,7 +160,7 @@ export class CameraService {
       {
         compress: quality,
         format: ImageManipulator.SaveFormat.JPEG,
-      }
+      },
     )
 
     const compressedSize = await this.getFileSize(result.uri)
@@ -169,7 +169,7 @@ export class CameraService {
       uri: result.uri,
       width: result.width,
       height: result.height,
-      type: 'image/jpeg',
+      type: "image/jpeg",
       compressedUri: result.uri,
       originalSize,
       compressedSize,
@@ -188,7 +188,7 @@ export class CameraService {
       const blob = await response.blob()
       return blob.size
     } catch (error) {
-      console.warn('Could not determine file size:', error)
+      console.warn("Could not determine file size:", error)
       return 0
     }
   }
@@ -206,7 +206,7 @@ export class CameraService {
       reader.onload = () => {
         const result = reader.result as string
         // Remove data URL prefix to get just the base64 string
-        const base64 = result.split(',')[1]
+        const base64 = result.split(",")[1]
         resolve(base64)
       }
       reader.onerror = reject
@@ -222,9 +222,9 @@ export class CameraService {
     // For now, return both types as they're commonly available
     // In a real implementation, you might want to check device capabilities
     // or use a different approach to determine available cameras
-    return ['back', 'front'] as CameraType[]
+    return ["back", "front"] as CameraType[]
   }
 }
 
 // Export singleton instance
-export const cameraService = CameraService.getInstance() 
+export const cameraService = CameraService.getInstance()

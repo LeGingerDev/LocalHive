@@ -24,18 +24,18 @@ export class GroupService {
    */
   static async getUserGroups(): Promise<{ data: Group[] | null; error: PostgrestError | null }> {
     console.log("🔍 [GroupService] getUserGroups called")
-    
+
     try {
       console.log("🔍 [GroupService] Getting current user")
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      
+
       console.log("🔍 [GroupService] User auth result:", {
         hasUser: !!user,
         userId: user?.id,
       })
-      
+
       if (!user) {
         console.log("🔍 [GroupService] No user found, returning auth error")
         return {
@@ -125,7 +125,7 @@ export class GroupService {
 
       console.log("🔍 [GroupService] Returning enriched groups:", {
         count: enrichedGroups.length,
-        groups: enrichedGroups.map(g => ({ id: g.id, name: g.name })),
+        groups: enrichedGroups.map((g) => ({ id: g.id, name: g.name })),
       })
 
       return { data: enrichedGroups as Group[], error: null }
@@ -564,8 +564,11 @@ export class GroupService {
     console.log("🚪 [leaveGroup] groupId:", groupId)
     try {
       // Get current user
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         console.error("❌ [leaveGroup] User not authenticated")
         return {
@@ -590,7 +593,7 @@ export class GroupService {
         console.error("❌ [leaveGroup] Leave group error:", error)
         return { error }
       }
-      
+
       console.log("✅ [leaveGroup] User successfully left group")
       return { error: null }
     } catch (error) {
@@ -1238,10 +1241,18 @@ export class GroupService {
       if (sessionData.session?.access_token) {
         console.log("🔟 Testing direct API call with access token...")
         try {
-          const apiUrl = `${Config.SUPABASE_URL}/rest/v1/profiles?select=id,email&limit=1`
+          const supabaseUrl = Config.SUPABASE_URL
+          const supabaseKey = Config.SUPABASE_KEY
+          
+          if (!supabaseUrl || !supabaseKey) {
+            console.warn("⚠️  Supabase config not available during build time")
+            return
+          }
+          
+          const apiUrl = `${supabaseUrl}/rest/v1/profiles?select=id,email&limit=1`
           const response = await fetch(apiUrl, {
             headers: {
-              apikey: Config.SUPABASE_KEY,
+              apikey: supabaseKey,
               Authorization: `Bearer ${sessionData.session.access_token}`,
             },
           })
@@ -1350,7 +1361,9 @@ export class GroupService {
   /**
    * Get the count of groups created by a specific user
    */
-  static async getGroupsCreatedCount(userId: string): Promise<{ count: number, error: PostgrestError | null }> {
+  static async getGroupsCreatedCount(
+    userId: string,
+  ): Promise<{ count: number; error: PostgrestError | null }> {
     try {
       const { count, error } = await supabase
         .from("groups")

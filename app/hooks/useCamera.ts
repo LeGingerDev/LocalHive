@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react'
-import { cameraService, ImageResult, CompressedImageResult } from '../services/cameraService'
+import { useState, useCallback } from "react"
+
+import { cameraService, ImageResult, CompressedImageResult } from "../services/cameraService"
 
 export interface UseCameraReturn {
   // State
@@ -13,7 +14,12 @@ export interface UseCameraReturn {
   // Actions
   takePhoto: (options?: any) => Promise<ImageResult | null>
   pickFromGallery: (options?: any) => Promise<ImageResult | null>
-  compressImage: (imageUri: string, quality?: number, maxWidth?: number, maxHeight?: number) => Promise<CompressedImageResult | null>
+  compressImage: (
+    imageUri: string,
+    quality?: number,
+    maxWidth?: number,
+    maxHeight?: number,
+  ) => Promise<CompressedImageResult | null>
   clearError: () => void
   clearLastImage: () => void
 }
@@ -29,7 +35,7 @@ export function useCamera(): UseCameraReturn {
   const takePhoto = useCallback(async (options?: any): Promise<ImageResult | null> => {
     setIsTakingPhoto(true)
     setError(null)
-    
+
     try {
       const result = await cameraService.takePhoto(options)
       if (result) {
@@ -37,7 +43,7 @@ export function useCamera(): UseCameraReturn {
       }
       return result
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to take photo'
+      const errorMessage = err instanceof Error ? err.message : "Failed to take photo"
       setError(errorMessage)
       return null
     } finally {
@@ -48,7 +54,7 @@ export function useCamera(): UseCameraReturn {
   const pickFromGallery = useCallback(async (options?: any): Promise<ImageResult | null> => {
     setIsPickingFromGallery(true)
     setError(null)
-    
+
     try {
       const result = await cameraService.pickFromGallery(options)
       if (result) {
@@ -56,7 +62,7 @@ export function useCamera(): UseCameraReturn {
       }
       return result
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to pick image from gallery'
+      const errorMessage = err instanceof Error ? err.message : "Failed to pick image from gallery"
       setError(errorMessage)
       return null
     } finally {
@@ -64,29 +70,32 @@ export function useCamera(): UseCameraReturn {
     }
   }, [])
 
-  const compressImage = useCallback(async (
-    imageUri: string, 
-    quality: number = 0.7, 
-    maxWidth: number = 1024, 
-    maxHeight: number = 1024
-  ): Promise<CompressedImageResult | null> => {
-    setIsCompressing(true)
-    setError(null)
-    
-    try {
-      const result = await cameraService.compressImage(imageUri, quality, maxWidth, maxHeight)
-      if (result) {
-        setLastCompressedImage(result)
+  const compressImage = useCallback(
+    async (
+      imageUri: string,
+      quality: number = 0.7,
+      maxWidth: number = 1024,
+      maxHeight: number = 1024,
+    ): Promise<CompressedImageResult | null> => {
+      setIsCompressing(true)
+      setError(null)
+
+      try {
+        const result = await cameraService.compressImage(imageUri, quality, maxWidth, maxHeight)
+        if (result) {
+          setLastCompressedImage(result)
+        }
+        return result
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to compress image"
+        setError(errorMessage)
+        return null
+      } finally {
+        setIsCompressing(false)
       }
-      return result
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to compress image'
-      setError(errorMessage)
-      return null
-    } finally {
-      setIsCompressing(false)
-    }
-  }, [])
+    },
+    [],
+  )
 
   const clearError = useCallback(() => {
     setError(null)
@@ -113,4 +122,4 @@ export function useCamera(): UseCameraReturn {
     clearError,
     clearLastImage,
   }
-} 
+}

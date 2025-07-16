@@ -13,9 +13,11 @@ export const hideNavigationBar = async (): Promise<void> => {
       console.warn = (...args) => {
         // Filter out navigation bar warnings when edge-to-edge is enabled
         const message = args[0]
-        if (typeof message === 'string' && 
-            (message.includes('setBehaviorAsync') || message.includes('setBackgroundColorAsync')) &&
-            message.includes('edge-to-edge')) {
+        if (
+          typeof message === "string" &&
+          (message.includes("setBehaviorAsync") || message.includes("setBackgroundColorAsync")) &&
+          message.includes("edge-to-edge")
+        ) {
           return // Suppress this warning
         }
         originalWarn.apply(console, args)
@@ -23,7 +25,7 @@ export const hideNavigationBar = async (): Promise<void> => {
 
       // Set the navigation bar to hidden
       await NavigationBar.setVisibilityAsync("hidden")
-      
+
       // Note: setBehaviorAsync and setBackgroundColorAsync are not supported with edge-to-edge enabled
       // These calls are removed to prevent warnings
       // The edge-to-edge configuration in app.json handles the navigation bar styling

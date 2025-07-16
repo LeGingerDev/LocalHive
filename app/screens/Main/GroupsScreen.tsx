@@ -12,6 +12,8 @@ import {
 import { useFocusEffect } from "@react-navigation/native"
 
 import { CustomAlert } from "@/components/Alert/CustomAlert"
+import { Button } from "@/components/Button"
+import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { GroupCard } from "@/components/Groups/GroupCard"
 import { InvitationCard } from "@/components/Groups/InvitationCard"
 import { Header } from "@/components/Header"
@@ -24,8 +26,6 @@ import { useGroups } from "@/hooks/useGroups"
 import { Group, GroupInvitation } from "@/services/api/types"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
-import { CustomGradient } from "@/components/Gradient/CustomGradient"
-import { Button } from "@/components/Button"
 
 const windowHeight = Dimensions.get("window").height
 const estimatedContentHeight = 450
@@ -59,16 +59,9 @@ const AuthPrompt = () => {
 export const GroupsScreen = ({ navigation, route }: any) => {
   const { themed, theme } = useAppTheme()
   const { user, isLoading: authLoading } = useAuth()
-  
-  const {
-    groups,
-    invitations,
-    loading,
-    refreshing,
-    error,
-    refresh,
-    respondToInvitation,
-  } = useGroups()
+
+  const { groups, invitations, loading, refreshing, error, refresh, respondToInvitation } =
+    useGroups()
 
   // Alert state
   const [alertVisible, setAlertVisible] = useState(false)
@@ -87,7 +80,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
       if (user) {
         refresh()
       }
-    }, [user, refresh])
+    }, [user, refresh]),
   )
 
   const handleInvitationResponse = async (
@@ -98,7 +91,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
     if (success) {
       // Refresh the data to ensure UI is updated
       await refresh()
-      
+
       setAlertTitle(status === "accepted" ? "Invitation Accepted" : "Invitation Declined")
       setAlertMessage(
         status === "accepted" ? "You have joined the group!" : "The invitation has been declined.",
@@ -156,7 +149,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
       </Screen>
     )
   }
-  
+
   return (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
       <Header
@@ -205,7 +198,12 @@ export const GroupsScreen = ({ navigation, route }: any) => {
                 <Button
                   text="Create Your First Group"
                   style={{ backgroundColor: "transparent", borderRadius: 8 }}
-                  textStyle={{ color: "#fff", fontFamily: theme.typography.primary.medium, fontSize: 16, textAlign: "center" }}
+                  textStyle={{
+                    color: "#fff",
+                    fontFamily: theme.typography.primary.medium,
+                    fontSize: 16,
+                    textAlign: "center",
+                  }}
                   onPress={handleCreateGroup}
                   preset="reversed"
                 />
@@ -226,7 +224,10 @@ export const GroupsScreen = ({ navigation, route }: any) => {
                   <Text style={themed($sectionHeaderTitle)} text={`Groups (${groups.length})`} />
                   <View style={themed($sectionHeaderRight)}>
                     {groupsCollapsed && (
-                      <Text style={themed($collapsedGroupsSummary)} text={`${groups.length} group${groups.length !== 1 ? "s" : ""} hidden`} />
+                      <Text
+                        style={themed($collapsedGroupsSummary)}
+                        text={`${groups.length} group${groups.length !== 1 ? "s" : ""} hidden`}
+                      />
                     )}
                     <Icon
                       icon={groupsCollapsed ? "caretRight" : "caretLeft"}
@@ -238,17 +239,16 @@ export const GroupsScreen = ({ navigation, route }: any) => {
               </TouchableOpacity>
 
               {/* Groups Content */}
-              {!groupsCollapsed && (
+              {!groupsCollapsed &&
                 groups.map((group: Group, index: number) => (
-                  <GroupCard 
-                    key={group.id} 
-                    group={group} 
-                    navigation={navigation} 
-                    index={index} 
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    navigation={navigation}
+                    index={index}
                     onNavigateToDetail={handleNavigateToGroupDetail}
                   />
-                ))
-              )}
+                ))}
             </>
           )
         )}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
-import { ItemService, ItemWithProfile } from "@/services/supabase/itemService"
+
 import { useAuth } from "@/context/AuthContext"
+import { ItemService, ItemWithProfile } from "@/services/supabase/itemService"
 
 export const useItems = (groupId?: string) => {
   const { user } = useAuth()
@@ -19,7 +20,7 @@ export const useItems = (groupId?: string) => {
 
     try {
       const { data, error: fetchError } = await ItemService.getGroupItemsWithProfiles(groupId)
-      
+
       if (fetchError) {
         setError(fetchError.message)
         setItems([])
@@ -34,11 +35,14 @@ export const useItems = (groupId?: string) => {
     }
   }, [user, groupId])
 
-  const getRecentItems = useCallback((limit: number = 3) => {
-    return items
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, limit)
-  }, [items])
+  const getRecentItems = useCallback(
+    (limit: number = 3) => {
+      return items
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, limit)
+    },
+    [items],
+  )
 
   useEffect(() => {
     fetchItems()
@@ -51,4 +55,4 @@ export const useItems = (groupId?: string) => {
     refresh: fetchItems,
     getRecentItems,
   }
-} 
+}

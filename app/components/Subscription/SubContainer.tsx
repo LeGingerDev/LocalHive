@@ -1,9 +1,10 @@
-import React from "react"
+import React, { useState } from "react"
 import { View, Text, StyleProp, ViewStyle, TextStyle, TouchableOpacity } from "react-native"
 
 import { Icon } from "@/components/Icon"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
+import VisuProModal from "./VisuProModal"
 // import LinearGradient from "react-native-linear-gradient" // Remove if not installed
 
 export interface SubContainerProps {
@@ -13,25 +14,48 @@ export interface SubContainerProps {
 
 export const SubContainer: React.FC<SubContainerProps> = ({ style, onUpgrade }) => {
   const { themed, theme } = useAppTheme()
+  const [isModalVisible, setIsModalVisible] = useState(false)
+
+  const handleUpgradePress = () => {
+    setIsModalVisible(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false)
+  }
+
+  const handleStartTrial = () => {
+    // TODO: Implement subscription logic
+    console.log("Starting 7-day free trial")
+    setIsModalVisible(false)
+  }
+
   return (
-    <View style={[themed($container), style]}>
-      <View style={themed($row)}>
-        {/* Fallback: Use a View with a solid color if LinearGradient is not available */}
-        <View style={themed($iconGradient)}>
-          <Icon icon="settings" color={theme.colors.background} size={28} />
+    <>
+      <View style={[themed($container), style]}>
+        <View style={themed($row)}>
+          {/* Fallback: Use a View with a solid color if LinearGradient is not available */}
+          <View style={themed($iconGradient)}>
+            <Icon icon="lightning" color={theme.colors.background} size={38} />
+          </View>
+          <View style={themed($textCol)}>
+            <Text style={themed($title)}>Visu Pro</Text>
+            <Text style={themed($subtitle)}>AI-powered search & premium features</Text>
+          </View>
         </View>
-        <View style={themed($textCol)}>
-          <Text style={themed($title)}>Local Hive Pro</Text>
-          <Text style={themed($subtitle)}>AI-powered search & premium features</Text>
+        <View style={themed($footerRow)}>
+          <TouchableOpacity style={themed($button)} onPress={handleUpgradePress}>
+            <Text style={themed($buttonText)}>Upgrade Now</Text>
+          </TouchableOpacity>
         </View>
       </View>
-      <View style={themed($footerRow)}>
-        <Text style={themed($trialInfo)}>Free Trial • 5 days left</Text>
-        <TouchableOpacity style={themed($button)} onPress={onUpgrade}>
-          <Text style={themed($buttonText)}>Upgrade Now</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+
+      <VisuProModal
+        visible={isModalVisible}
+        onClose={handleCloseModal}
+        onStartTrial={handleStartTrial}
+      />
+    </>
   )
 }
 

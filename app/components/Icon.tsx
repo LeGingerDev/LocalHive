@@ -118,6 +118,7 @@ export const iconRegistry = {
   checkOutline: require("@assets/icons/check.png"), // Using same icon but will style it as outline
   hidden: require("@assets/icons/hidden.png"),
   ladybug: require("@assets/icons/ladybug.png"),
+  lightning: require("@assets/Visu/LightningIcon.png"),
   lock: require("@assets/icons/lock.png"),
   menu: require("@assets/icons/menu.png"),
   more: require("@assets/icons/more.png"),

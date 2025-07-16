@@ -55,7 +55,9 @@ export const CreateGroupScreen = ({ navigation }: any) => {
       }
       const result = await createGroup(groupData)
       if (result) {
-        console.log("🔍 [CreateGroupScreen] Group created successfully, navigating back to Groups with refresh")
+        console.log(
+          "🔍 [CreateGroupScreen] Group created successfully, navigating back to Groups with refresh",
+        )
         // Navigate back to main and then to groups tab
         navigation.navigate("Main", { screen: "Groups", params: { refresh: true } })
       }

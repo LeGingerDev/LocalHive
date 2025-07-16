@@ -41,7 +41,9 @@ export const LandingScreen = () => {
   const [alertVisible, setAlertVisible] = useState(false)
   const [alertTitle, setAlertTitle] = useState("")
   const [alertMessage, setAlertMessage] = useState("")
-  const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">("default")
+  const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">(
+    "default",
+  )
 
   useEffect(() => {
     hideNavigationBar()
@@ -65,7 +67,7 @@ export const LandingScreen = () => {
   const showAlert = (
     title: string,
     message: string,
-    confirmStyle: "default" | "destructive" | "success" = "default"
+    confirmStyle: "default" | "destructive" | "success" = "default",
   ) => {
     setAlertTitle(title)
     setAlertMessage(message)
@@ -94,12 +96,12 @@ export const LandingScreen = () => {
         } else if (result.error === "PLAY_SERVICES_NOT_AVAILABLE") {
           showAlert(
             "Google Play Services Required",
-            "Please update Google Play Services to use Google Sign-In."
+            "Please update Google Play Services to use Google Sign-In.",
           )
         } else {
           showAlert(
             "Sign-In Failed",
-            result.message || "An error occurred during sign-in. Please try again."
+            result.message || "An error occurred during sign-in. Please try again.",
           )
         }
       }
@@ -113,14 +115,13 @@ export const LandingScreen = () => {
       console.error("Google sign-in error (raw):", error)
       console.error("Google sign-in error (type):", typeof error)
       // If the error is a cancellation, do not show an alert
-      const err = error as any;
+      const err = error as any
       if (
         err &&
-        (err.code === 'SIGN_IN_CANCELLED' ||
-          (typeof err.message === 'string' && (
-            err.message.toLowerCase().includes('cancelled') ||
-            err.message.toLowerCase().includes('gettokens')
-          )))
+        (err.code === "SIGN_IN_CANCELLED" ||
+          (typeof err.message === "string" &&
+            (err.message.toLowerCase().includes("cancelled") ||
+              err.message.toLowerCase().includes("gettokens"))))
       ) {
         return
       }
@@ -313,6 +314,21 @@ const styles = StyleSheet.create({
     width: 24,
     zIndex: 1,
   },
+  legalContainer: {
+    marginBottom: 30,
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  legalLink: {
+    color: "rgba(255, 255, 255, 0.9)",
+    textDecorationLine: "underline",
+  },
+  legalText: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: "center",
+  },
   logo: {
     height: 150,
     width: 150,
@@ -344,20 +360,5 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingBottom: 16,
     textAlign: "center",
-  },
-  legalContainer: {
-    marginTop: 20,
-    marginBottom: 30,
-    paddingHorizontal: 20,
-  },
-  legalText: {
-    color: "rgba(255, 255, 255, 0.7)",
-    fontSize: 12,
-    textAlign: "center",
-    lineHeight: 16,
-  },
-  legalLink: {
-    color: "rgba(255, 255, 255, 0.9)",
-    textDecorationLine: "underline",
   },
 })

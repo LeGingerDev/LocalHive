@@ -9,7 +9,6 @@ import {
   Image,
   Dimensions,
 } from "react-native"
-
 import { useFocusEffect } from "@react-navigation/native"
 import { useNavigation } from "@react-navigation/native"
 
@@ -108,7 +107,6 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
     }
   }, [groupsLoading, groups, groupIdFromParams, selectedGroupId])
 
-
   // #endregion
 
   // #region Hooks & Context
@@ -205,32 +203,35 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
       // 2. Trigger embedding generation asynchronously (don't wait for it)
       const triggerEmbedding = async () => {
         try {
-          console.log('[AddScreen] Triggering embedding generation for item:', createdItem.id)
-          const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/generate-item-embedding`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-              'Content-Type': 'application/json',
+          console.log("[AddScreen] Triggering embedding generation for item:", createdItem.id)
+          const response = await fetch(
+            `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/generate-item-embedding`,
+            {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                item_id: createdItem.id,
+                title: title.trim(),
+                details: notes.trim() || undefined,
+                category: selectedCategory!,
+                location: location.trim() || undefined,
+              }),
             },
-            body: JSON.stringify({
-              item_id: createdItem.id,
-              title: title.trim(),
-              details: notes.trim() || undefined,
-              category: selectedCategory!,
-              location: location.trim() || undefined,
-            }),
-          })
-          
+          )
+
           if (response.ok) {
-            console.log('[AddScreen] Embedding generation triggered successfully')
+            console.log("[AddScreen] Embedding generation triggered successfully")
           } else {
-            console.warn('[AddScreen] Embedding generation failed:', await response.text())
+            console.warn("[AddScreen] Embedding generation failed:", await response.text())
           }
         } catch (embeddingError) {
-          console.warn('[AddScreen] Embedding generation error (non-blocking):', embeddingError)
+          console.warn("[AddScreen] Embedding generation error (non-blocking):", embeddingError)
         }
       }
-      
+
       // Fire and forget - don't await this
       triggerEmbedding()
 
@@ -288,11 +289,13 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
 
       // 4. Update the item with the image URL
       if (imageUrl) {
-        console.log('[AddScreen] Updating item with image URL:', imageUrl)
-        const updateResult = await ItemService.updateItem(createdItem.id, { image_urls: [imageUrl] })
-        console.log('[AddScreen] Update result:', updateResult)
+        console.log("[AddScreen] Updating item with image URL:", imageUrl)
+        const updateResult = await ItemService.updateItem(createdItem.id, {
+          image_urls: [imageUrl],
+        })
+        console.log("[AddScreen] Update result:", updateResult)
         if (updateResult.error) {
-          console.error('[AddScreen] Update error:', updateResult.error)
+          console.error("[AddScreen] Update error:", updateResult.error)
         }
       }
 
@@ -527,11 +530,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
               onChangeText={setLocation}
               editable={!isSubmitting}
             />
-            <Text 
-              style={themed($locationLink)} 
-              text="Use current location" 
-              onPress={() => {}} 
-            />
+            <Text style={themed($locationLink)} text="Use current location" onPress={() => {}} />
             {/* Photo Picker */}
             <Text style={themed($label)} text="Photo" />
             <View style={[themed($photoBox), { width: "100%", alignSelf: "stretch" }]}>
@@ -617,15 +616,15 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
         )}
       </ScrollView>
 
-              {/* Upload Alert - Shows during submission */}
-        <CustomAlert
-          visible={isSubmitting}
-          title="Saving Item"
-          message="Please wait while we save your item and generate search embeddings. Don't leave this screen."
-          confirmText="Please Wait..."
-          onConfirm={() => {}} // No action needed, just prevents dismissal
-          confirmStyle="default"
-        />
+      {/* Upload Alert - Shows during submission */}
+      <CustomAlert
+        visible={isSubmitting}
+        title="Saving Item"
+        message="Please wait while we save your item and generate search embeddings. Don't leave this screen."
+        confirmText="Please Wait..."
+        onConfirm={() => {}} // No action needed, just prevents dismissal
+        confirmStyle="default"
+      />
 
       <CustomAlert
         visible={alertVisible}
@@ -877,5 +876,3 @@ const $createFirstGroupButtonText = ({ colors, typography }: any): TextStyle => 
   fontSize: 16,
   textAlign: "center",
 })
-
-

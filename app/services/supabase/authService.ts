@@ -2,6 +2,7 @@ import { AuthError, AuthResponse, Session, User } from "@supabase/supabase-js"
 
 import { DatabaseService } from "./databaseService"
 import { supabase } from "./supabase"
+import { AnalyticsService, AnalyticsEvents } from "../analyticsService"
 
 /**
  * Service for handling authentication with Supabase
@@ -29,6 +30,15 @@ export class AuthService {
   static async signOut(): Promise<{ error: AuthError | null }> {
     try {
       const { error } = await supabase.auth.signOut()
+      
+      if (!error) {
+        // Track sign out event
+        await AnalyticsService.trackEvent({
+          name: AnalyticsEvents.USER_SIGNED_OUT,
+        })
+        await AnalyticsService.clearUserId()
+      }
+      
       return { error }
     } catch (error) {
       console.error("Error signing out:", error)

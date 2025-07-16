@@ -1,5 +1,6 @@
-import { supabase } from "./supabase"
 import Config from "@/config"
+
+import { supabase } from "./supabase"
 
 /**
  * Service for handling Supabase Storage operations
@@ -18,7 +19,7 @@ export class StorageService {
     options?: {
       contentType?: string
       upsert?: boolean
-    }
+    },
   ) {
     try {
       console.log("[StorageService] Starting upload for path:", filePath)
@@ -26,12 +27,10 @@ export class StorageService {
       console.log("[StorageService] File size:", file instanceof Blob ? file.size : "FormData")
 
       // Try with authenticated client first
-      const uploadResult = await supabase.storage
-        .from("items")
-        .upload(filePath, file, {
-          upsert: options?.upsert ?? true,
-          contentType: options?.contentType || "image/jpeg",
-        })
+      const uploadResult = await supabase.storage.from("items").upload(filePath, file, {
+        upsert: options?.upsert ?? true,
+        contentType: options?.contentType || "image/jpeg",
+      })
 
       console.log("[StorageService] Upload result:", uploadResult)
 
@@ -46,8 +45,6 @@ export class StorageService {
       throw error
     }
   }
-
-
 
   /**
    * Get the public URL for a file
@@ -67,7 +64,7 @@ export class StorageService {
   static async deleteFile(filePath: string) {
     try {
       const { data, error } = await supabase.storage.from("items").remove([filePath])
-      
+
       if (error) {
         console.error("[StorageService] Delete error:", error)
         throw new Error(error.message)
@@ -79,4 +76,4 @@ export class StorageService {
       throw error
     }
   }
-} 
+}

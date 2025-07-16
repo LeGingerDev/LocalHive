@@ -52,10 +52,7 @@ const ProfileScreen = () => {
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.profileBoxContainer}>
           <ProfileBox style={styles.profileBox} />
-          <PersonalCodeBox
-            style={styles.personalCodeBox}
-            code={userProfile?.personal_code}
-          />
+          <PersonalCodeBox style={styles.personalCodeBox} code={userProfile?.personal_code} />
           <SubContainer style={styles.subContainer} />
         </View>
 

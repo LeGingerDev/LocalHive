@@ -8,11 +8,11 @@ export class EdgeFunctionService {
    * Call the generate-item-embedding edge function
    */
   static async generateItemEmbedding(
-    itemId: string, 
-    title: string, 
+    itemId: string,
+    title: string,
     details?: string,
     category?: string,
-    location?: string
+    location?: string,
   ): Promise<{
     success: boolean
     error?: string
@@ -64,12 +64,12 @@ export class EdgeFunctionService {
         return { success: false, error: error.message }
       }
 
-      return { 
+      return {
         success: true,
         message: data.message,
         processed: data.processed,
         totalItems: data.totalItems,
-        errors: data.errors
+        errors: data.errors,
       }
     } catch (error) {
       console.error("Error calling regenerate-embeddings-batch:", error)
@@ -79,4 +79,4 @@ export class EdgeFunctionService {
       }
     }
   }
-} 
+}

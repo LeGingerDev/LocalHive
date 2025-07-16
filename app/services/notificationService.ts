@@ -1,5 +1,5 @@
-import * as Notifications from 'expo-notifications'
-import { Platform } from 'react-native'
+import { Platform } from "react-native"
+import * as Notifications from "expo-notifications"
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -17,7 +17,7 @@ export interface NotificationData {
   body: string
   data?: Record<string, any>
   sound?: boolean
-  priority?: 'default' | 'normal' | 'high'
+  priority?: "default" | "normal" | "high"
 }
 
 export interface ScheduledNotification extends NotificationData {
@@ -36,27 +36,27 @@ export class NotificationService {
       const { status: existingStatus } = await Notifications.getPermissionsAsync()
       let finalStatus = existingStatus
 
-      if (existingStatus !== 'granted') {
+      if (existingStatus !== "granted") {
         const { status } = await Notifications.requestPermissionsAsync()
         finalStatus = status
       }
 
-      if (finalStatus !== 'granted') {
-        console.log('Notification permissions not granted')
+      if (finalStatus !== "granted") {
+        console.log("Notification permissions not granted")
         return false
       }
 
       // Get push token for remote notifications
-      if (Platform.OS !== 'web') {
+      if (Platform.OS !== "web") {
         const token = await Notifications.getExpoPushTokenAsync({
           projectId: process.env.EXPO_PROJECT_ID,
         })
-        console.log('Push token:', token.data)
+        console.log("Push token:", token.data)
       }
 
       return true
     } catch (error) {
-      console.error('Error requesting notification permissions:', error)
+      console.error("Error requesting notification permissions:", error)
       return false
     }
   }
@@ -67,9 +67,9 @@ export class NotificationService {
   static async areEnabled(): Promise<boolean> {
     try {
       const { status } = await Notifications.getPermissionsAsync()
-      return status === 'granted'
+      return status === "granted"
     } catch (error) {
-      console.error('Error checking notification permissions:', error)
+      console.error("Error checking notification permissions:", error)
       return false
     }
   }
@@ -81,7 +81,7 @@ export class NotificationService {
     try {
       const isEnabled = await this.areEnabled()
       if (!isEnabled) {
-        console.log('Notifications not enabled')
+        console.log("Notifications not enabled")
         return null
       }
 
@@ -97,7 +97,7 @@ export class NotificationService {
 
       return notificationId
     } catch (error) {
-      console.error('Error sending local notification:', error)
+      console.error("Error sending local notification:", error)
       return null
     }
   }
@@ -109,7 +109,7 @@ export class NotificationService {
     try {
       const isEnabled = await this.areEnabled()
       if (!isEnabled) {
-        console.log('Notifications not enabled')
+        console.log("Notifications not enabled")
         return null
       }
 
@@ -125,7 +125,7 @@ export class NotificationService {
 
       return notificationId
     } catch (error) {
-      console.error('Error scheduling notification:', error)
+      console.error("Error scheduling notification:", error)
       return null
     }
   }
@@ -138,7 +138,7 @@ export class NotificationService {
       await Notifications.cancelScheduledNotificationAsync(notificationId)
       return true
     } catch (error) {
-      console.error('Error canceling notification:', error)
+      console.error("Error canceling notification:", error)
       return false
     }
   }
@@ -151,7 +151,7 @@ export class NotificationService {
       await Notifications.cancelAllScheduledNotificationsAsync()
       return true
     } catch (error) {
-      console.error('Error canceling all notifications:', error)
+      console.error("Error canceling all notifications:", error)
       return false
     }
   }
@@ -163,7 +163,7 @@ export class NotificationService {
     try {
       return await Notifications.getAllScheduledNotificationsAsync()
     } catch (error) {
-      console.error('Error getting scheduled notifications:', error)
+      console.error("Error getting scheduled notifications:", error)
       return []
     }
   }
@@ -173,14 +173,14 @@ export class NotificationService {
    */
   static setupNotificationListeners(
     onNotificationReceived?: (notification: Notifications.Notification) => void,
-    onNotificationResponse?: (response: Notifications.NotificationResponse) => void
+    onNotificationResponse?: (response: Notifications.NotificationResponse) => void,
   ) {
     const notificationListener = Notifications.addNotificationReceivedListener(
-      onNotificationReceived || (() => {})
+      onNotificationReceived || (() => {}),
     )
 
     const responseListener = Notifications.addNotificationResponseReceivedListener(
-      onNotificationResponse || (() => {})
+      onNotificationResponse || (() => {}),
     )
 
     return () => {
@@ -192,27 +192,33 @@ export class NotificationService {
   /**
    * Send app-specific notifications
    */
-  static async sendGroupInviteNotification(groupName: string, inviterName: string): Promise<string | null> {
+  static async sendGroupInviteNotification(
+    groupName: string,
+    inviterName: string,
+  ): Promise<string | null> {
     return this.sendLocalNotification({
-      title: 'Group Invitation',
+      title: "Group Invitation",
       body: `${inviterName} invited you to join "${groupName}"`,
-      data: { type: 'group_invite', groupName, inviterName },
+      data: { type: "group_invite", groupName, inviterName },
     })
   }
 
-  static async sendNewItemNotification(itemName: string, groupName: string): Promise<string | null> {
+  static async sendNewItemNotification(
+    itemName: string,
+    groupName: string,
+  ): Promise<string | null> {
     return this.sendLocalNotification({
-      title: 'New Item Added',
+      title: "New Item Added",
       body: `A new item "${itemName}" was added to "${groupName}"`,
-      data: { type: 'new_item', itemName, groupName },
+      data: { type: "new_item", itemName, groupName },
     })
   }
 
   static async sendReminderNotification(message: string): Promise<string | null> {
     return this.sendLocalNotification({
-      title: 'Reminder',
+      title: "Reminder",
       body: message,
-      data: { type: 'reminder' },
+      data: { type: "reminder" },
     })
   }
-} 
+}

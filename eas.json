@@ -6,7 +6,9 @@
   "build": {
     "development": {
       "extends": "production",
+      "environment": "development",
       "distribution": "internal",
+      "developmentClient": true,
       "android": {
         "gradleCommand": ":app:assembleDebug",
         "credentialsSource": "remote"
@@ -26,8 +28,11 @@
     },
     "preview": {
       "extends": "production",
+      "environment": "preview",
       "distribution": "internal",
-      "ios": { "simulator": true },
+      "ios": { 
+        "simulator": true 
+      },
       "android": { 
         "buildType": "apk",
         "credentialsSource": "remote"
@@ -35,9 +40,12 @@
     },
     "preview:device": {
       "extends": "preview",
-      "ios": { "simulator": false }
+      "ios": { 
+        "simulator": false 
+      }
     },
     "production": {
+      "environment": "production",
       "android": {
         "buildType": "app-bundle",
         "credentialsSource": "remote"
@@ -45,6 +53,16 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "your_apple_id@example.com",
+        "ascAppId": "your_app_store_connect_app_id",
+        "appleTeamId": "your_apple_team_id"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./path/to/your/service-account-key.json",
+        "track": "production"
+      }
+    }
   }
 }

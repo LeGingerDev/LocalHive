@@ -72,30 +72,20 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   return (
     <>
       <Pressable
-        style={[
-          themed($dropdownContainer), 
-          style, 
-          disabled && themed($dropdownDisabled)
-        ]}
+        style={[themed($dropdownContainer), style, disabled && themed($dropdownDisabled)]}
         onPress={() => !disabled && setModalVisible(true)}
         accessibilityRole="button"
         testID={testID}
         disabled={disabled}
       >
         <Text
-          style={[
-            themed($dropdownText),
-            disabled && themed($dropdownTextDisabled)
-          ]}
+          style={[themed($dropdownText), disabled && themed($dropdownTextDisabled)]}
           text={selectedOption ? selectedOption.label : placeholder}
           numberOfLines={1}
         />
-        <Text 
-          style={[
-            themed($chevron),
-            disabled && themed($chevronDisabled)
-          ]} 
-          text={modalVisible ? "▲" : "▼"} 
+        <Text
+          style={[themed($chevron), disabled && themed($chevronDisabled)]}
+          text={modalVisible ? "▲" : "▼"}
         />
       </Pressable>
       <Modal

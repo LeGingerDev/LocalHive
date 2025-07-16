@@ -11,9 +11,9 @@ import {
 } from "react-native"
 
 import { Text } from "@/components/Text"
-import { useAppTheme } from "@/theme/context"
 import { ItemWithProfile } from "@/services/supabase/itemService"
 import { getCategoryColor } from "@/theme/categoryColors"
+import { useAppTheme } from "@/theme/context"
 
 // #region Types & Interfaces
 export interface ItemModalProps {
@@ -21,23 +21,28 @@ export interface ItemModalProps {
    * The item to display in the modal
    */
   item: ItemWithProfile
-  
+
   /**
    * Whether the modal is visible
    */
   visible: boolean
-  
+
   /**
    * Callback when modal is closed
    */
   onClose: () => void
+
+  /**
+   * Callback when item is updated
+   */
+  onItemUpdated?: (updatedItem: ItemWithProfile) => void
 }
 // #endregion
 
 // #region Component
 /**
  * ItemModal - A modal component for displaying and editing item details
- * 
+ *
  * Features:
  * - View and edit item details
  * - Image display
@@ -48,7 +53,7 @@ export interface ItemModalProps {
  */
 export const ItemModal: FC<ItemModalProps> = memo((props) => {
   // #region Props Destructuring
-  const { item, visible, onClose } = props
+  const { item, visible, onClose, onItemUpdated } = props
   // #endregion
 
   // #region Hooks & Context
@@ -82,11 +87,7 @@ export const ItemModal: FC<ItemModalProps> = memo((props) => {
 
     return (
       <View style={themed($modalImageContainer)}>
-        <Image
-          source={{ uri: imageUrls[0] }}
-          style={themed($modalImage)}
-          resizeMode="contain"
-        />
+        <Image source={{ uri: imageUrls[0] }} style={themed($modalImage)} resizeMode="contain" />
       </View>
     )
   }
@@ -126,19 +127,13 @@ export const ItemModal: FC<ItemModalProps> = memo((props) => {
       {/* Added by */}
       <View style={themed($detailRow)}>
         <Text style={themed($detailLabel)} text="Added by" />
-        <Text
-          style={themed($detailValue)}
-          text={item.full_name || item.email || "Unknown user"}
-        />
+        <Text style={themed($detailValue)} text={item.full_name || item.email || "Unknown user"} />
       </View>
 
       {/* Date */}
       <View style={themed($detailRow)}>
         <Text style={themed($detailLabel)} text="Added on" />
-        <Text
-          style={themed($detailValue)}
-          text={new Date(item.created_at).toLocaleDateString()}
-        />
+        <Text style={themed($detailValue)} text={new Date(item.created_at).toLocaleDateString()} />
       </View>
     </>
   )
@@ -146,20 +141,13 @@ export const ItemModal: FC<ItemModalProps> = memo((props) => {
 
   // #region Main Render
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={themed($modalOverlay)} onPress={onClose}>
         <View style={themed($modalContainer)}>
           <View style={themed($modalContent)}>
             {renderHeader()}
             {renderImage()}
-            <View style={themed($modalDetailsContainer)}>
-              {renderViewMode()}
-            </View>
+            <View style={themed($modalDetailsContainer)}>{renderViewMode()}</View>
           </View>
         </View>
       </Pressable>

@@ -42,7 +42,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       // Hide collapsed content immediately and show main content
       setIsCollapsedContentVisible(false)
       setIsContentVisible(true)
-      
+
       // Fade in the main content
       Animated.timing(opacityAnim, {
         toValue: 1,
@@ -59,20 +59,22 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
     <View style={style}>
       {/* Main content */}
       {isContentVisible && (
-        <Animated.View style={{ opacity: opacityAnim }}>
-          {children}
-        </Animated.View>
+        <Animated.View style={{ opacity: opacityAnim }}>{children}</Animated.View>
       )}
 
       {/* Collapsed content */}
       {isCollapsedContentVisible && renderCollapsedContent && (
-        <Animated.View style={{ opacity: opacityAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [1, 0],
-        })}}>
+        <Animated.View
+          style={{
+            opacity: opacityAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 0],
+            }),
+          }}
+        >
           {renderCollapsedContent()}
         </Animated.View>
       )}
     </View>
   )
-} 
+}

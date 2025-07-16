@@ -78,7 +78,9 @@ export const InvitationsScreen = () => {
   const [alertVisible, setAlertVisible] = useState(false)
   const [alertTitle, setAlertTitle] = useState("")
   const [alertMessage, setAlertMessage] = useState("")
-  const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">("default")
+  const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">(
+    "default",
+  )
   const [alertOnConfirm, setAlertOnConfirm] = useState<(() => void) | null>(null)
 
   // Smart refresh when screen comes into focus
@@ -94,7 +96,7 @@ export const InvitationsScreen = () => {
     title: string,
     message: string,
     confirmStyle: "default" | "destructive" | "success" = "default",
-    onConfirm?: () => void
+    onConfirm?: () => void,
   ) => {
     setAlertTitle(title)
     setAlertMessage(message)
@@ -112,7 +114,7 @@ export const InvitationsScreen = () => {
       showAlert(
         status === "accepted" ? "Invitation Accepted" : "Invitation Declined",
         status === "accepted" ? "You have joined the group!" : "The invitation has been declined.",
-        status === "accepted" ? "success" : "default"
+        status === "accepted" ? "success" : "default",
       )
     } else {
       showAlert("Error", "Failed to respond to invitation. Please try again.", "destructive")
@@ -132,7 +134,7 @@ export const InvitationsScreen = () => {
         } else {
           showAlert("Error", "Failed to cancel invitation. Please try again.", "destructive")
         }
-      }
+      },
     )
   }
 

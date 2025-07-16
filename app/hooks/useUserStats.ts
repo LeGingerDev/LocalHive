@@ -12,7 +12,11 @@ export interface UserStats {
 
 export const useUserStats = () => {
   const { user } = useAuth()
-  const [stats, setStats] = useState<UserStats>({ groupsCount: 0, itemsCount: 0, groupsCreatedCount: 0 })
+  const [stats, setStats] = useState<UserStats>({
+    groupsCount: 0,
+    itemsCount: 0,
+    groupsCreatedCount: 0,
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,7 +44,8 @@ export const useUserStats = () => {
       }
 
       // Fetch groups created count
-      const { count: groupsCreatedCount, error: groupsCreatedError } = await GroupService.getGroupsCreatedCount(user.id)
+      const { count: groupsCreatedCount, error: groupsCreatedError } =
+        await GroupService.getGroupsCreatedCount(user.id)
       if (groupsCreatedError) {
         console.error("Error loading groups created count for stats:", groupsCreatedError)
       }

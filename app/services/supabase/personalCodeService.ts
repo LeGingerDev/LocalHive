@@ -1,3 +1,4 @@
+import Config from "@/config"
 import { supabase } from "./supabase"
 
 export interface PersonalCodeResponse {
@@ -13,8 +14,14 @@ export interface PersonalCodeError {
  * Service for handling personal code generation via Edge Function
  */
 export class PersonalCodeService {
-  private static readonly EDGE_FUNCTION_URL =
-    "https://xnnobyeytyycngybinqj.functions.supabase.co/generate-personal-code"
+  private static getEdgeFunctionUrl() {
+    const supabaseUrl = Config.SUPABASE_URL
+    if (!supabaseUrl) {
+      console.warn("⚠️  SUPABASE_URL not available during build time")
+      return "https://placeholder.functions.supabase.co/generate-personal-code"
+    }
+    return `${supabaseUrl.replace('.supabase.co', '.functions.supabase.co')}/generate-personal-code`
+  }
 
   /**
    * Generate a personal code for the current user
@@ -36,7 +43,7 @@ export class PersonalCodeService {
       }
 
       // Call the Edge Function
-      const response = await fetch(this.EDGE_FUNCTION_URL, {
+      const response = await fetch(this.getEdgeFunctionUrl(), {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session.access_token}`,

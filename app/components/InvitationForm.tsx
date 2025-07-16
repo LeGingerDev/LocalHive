@@ -3,6 +3,7 @@ import { View, ViewStyle, TextStyle, ScrollView } from "react-native"
 
 import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { Button } from "@/components/Button"
+import { Header } from "@/components/Header"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
@@ -10,7 +11,6 @@ import { TextField } from "@/components/TextField"
 import { useInvitations } from "@/hooks/useInvitations"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
-import { Header } from "@/components/Header"
 
 interface InvitationFormProps {
   groupId: string
@@ -33,12 +33,14 @@ export const InvitationForm = ({
   const [alertVisible, setAlertVisible] = useState(false)
   const [alertTitle, setAlertTitle] = useState("")
   const [alertMessage, setAlertMessage] = useState("")
-  const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">("default")
+  const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">(
+    "default",
+  )
 
   const showAlert = (
     title: string,
     message: string,
-    confirmStyle: "default" | "destructive" | "success" = "default"
+    confirmStyle: "default" | "destructive" | "success" = "default",
   ) => {
     setAlertTitle(title)
     setAlertMessage(message)
@@ -64,15 +66,8 @@ export const InvitationForm = ({
 
   return (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
-      <Header
-        title="Send Invitation"
-        showBackButton
-        onBackPress={onCancel}
-      />
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={themed($content)}
-      >
+      <Header title="Send Invitation" showBackButton onBackPress={onCancel} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={themed($content)}>
         <View style={themed($header)}>
           <Text
             style={themed($subtitle)}

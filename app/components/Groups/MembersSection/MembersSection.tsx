@@ -37,7 +37,7 @@ export const MembersSection = ({
   const { themed } = useAppTheme()
 
   // Create member count text
-  const memberCountText = memberLimit 
+  const memberCountText = memberLimit
     ? `Members (${members.length}/${memberLimit})`
     : `Members (${members.length})`
 
