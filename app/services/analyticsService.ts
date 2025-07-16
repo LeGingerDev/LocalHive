@@ -325,6 +325,13 @@ export const AnalyticsEvents = {
   VECTOR_SEARCH_PERFORMED: 'vector_search_performed',
   SEARCH_MODE_SWITCHED: 'search_mode_switched',
   
+  // Subscription
+  SUBSCRIPTION_STATUS_CHANGED: 'subscription_status_changed',
+  TRIAL_ACTIVATED: 'trial_activated',
+  PRO_UPGRADE: 'pro_upgrade',
+  UPGRADE_PROMPT_SHOWN: 'upgrade_prompt_shown',
+  UPGRADE_ATTEMPTED: 'upgrade_attempted',
+  
   // Navigation
   SCREEN_VIEWED: 'screen_viewed',
   
