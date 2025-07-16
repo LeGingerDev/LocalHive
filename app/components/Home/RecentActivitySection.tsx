@@ -1,8 +1,9 @@
-import React, { FC, memo, useCallback } from "react"
-import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator } from "react-native"
+import React, { FC, memo, useCallback, useState } from "react"
+import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator, TouchableOpacity } from "react-native"
 
 import { ItemCard } from "@/components/ItemCard"
 import { Text } from "@/components/Text"
+import { Icon } from "@/components/Icon"
 import { useRecentItemsFromAllGroups, RecentItemWithGroup } from "@/hooks/useRecentItemsFromAllGroups"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
@@ -59,6 +60,7 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
   // #region Hooks & Context
   const { themed } = useAppTheme()
   const { items, loading, error, refresh } = useRecentItemsFromAllGroups(limit)
+  const [isCollapsed, setIsCollapsed] = useState(false)
   // #endregion
 
   // #region Event Handlers
@@ -74,6 +76,11 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
   const _handleRetry = useCallback(() => {
     refresh()
   }, [refresh])
+
+  const _handleToggleCollapse = useCallback(() => {
+    console.log("[RecentActivitySection] Toggle collapse, current state:", isCollapsed)
+    setIsCollapsed(!isCollapsed)
+  }, [isCollapsed])
   // #endregion
 
   // #region Render Helpers
@@ -115,13 +122,31 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
   return (
     <View style={themed([$container, style])} testID={testID}>
       {/* Section Header */}
-      <View style={themed($headerContainer)}>
-        <Text style={themed($sectionTitle)} text="Recent Activity" />
-        <Text style={themed($sectionSubtitle)} text="Latest items from your groups" />
-      </View>
+      <TouchableOpacity 
+        style={themed($headerContainer)} 
+        onPress={_handleToggleCollapse}
+        activeOpacity={0.7}
+      >
+        <View style={themed($headerContent)}>
+          <View>
+            <Text style={themed($sectionTitle)} text="Recent Activity" />
+            <Text style={themed($sectionSubtitle)} text="Latest items from your groups" />
+          </View>
+          <Icon 
+            icon={isCollapsed ? "caretRight" : "caretLeft"} 
+            size={24} 
+            color={themed($arrowColor).color}
+            style={themed($arrowIcon)}
+          />
+        </View>
+      </TouchableOpacity>
 
       {/* Content */}
-      {loading ? (
+      {isCollapsed ? (
+        <View style={themed($collapsedContainer)}>
+          <Text style={themed($collapsedText)} text="Items hidden" />
+        </View>
+      ) : loading ? (
         _renderLoadingState()
       ) : error ? (
         _renderErrorState()
@@ -152,8 +177,24 @@ const $container: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   elevation: 3,
 })
 
-const $headerContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $headerContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   marginBottom: spacing.md,
+  paddingVertical: spacing.xs, // Add some padding for better touch area
+  borderRadius: spacing.xs, // Rounded corners for better visual feedback
+})
+
+const $headerContent: ThemedStyle<ViewStyle> = () => ({
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+})
+
+const $arrowColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.text, // Make arrow more visible
+})
+
+const $arrowIcon: ThemedStyle<{ transform: [{ rotate: string }] }> = () => ({
+  transform: [{ rotate: "90deg" }], // Rotate caretLeft to point down
 })
 
 const $sectionTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
@@ -171,6 +212,18 @@ const $sectionSubtitle: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
 
 const $itemsContainer: ThemedStyle<ViewStyle> = () => ({
   // No additional styling needed
+})
+
+const $collapsedContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  alignItems: "center",
+  paddingVertical: spacing.lg,
+})
+
+const $collapsedText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.textDim,
+  fontStyle: "italic",
 })
 
 const $loadingContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
