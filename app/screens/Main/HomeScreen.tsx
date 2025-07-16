@@ -93,11 +93,6 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
     navigation.navigate("Groups")
   }, [navigation])
 
-  const handleUpgradePress = useCallback(() => {
-    // Navigate to subscription management or show upgrade modal
-    console.log("Navigate to subscription management")
-  }, [])
-
   const handleManagePress = useCallback(() => {
     setIsManageModalVisible(true)
   }, [])
@@ -154,12 +149,11 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
     </Screen>
   )
 
-  const renderContent = (): React.JSX.Element => (
-    <Screen style={themed($root)} preset="scroll" safeAreaEdges={["top"]}>
+    const renderContent = (): React.JSX.Element => (
+    <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
       <Header title="Home" />
       
       <ScrollView 
-        style={themed($scrollView)} 
         contentContainerStyle={themed($scrollContent)}
         showsVerticalScrollIndicator={false}
       >
@@ -169,7 +163,6 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
         {/* Subscription Status */}
         <SubscriptionStatusBox 
           userId={user?.id || null}
-          onUpgradePress={handleUpgradePress}
           onManagePress={handleManagePress}
         />
 
@@ -215,10 +208,10 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
   // #endregion
 
   // #region Main Render
-  if (isLoading && !data) {
+  if (isLoading) {
     return renderLoadingState()
   }
-  if (error && !data) {
+  if (error) {
     return renderErrorState()
   }
   return renderContent()
@@ -232,11 +225,11 @@ const $root: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.background,
 })
 
-const $scrollView: ThemedStyle<ViewStyle> = () => ({
-  flex: 1,
-})
-
 const $scrollContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexGrow: 1,
+  justifyContent: "flex-start",
+  paddingHorizontal: spacing.md,
+  paddingTop: spacing.md,
   paddingBottom: spacing.xl * 4, // Increased bottom padding for better access
 })
 

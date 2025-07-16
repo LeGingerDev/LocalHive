@@ -113,14 +113,13 @@ export const CreateGroupScreen = ({ navigation }: any) => {
   }
 
   return (
-    <Screen style={themed($root)} preset="scroll" safeAreaEdges={["top", "bottom"]}>
+    <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
       <Header title="Create Group" showBackButton onBackPress={() => navigation.goBack()} />
-      <View style={{ flex: 1 }}>
-        <ScrollView
-          contentContainerStyle={themed($formContent)}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
+      <ScrollView
+        contentContainerStyle={themed($formContent)}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
           <Text style={themed($label)} text="Group Name" />
           <TextField
             placeholder="Enter group name"
@@ -205,7 +204,6 @@ export const CreateGroupScreen = ({ navigation }: any) => {
             </CustomGradient>
           </View>
         </ScrollView>
-      </View>
     </Screen>
   )
 }

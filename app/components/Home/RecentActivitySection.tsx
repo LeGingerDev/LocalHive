@@ -8,6 +8,7 @@ import { useRecentItemsFromAllGroups, RecentItemWithGroup } from "@/hooks/useRec
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 import { navigate } from "@/navigators/navigationUtilities"
+import { CustomGradient } from "@/components/Gradient/CustomGradient"
 
 // #region Types & Interfaces
 export interface RecentActivitySectionProps {
@@ -121,24 +122,26 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
 
   return (
     <View style={themed([$container, style])} testID={testID}>
-      {/* Section Header */}
+      {/* Header with Gradient Background */}
       <TouchableOpacity 
-        style={themed($headerContainer)} 
+        style={themed($headerGradient)} 
         onPress={_handleToggleCollapse}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
       >
-        <View style={themed($headerContent)}>
-          <View>
-            <Text style={themed($sectionTitle)} text="Recent Activity" />
-            <Text style={themed($sectionSubtitle)} text="Latest items from your groups" />
+        <CustomGradient preset="primary" style={themed($gradientContainer)}>
+          <View style={themed($headerContent)}>
+            <View style={themed($headerTextContainer)}>
+              <Icon icon="view" size={20} color="#FFFFFF" />
+              <Text style={themed($sectionTitle)} text="Recent Activity" />
+            </View>
+            <Icon 
+              icon={isCollapsed ? "caretRight" : "caretLeft"} 
+              size={20} 
+              color="#FFFFFF"
+              style={themed($arrowIcon)}
+            />
           </View>
-          <Icon 
-            icon={isCollapsed ? "caretRight" : "caretLeft"} 
-            size={24} 
-            color={themed($arrowColor).color}
-            style={themed($arrowIcon)}
-          />
-        </View>
+        </CustomGradient>
       </TouchableOpacity>
 
       {/* Content */}
@@ -167,20 +170,22 @@ RecentActivitySection.displayName = "RecentActivitySection"
 const $container: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.cardColor,
   borderRadius: 12,
-  padding: spacing.md,
   marginHorizontal: spacing.md,
   marginVertical: spacing.sm,
   shadowColor: colors.text,
-  shadowOffset: { width: 0, height: 2 },
+  shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.1,
-  shadowRadius: 4,
-  elevation: 3,
+  shadowRadius: 8,
+  elevation: 4,
+  overflow: "hidden",
 })
 
-const $headerContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  marginBottom: spacing.md,
-  paddingVertical: spacing.xs, // Add some padding for better touch area
-  borderRadius: spacing.xs, // Rounded corners for better visual feedback
+const $headerGradient: ThemedStyle<ViewStyle> = () => ({
+  // TouchableOpacity wrapper for the gradient
+})
+
+const $gradientContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  padding: spacing.md,
 })
 
 const $headerContent: ThemedStyle<ViewStyle> = () => ({
@@ -189,34 +194,31 @@ const $headerContent: ThemedStyle<ViewStyle> = () => ({
   alignItems: "center",
 })
 
-const $arrowColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
-  color: colors.text, // Make arrow more visible
+const $headerTextContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: spacing.sm,
 })
 
 const $arrowIcon: ThemedStyle<{ transform: [{ rotate: string }] }> = () => ({
   transform: [{ rotate: "90deg" }], // Rotate caretLeft to point down
 })
 
-const $sectionTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
+const $sectionTitle: ThemedStyle<TextStyle> = ({ typography }) => ({
   fontFamily: typography.primary.bold,
-  fontSize: 20,
-  color: colors.text,
-  marginBottom: spacing.xs,
+  fontSize: 18,
+  color: "#FFFFFF",
 })
 
-const $sectionSubtitle: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 14,
-  color: colors.textDim,
+const $itemsContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  padding: spacing.lg,
+  backgroundColor: colors.background,
 })
 
-const $itemsContainer: ThemedStyle<ViewStyle> = () => ({
-  // No additional styling needed
-})
-
-const $collapsedContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $collapsedContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   alignItems: "center",
   paddingVertical: spacing.lg,
+  backgroundColor: colors.background,
 })
 
 const $collapsedText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
@@ -226,9 +228,10 @@ const $collapsedText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontStyle: "italic",
 })
 
-const $loadingContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $loadingContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   alignItems: "center",
   paddingVertical: spacing.lg,
+  backgroundColor: colors.background,
 })
 
 const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
@@ -242,9 +245,10 @@ const $activityIndicatorColor: ThemedStyle<{ color: string }> = ({ colors }) => 
   color: colors.tint,
 })
 
-const $errorContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $errorContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   alignItems: "center",
   paddingVertical: spacing.lg,
+  backgroundColor: colors.background,
 })
 
 const $errorText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
@@ -260,9 +264,10 @@ const $retryButton: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.tint,
 })
 
-const $emptyContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $emptyContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   alignItems: "center",
   paddingVertical: spacing.lg,
+  backgroundColor: colors.background,
 })
 
 const $emptyText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({

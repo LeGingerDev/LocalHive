@@ -1,38 +1,41 @@
-import React, { FC } from "react"
+import React, { FC, useState, useCallback } from "react"
 import { View, Text, TouchableOpacity, Alert, ViewStyle, TextStyle } from "react-native"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 import { spacing } from "@/theme/spacing"
 import { useSubscription } from "@/hooks/useSubscription"
 import { SubscriptionService } from "@/services/subscriptionService"
+import { Icon } from "@/components/Icon"
+import { CustomGradient } from "@/components/Gradient/CustomGradient"
+import VisuProModal from "@/components/Subscription/VisuProModal"
 
 interface SubscriptionStatusBoxProps {
   userId: string | null
-  onUpgradePress?: () => void
   onManagePress?: () => void
 }
 
 export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
   userId,
-  onUpgradePress,
   onManagePress,
 }) => {
   const { themed } = useAppTheme()
   const subscription = useSubscription(userId)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isUpgradeModalVisible, setIsUpgradeModalVisible] = useState(false)
 
   const handleUpgradePress = () => {
-    if (onUpgradePress) {
-      onUpgradePress()
-    } else {
-      Alert.alert(
-        "Upgrade to Pro",
-        "Get unlimited groups, items, and AI search for $5.99/month!",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Upgrade", onPress: () => handleUpgrade() },
-        ]
-      )
-    }
+    // Always show the VisuPro modal
+    setIsUpgradeModalVisible(true)
+  }
+
+  const handleCloseUpgradeModal = () => {
+    setIsUpgradeModalVisible(false)
+  }
+
+  const handleStartTrial = () => {
+    // TODO: Implement subscription logic
+    console.log("Starting 3-day free trial")
+    setIsUpgradeModalVisible(false)
   }
 
   const handleUpgrade = async () => {
@@ -69,6 +72,10 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
     }
   }
 
+  const handleToggleCollapse = useCallback(() => {
+    setIsCollapsed(!isCollapsed)
+  }, [isCollapsed])
+
   const getStatusColor = () => {
     if (subscription.isPro) return themed($proColor)
     if (subscription.isTrial) return themed($trialColor)
@@ -82,9 +89,9 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
   }
 
   const getStatusIcon = () => {
-    if (subscription.isPro) return "⭐"
-    if (subscription.isTrial) return "⏰"
-    return "📋"
+    if (subscription.isPro) return "lightning"
+    if (subscription.isTrial) return "bell"
+    return "check"
   }
 
   const isAtLimit = subscription.groupsPercentage >= 100 || subscription.itemsPercentage >= 100
@@ -98,89 +105,132 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
   }
 
   return (
-    <View style={themed($container)}>
-      {/* Header */}
-      <View style={themed($header)}>
-        <View style={themed($statusBadge)}>
-          <Text style={themed($statusIcon)}>{getStatusIcon()}</Text>
-          <Text style={[themed($statusText), getStatusColor()]}>{getStatusText()}</Text>
-        </View>
-        
-        {subscription.isTrial && subscription.subscriptionInfo?.trial_ends_at && (
-          <Text style={themed($trialCountdown)}>
-            ⏰ {formatTimeRemaining(subscription.subscriptionInfo.trial_ends_at)} left
-          </Text>
-        )}
-      </View>
+    <>
+      <View style={themed($container)}>
+        {/* Header with Gradient Background */}
+        <TouchableOpacity 
+          style={themed($headerGradient)} 
+          onPress={handleToggleCollapse}
+          activeOpacity={0.8}
+        >
+          <CustomGradient preset="primary" style={themed($gradientContainer)}>
+            <View style={themed($headerContent)}>
+              <View style={themed($statusBadge)}>
+                <Text style={themed($statusText)}>{getStatusText()}</Text>
+                <Text style={themed($statusSubtext)}>
+                  {subscription.isPro ? " - Unlimited Access" : subscription.isTrial ? " - Trial Active" : " - Basic Plan"}
+                </Text>
+              </View>
+              
+              <Icon 
+                icon={isCollapsed ? "caretRight" : "caretLeft"} 
+                size={20} 
+                color="#FFFFFF"
+                style={themed($arrowIcon)}
+              />
+            </View>
+          </CustomGradient>
+        </TouchableOpacity>
 
-      {/* Usage Progress */}
-      <View style={themed($usageSection)}>
-        <View style={themed($usageRow)}>
-          <Text style={themed($usageLabel)}>Groups</Text>
-          <Text style={themed($usageCount)}>
-            {subscription.isPro || subscription.isTrial 
-              ? subscription.groupsUsed.toString()
-              : `${subscription.groupsUsed}/${subscription.groupsLimit}`
-            }
-          </Text>
-          {subscription.groupsUsed >= subscription.groupsLimit && (
-            <Text style={themed($maxCapacityText)}>Max capacity</Text>
-          )}
-        </View>
-
-        <View style={themed($usageRow)}>
-          <Text style={themed($usageLabel)}>Items</Text>
-          <Text style={themed($usageCount)}>
-            {subscription.isPro || subscription.isTrial 
-              ? subscription.itemsUsed.toString()
-              : `${subscription.itemsUsed}/${subscription.itemsLimit}`
-            }
-          </Text>
-          {subscription.itemsUsed >= subscription.itemsLimit && (
-            <Text style={themed($maxCapacityText)}>Max capacity</Text>
-          )}
-        </View>
-
-        <View style={themed($aiSection)}>
-          <Text style={themed($aiLabel)}>AI Search</Text>
-          <Text style={[
-            themed($aiStatus),
-            subscription.canUseAISearchNow ? themed($aiStatusAvailable) : themed($aiStatusUnavailable)
-          ]}>
-            {subscription.canUseAISearchNow ? "Available" : "Pro Members Only"}
-          </Text>
-        </View>
-      </View>
-
-      {/* Action Buttons */}
-      <View style={themed($actionsSection)}>
-        {subscription.isFree && !isAtLimit && (
-          <TouchableOpacity style={themed($trialButton)} onPress={handleActivateTrial}>
-            <Text style={themed($trialButtonText)}>🎯 Start Free Trial</Text>
-          </TouchableOpacity>
-        )}
-
-        {(subscription.isFree || subscription.isTrial) && (
-          <TouchableOpacity style={themed($upgradeButton)} onPress={handleUpgradePress}>
-            <Text style={themed($upgradeButtonText)}>⭐ Upgrade to Pro</Text>
-          </TouchableOpacity>
-        )}
-
-        {subscription.isPro && (
-          <TouchableOpacity style={themed($manageButton)} onPress={onManagePress}>
-            <Text style={themed($manageButtonText)}>⚙️ Manage Subscription</Text>
-          </TouchableOpacity>
-        )}
-
-        {subscription.groupsUsed >= subscription.groupsLimit && subscription.itemsUsed >= subscription.itemsLimit && (
-          <View style={themed($limitWarning)}>
-            <Text style={themed($limitWarningText)}>
-              ⚠️ You've reached your limit. Upgrade to Pro for unlimited access!
-            </Text>
+        {/* Content */}
+        {isCollapsed ? (
+          <View style={themed($collapsedContainer)}>
+            <Text style={themed($collapsedText)}>Subscription details hidden</Text>
           </View>
+        ) : (
+          <>
+            {/* Usage Progress */}
+            <View style={themed($usageSection)}>
+              <Text style={themed($usageTitle)}>Your Usage</Text>
+              
+              <View style={themed($usageGrid)}>
+                <View style={themed($usageCard)}>
+                  <View style={themed($usageCardHeader)}>
+                    <Icon icon="view" size={20} color={themed($usageIconColor).color} />
+                    <Text style={themed($usageCardLabel)}>Groups</Text>
+                  </View>
+                  <Text style={themed($usageCardCount)}>
+                    {subscription.isPro || subscription.isTrial 
+                      ? subscription.groupsUsed.toString()
+                      : `${subscription.groupsUsed}/${subscription.groupsLimit}`
+                    }
+                  </Text>
+                  {subscription.groupsUsed >= subscription.groupsLimit && (
+                    <View style={themed($limitBadge)}>
+                      <Text style={themed($limitBadgeText)}>Limit Reached</Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={themed($usageCard)}>
+                  <View style={themed($usageCardHeader)}>
+                    <Icon icon="check" size={20} color={themed($usageIconColor).color} />
+                    <Text style={themed($usageCardLabel)}>Items</Text>
+                  </View>
+                  <Text style={themed($usageCardCount)}>
+                    {subscription.isPro || subscription.isTrial 
+                      ? subscription.itemsUsed.toString()
+                      : `${subscription.itemsUsed}/${subscription.itemsLimit}`
+                    }
+                  </Text>
+                  {subscription.itemsUsed >= subscription.itemsLimit && (
+                    <View style={themed($limitBadge)}>
+                      <Text style={themed($limitBadgeText)}>Limit Reached</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              <View style={themed($aiSection)}>
+                <View style={themed($aiHeader)}>
+                  <Icon icon="lightning" size={20} color={themed($aiIconColor).color} />
+                  <Text style={themed($aiLabel)}>AI Search</Text>
+                </View>
+                <View style={[
+                  themed($aiStatusContainer),
+                  subscription.canUseAISearchNow ? themed($aiStatusAvailable) : themed($aiStatusUnavailable)
+                ]}>
+                  <Text style={themed($aiStatus)}>
+                    {subscription.canUseAISearchNow ? "Available" : "Pro Members Only"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={themed($actionsSection)}>
+              {subscription.isFree && !isAtLimit && (
+                <TouchableOpacity style={themed($trialButton)} onPress={handleActivateTrial} activeOpacity={0.8}>
+                  <Icon icon="check" size={18} color={themed($trialButtonIconColor).color} />
+                  <Text style={themed($trialButtonText)}>Start Free Trial</Text>
+                </TouchableOpacity>
+              )}
+
+              {(subscription.isFree || subscription.isTrial) && (
+                <TouchableOpacity style={themed($upgradeButton)} onPress={handleUpgradePress} activeOpacity={0.8}>
+                  <Icon icon="lightning" size={18} color={themed($upgradeButtonIconColor).color} />
+                  <Text style={themed($upgradeButtonText)}>Upgrade to Pro</Text>
+                </TouchableOpacity>
+              )}
+
+              {subscription.isPro && (
+                <TouchableOpacity style={themed($manageButton)} onPress={onManagePress} activeOpacity={0.8}>
+                  <Icon icon="settings" size={18} color={themed($manageButtonIconColor).color} />
+                  <Text style={themed($manageButtonText)}>Manage Subscription</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </>
         )}
       </View>
-    </View>
+
+      {/* VisuPro Modal */}
+      <VisuProModal
+        visible={isUpgradeModalVisible}
+        onClose={handleCloseUpgradeModal}
+        onStartTrial={handleStartTrial}
+      />
+    </>
   )
 }
 
@@ -209,39 +259,93 @@ const formatTimeRemaining = (endDate: string) => {
 // Styles
 const $container: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.cardColor,
-  borderRadius: 12,
-  padding: spacing.md,
+  borderRadius: 16,
+  padding: 0, // Remove padding to allow gradient header
   marginHorizontal: spacing.md,
   marginVertical: spacing.sm,
   shadowColor: colors.text,
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-  elevation: 3,
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.15,
+  shadowRadius: 8,
+  elevation: 6,
+  overflow: "hidden", // For rounded corners
 })
 
-const $header: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $headerGradient: ThemedStyle<ViewStyle> = () => ({
+  // TouchableOpacity wrapper for the gradient
+})
+
+const $gradientContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  padding: spacing.md,
+  borderTopLeftRadius: 16,
+  borderTopRightRadius: 16,
+})
+
+const $headerContent: ThemedStyle<ViewStyle> = () => ({
   flexDirection: "row",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: spacing.md,
 })
 
-const $statusBadge: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $statusBadge: ThemedStyle<ViewStyle> = () => ({
   flexDirection: "row",
   alignItems: "center",
   gap: spacing.xs,
 })
 
-const $statusIcon: ThemedStyle<TextStyle> = () => ({
-  fontSize: 16,
+const $iconContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  width: 48,
+  height: 48,
+  borderRadius: 12,
+  backgroundColor: colors.background + "20",
+  alignItems: "center",
+  justifyContent: "center",
 })
 
-const $statusText: ThemedStyle<TextStyle> = ({ typography }) => ({
-  fontFamily: typography.primary.medium,
-  fontSize: 14,
+const $iconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.background,
+})
+
+const $statusTextContainer: ThemedStyle<ViewStyle> = () => ({
+  flex: 1,
+})
+
+const $statusText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 18,
+  color: "#FFFFFF", // Always white regardless of theme
   textTransform: "uppercase",
-  letterSpacing: 0.5,
+  letterSpacing: 1,
+})
+
+const $statusSubtext: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 16,
+  color: "#FFFFFF", // Always white regardless of theme
+})
+
+const $arrowIcon: ThemedStyle<{ transform: [{ rotate: string }] }> = () => ({
+  transform: [{ rotate: "90deg" }], // Rotate caretLeft to point down
+})
+
+const $trialCountdownContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: spacing.xs,
+  backgroundColor: colors.background + "20",
+  paddingHorizontal: spacing.sm,
+  paddingVertical: spacing.xs,
+  borderRadius: 8,
+})
+
+const $trialCountdownColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: "#FFFFFF", // Always white regardless of theme
+})
+
+const $trialCountdown: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 12,
+  color: "#FFFFFF", // Always white regardless of theme
 })
 
 const $proColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
@@ -249,101 +353,163 @@ const $proColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
 })
 
 const $trialColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
-  color: colors.palette.accent500,
+  color: colors.cta,
 })
 
 const $freeColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.textDim,
 })
 
-const $trialCountdown: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 12,
-  color: colors.palette.accent500,
+const $usageSection: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  padding: spacing.lg,
+  backgroundColor: colors.background,
+  paddingBottom: spacing.sm, // Further reduce bottom padding
 })
 
-const $usageSection: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $usageTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 16,
+  color: colors.text,
   marginBottom: spacing.md,
 })
 
-const $usageRow: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $usageGrid: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  gap: spacing.md,
+  marginBottom: spacing.lg,
+})
+
+const $usageCard: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  flex: 1,
+  backgroundColor: colors.cardColor,
+  borderRadius: 12,
+  padding: spacing.md,
+  borderWidth: 1,
+  borderColor: colors.border,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.05,
+  shadowRadius: 4,
+  elevation: 2,
+})
+
+const $usageCardHeader: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flexDirection: "row",
   alignItems: "center",
+  gap: spacing.xs,
   marginBottom: spacing.sm,
 })
 
-const $usageLabel: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.medium,
-  fontSize: 14,
-  color: colors.text,
-  width: 60,
-})
-
-const $usageCount: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 14,
+const $usageIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.textDim,
-  width: 50,
-  textAlign: "right",
-  marginRight: spacing.sm,
 })
 
-const $maxCapacityContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  marginTop: spacing.sm,
-  alignItems: "center",
-})
-
-const $maxCapacityText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.normal,
+const $usageCardLabel: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
   fontSize: 12,
-  color: colors.error,
-  fontStyle: "italic",
+  color: colors.textDim,
+  textTransform: "uppercase",
+  letterSpacing: 0.5,
 })
 
-const $aiSection: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $usageCardCount: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 24,
+  color: colors.text,
+})
+
+const $limitBadge: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.error + "20",
+  paddingHorizontal: spacing.xs,
+  paddingVertical: spacing.xxs,
+  borderRadius: 4,
+  marginTop: spacing.xs,
+  alignSelf: "flex-start",
+})
+
+const $limitBadgeText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 10,
+  color: colors.error,
+  textTransform: "uppercase",
+  letterSpacing: 0.5,
+})
+
+const $aiSection: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   flexDirection: "row",
   alignItems: "center",
-  marginTop: spacing.md,
+  justifyContent: "space-between",
+  paddingTop: spacing.md,
+  borderTopWidth: 1,
+  borderTopColor: colors.border,
+})
+
+const $aiHeader: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: spacing.xs,
+})
+
+const $aiIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.textDim,
 })
 
 const $aiLabel: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.medium,
   fontSize: 14,
   color: colors.text,
-  width: 60,
 })
 
-const $aiStatus: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 14,
-  color: colors.textDim,
-  width: 120,
-  textAlign: "right",
-  marginRight: spacing.sm,
+const $aiStatusContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  paddingHorizontal: spacing.sm,
+  paddingVertical: spacing.xs,
+  borderRadius: 8,
+  backgroundColor: colors.success + "20",
 })
 
-const $aiStatusAvailable: ThemedStyle<TextStyle> = ({ colors }) => ({
+const $aiStatus: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 12,
   color: colors.success,
+  textTransform: "uppercase",
+  letterSpacing: 0.5,
 })
 
-const $aiStatusUnavailable: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.error,
+const $aiStatusAvailable: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  backgroundColor: colors.success + "20",
 })
 
-const $actionsSection: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $aiStatusUnavailable: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  backgroundColor: colors.error + "20",
+})
+
+const $actionsSection: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   gap: spacing.sm,
+  padding: spacing.lg,
+  paddingTop: spacing.sm, // Further reduce top padding
+  backgroundColor: colors.background,
 })
 
 const $trialButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.cta,
   paddingVertical: spacing.sm,
   paddingHorizontal: spacing.md,
-  borderRadius: 8,
+  borderRadius: 12,
   alignItems: "center",
+  flexDirection: "row",
+  justifyContent: "center",
+  gap: spacing.xs,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 2,
+})
+
+const $trialButtonIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.background,
 })
 
 const $trialButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.medium,
+  fontFamily: typography.primary.bold,
   fontSize: 14,
   color: colors.background,
 })
@@ -352,14 +518,25 @@ const $upgradeButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.gradientOrange[0],
   paddingVertical: spacing.sm,
   paddingHorizontal: spacing.md,
-  borderRadius: 8,
+  borderRadius: 12,
   alignItems: "center",
+  flexDirection: "row",
+  justifyContent: "center",
+  gap: spacing.xs,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 2,
+})
+
+const $upgradeButtonIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.palette.neutral100, // Always white regardless of theme
 })
 
 const $upgradeButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.medium,
+  fontFamily: typography.primary.bold,
   fontSize: 14,
-  color: colors.background,
+  color: colors.palette.neutral100, // Always white regardless of theme
 })
 
 const $manageButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
@@ -368,12 +545,23 @@ const $manageButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   borderColor: colors.border,
   paddingVertical: spacing.sm,
   paddingHorizontal: spacing.md,
-  borderRadius: 8,
+  borderRadius: 12,
   alignItems: "center",
+  flexDirection: "row",
+  justifyContent: "center",
+  gap: spacing.xs,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 2,
+})
+
+const $manageButtonIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.text,
 })
 
 const $manageButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.medium,
+  fontFamily: typography.primary.bold,
   fontSize: 14,
   color: colors.text,
 })
@@ -383,14 +571,35 @@ const $limitWarning: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   borderWidth: 1,
   borderColor: colors.error,
   padding: spacing.sm,
-  borderRadius: 8,
+  borderRadius: 12,
+  alignItems: "center",
+  flexDirection: "row",
+  justifyContent: "center",
+  gap: spacing.xs,
+})
+
+const $limitWarningIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.error,
 })
 
 const $limitWarningText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.normal,
+  fontFamily: typography.primary.medium,
   fontSize: 12,
   color: colors.error,
   textAlign: "center",
+})
+
+const $collapsedContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  alignItems: "center",
+  paddingVertical: spacing.lg,
+  backgroundColor: colors.background,
+})
+
+const $collapsedText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.textDim,
+  fontStyle: "italic",
 })
 
 const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
