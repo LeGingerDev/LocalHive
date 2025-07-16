@@ -123,6 +123,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Trigger for items table (separate function that uses user_id)
+CREATE OR REPLACE FUNCTION update_usage_on_item_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    PERFORM update_user_usage(NEW.user_id);
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    PERFORM update_user_usage(OLD.user_id);
+    RETURN OLD;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Create trigger for groups table
 DROP TRIGGER IF EXISTS trigger_update_usage_on_group_change ON public.groups;
 CREATE TRIGGER trigger_update_usage_on_group_change
@@ -137,12 +152,12 @@ BEGIN
     SELECT 1 FROM information_schema.tables 
     WHERE table_schema = 'public' AND table_name = 'items'
   ) THEN
-    -- Create trigger for items table
+    -- Create trigger for items table using the correct function
     EXECUTE 'DROP TRIGGER IF EXISTS trigger_update_usage_on_item_change ON public.items';
     EXECUTE 'CREATE TRIGGER trigger_update_usage_on_item_change
       AFTER INSERT OR DELETE ON public.items
       FOR EACH ROW
-      EXECUTE FUNCTION update_usage_on_group_change()';
+      EXECUTE FUNCTION update_usage_on_item_change()';
   END IF;
 END $$;
 

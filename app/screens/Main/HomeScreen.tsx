@@ -8,12 +8,13 @@ import {
   Text,
   Alert,
 } from "react-native"
+import { useFocusEffect } from "@react-navigation/native"
 
 import { Header } from "@/components/Header"
 import { Screen } from "@/components/Screen"
 import { SubscriptionStatusBox } from "@/components/Subscription"
 import SubscriptionManagementModal from "@/components/Subscription/SubscriptionManagementModal"
-import { QuickActions, WelcomeMessage } from "@/components/Home"
+import { QuickActions, WelcomeMessage, RecentActivitySection } from "@/components/Home"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
@@ -117,6 +118,16 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
   useEffect(() => {
     trackScreenView({ screenName: "Home" })
   }, [trackScreenView])
+
+  // Refresh subscription data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        console.log("[HomeScreen] Screen focused - refreshing subscription data")
+        subscription.refresh()
+      }
+    }, [user?.id]) // Only depend on user?.id, not the subscription object
+  )
   // #endregion
 
   // #region Render Functions
@@ -172,14 +183,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
         />
 
         {/* Recent Activity Section */}
-        <View style={themed($recentSection)}>
-          <Text style={themed($sectionTitle)}>Recent Activity</Text>
-          <View style={themed($recentContent)}>
-            <Text style={themed($recentText)}>
-              No recent activity yet. Start by creating your first group!
-            </Text>
-          </View>
-        </View>
+        <RecentActivitySection limit={5} />
 
         {/* Tips Section */}
         <View style={themed($tipsSection)}>
@@ -238,36 +242,12 @@ const $scrollContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
 
 
 
-const $recentSection: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  backgroundColor: colors.cardColor,
-  borderRadius: 12,
-  padding: spacing.md,
-  marginHorizontal: spacing.md,
-  marginVertical: spacing.sm,
-  shadowColor: colors.text,
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-  elevation: 3,
-})
 
 const $sectionTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   fontFamily: typography.primary.bold,
   fontSize: 18,
   color: colors.text,
   marginBottom: spacing.md,
-})
-
-const $recentContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  alignItems: "center",
-  paddingVertical: spacing.lg,
-})
-
-const $recentText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 14,
-  color: colors.textDim,
-  textAlign: "center",
 })
 
 const $tipsSection: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({

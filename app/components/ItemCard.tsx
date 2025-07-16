@@ -15,9 +15,10 @@ interface ItemCardProps {
   onItemUpdated?: (updatedItem: ItemWithProfile) => void
   onItemDeleted?: (itemId: string) => void
   deletable?: boolean // NEW
+  groupName?: string // NEW: Optional group name to display as a tag
 }
 
-export const ItemCard = ({ item, onPress, onItemUpdated, onItemDeleted, deletable = false }: ItemCardProps) => {
+export const ItemCard = ({ item, onPress, onItemUpdated, onItemDeleted, deletable = false, groupName }: ItemCardProps) => {
   const { themed, themeContext } = useAppTheme()
   const imageUrls = item.image_urls ?? []
   const hasImage = imageUrls.length > 0
@@ -70,53 +71,65 @@ export const ItemCard = ({ item, onPress, onItemUpdated, onItemDeleted, deletabl
 
   return (
     <>
-      <TouchableOpacity
-        style={[
-          themed($card),
-          {
-            borderColor: categoryColor,
-            shadowColor: categoryColor,
-          },
-        ]}
-        activeOpacity={0.85}
-        onPress={handlePress}
-        onLongPress={handleLongPress}
-        accessibilityRole={onPress ? "button" : undefined}
-      >
-        {/* Image section */}
-        <View style={themed($imageContainer)}>
-          {hasImage ? (
-            <Image
-              source={{ uri: imageUrls[0] }}
-              style={themed($image)}
-              resizeMode="cover"
-              accessibilityLabel={item.title}
-            />
-          ) : (
-            <View style={themed($imagePlaceholder)}>
-              <Text style={themed($imagePlaceholderText)} text={item.title?.charAt(0) || "?"} />
-            </View>
-          )}
-        </View>
-        {/* Content section */}
-        <View style={themed($content)}>
-          <Text style={themed($title)} text={item.title} numberOfLines={0} />
-          <View style={themed($metaRow)}>
-            <Text
-              style={themed($category)}
-              text={item.category}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            />
-            <Text
-              style={themed($userText)}
-              text={item.full_name || item.email || "Unknown user"}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            />
+      <View style={themed($cardContainer)}>
+        <TouchableOpacity
+          style={[
+            themed($card),
+            {
+              borderColor: categoryColor,
+              shadowColor: categoryColor,
+            },
+          ]}
+          activeOpacity={0.85}
+          onPress={handlePress}
+          onLongPress={handleLongPress}
+          accessibilityRole={onPress ? "button" : undefined}
+        >
+          {/* Image section */}
+          <View style={themed($imageContainer)}>
+            {hasImage ? (
+              <Image
+                source={{ uri: imageUrls[0] }}
+                style={themed($image)}
+                resizeMode="cover"
+                accessibilityLabel={item.title}
+              />
+            ) : (
+              <View style={themed($imagePlaceholder)}>
+                <Text style={themed($imagePlaceholderText)} text={item.title?.charAt(0) || "?"} />
+              </View>
+            )}
           </View>
-        </View>
-      </TouchableOpacity>
+          {/* Content section */}
+          <View style={themed($content)}>
+            <Text style={themed($title)} text={item.title} numberOfLines={0} />
+            <View style={themed($metaRow)}>
+              <Text
+                style={themed($category)}
+                text={item.category}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              />
+              <Text
+                style={themed($userText)}
+                text={item.full_name || item.email || "Unknown user"}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* Group Name Tag */}
+        {groupName && (
+          <View style={themed($groupTagContainer)}>
+            <View style={themed($groupTagLine)} />
+            <View style={themed($groupTag)}>
+              <Text style={themed($groupTagText)} text={groupName} />
+            </View>
+          </View>
+        )}
+      </View>
 
       {/* Item Modal */}
       <ItemModal
@@ -142,22 +155,26 @@ export const ItemCard = ({ item, onPress, onItemUpdated, onItemDeleted, deletabl
 }
 
 // Styles
+const $cardContainer = ({ spacing }: any): ViewStyle => ({
+  position: "relative",
+  marginBottom: spacing.sm,
+})
+
 const $card = ({ colors, spacing }: any): ViewStyle => ({
   flexDirection: "row",
   alignItems: "center",
-  backgroundColor: colors.cardColor,
+  backgroundColor: colors.palette.neutral200, // Darker background for better visibility
   borderRadius: spacing.md,
   borderWidth: 1,
   borderColor: colors.border,
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.15,
-  shadowRadius: 8,
-  elevation: 4,
+  shadowOffset: { width: 0, height: 6 }, // Increased height for more downward shadow
+  shadowOpacity: 0.2, // Slightly increased opacity for more visible shadow
+  shadowRadius: 10, // Increased radius for softer shadow
+  elevation: 6, // Increased elevation for Android
   minHeight: 64, // slightly more compact
   maxHeight: 80, // slightly more compact
   paddingVertical: spacing.xxs, // less vertical padding
   paddingHorizontal: spacing.xs, // less horizontal padding
-  marginBottom: spacing.sm,
 })
 
 const $imageContainer = ({ spacing }: any): ViewStyle => ({
@@ -185,7 +202,7 @@ const $imagePlaceholder = ({ colors }: any): ViewStyle => ({
   width: "100%",
   height: "100%",
   borderRadius: 12,
-  backgroundColor: colors.cardColor,
+  backgroundColor: colors.palette.neutral300, // Slightly darker than card background
   alignItems: "center",
   justifyContent: "center",
   opacity: 0.8,
@@ -234,4 +251,41 @@ const $userText = ({ typography, colors }: any): TextStyle => ({
   flexShrink: 1,
   flexGrow: 0,
   maxWidth: "50%",
+})
+
+// Group Tag Styles
+const $groupTagContainer = (): ViewStyle => ({
+  position: "absolute",
+  top: -8,
+  right: 8,
+  zIndex: 1,
+})
+
+const $groupTagLine = ({ colors, spacing }: any): ViewStyle => ({
+  position: "absolute",
+  top: 8,
+  left: -4,
+  width: 4,
+  height: 1,
+  backgroundColor: colors.border,
+})
+
+const $groupTag = ({ colors, spacing }: any): ViewStyle => ({
+  backgroundColor: colors.palette.neutral200,
+  borderWidth: 1,
+  borderColor: colors.border,
+  borderRadius: 12,
+  paddingHorizontal: spacing.xs,
+  paddingVertical: spacing.xxs,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 2,
+})
+
+const $groupTagText = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 10,
+  color: colors.textDim,
+  textAlign: "center",
 })

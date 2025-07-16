@@ -15,6 +15,9 @@ import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { Switch } from "@/components/Toggle/Switch"
 import { useAnalytics } from "@/hooks/useAnalytics"
+import { useSubscription } from "@/hooks/useSubscription"
+import { useAuth } from "@/context/AuthContext"
+import { useAlert } from "@/components/Alert"
 import { askAIAboutItems, AIQueryResponse } from "@/services/openaiService"
 import { ItemWithProfile, ItemService } from "@/services/supabase/itemService"
 import { supabase } from "@/services/supabase/supabase"
@@ -27,11 +30,18 @@ import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
   const { themed } = useAppTheme()
   const { trackEvent, events } = useAnalytics()
+  const { user } = useAuth()
+  const subscription = useSubscription(user?.id || null)
+  const { showAlert } = useAlert()
   const [query, setQuery] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [results, setResults] = useState<ItemWithProfile[]>([])
-  const [isAIMode, setIsAIMode] = useState(route.params?.enableAI || false)
+  const [isAIMode, setIsAIMode] = useState(() => {
+    // Only enable AI mode by default if user is pro and explicitly requested
+    const requestedAI = route.params?.enableAI || false
+    return requestedAI && subscription.isPro
+  })
   const [aiResponse, setAiResponse] = useState<AIQueryResponse | null>(null)
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
 
@@ -126,6 +136,34 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
   const handleModeSwitch = useCallback(() => {
     const newMode = !isAIMode
 
+    // If trying to enable AI mode and user is not pro, show upgrade modal
+    if (newMode && !subscription.isPro) {
+      showAlert({
+        title: "AI Search Requires Pro",
+        message: "AI-powered search is a Pro feature. Upgrade to Pro to unlock advanced AI search capabilities and get intelligent answers about your items.",
+        buttons: [
+          {
+            label: "Maybe Later",
+            preset: "default",
+          },
+          {
+            label: "Upgrade to Pro",
+            preset: "filled",
+            onPress: () => {
+              // Navigate to subscription management or upgrade flow
+              // For now, we'll just show a message
+              showAlert({
+                title: "Upgrade to Pro",
+                message: "To upgrade to Pro, please go to your Profile screen and tap on the subscription management option.",
+                buttons: [{ label: "OK", preset: "filled" }],
+              })
+            },
+          },
+        ],
+      })
+      return
+    }
+
     // Track mode switch
     trackEvent({
       name: events.SEARCH_MODE_SWITCHED,
@@ -134,6 +172,7 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
         to_mode: newMode ? "ai" : "vector",
         had_query: query.length > 0,
         query_length: query.length,
+        is_pro_user: subscription.isPro,
       },
     })
 
@@ -142,7 +181,7 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
     setResults([]) // Clear results
     setError(null) // Clear any errors
     setAiResponse(null) // Clear AI response
-  }, [isAIMode, query, trackEvent, events.SEARCH_MODE_SWITCHED])
+  }, [isAIMode, query, trackEvent, events.SEARCH_MODE_SWITCHED, subscription.isPro, showAlert])
 
   return (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top"]}>
@@ -153,7 +192,14 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
             customComponent: (
               <View style={themed($aiToggleContainer)}>
                 <Text style={themed($aiToggleText)}>Use AI</Text>
-                <Switch value={isAIMode} onValueChange={handleModeSwitch} />
+                <Switch 
+                  value={isAIMode} 
+                  onValueChange={handleModeSwitch}
+                  disabled={!subscription.isPro}
+                />
+                {!subscription.isPro && (
+                  <Text style={themed($proBadge)}>PRO</Text>
+                )}
               </View>
             ),
           },
@@ -378,4 +424,16 @@ const $aiToggleText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.medium,
   fontSize: 14,
   color: colors.text,
+})
+
+const $proBadge: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 10,
+  color: colors.background,
+  backgroundColor: colors.tint,
+  paddingHorizontal: spacing.xs,
+  paddingVertical: 2,
+  borderRadius: 4,
+  marginLeft: spacing.xs,
+  overflow: "hidden",
 })

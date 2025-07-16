@@ -345,4 +345,113 @@ export class ItemService {
       }
     }
   }
+
+  /**
+   * Get recent items from all groups the user is a member of
+   */
+  static async getRecentItemsFromAllGroups(
+    userId: string,
+    limit: number = 5,
+  ): Promise<{ data: (ItemWithProfile & { group_name: string })[] | null; error: PostgrestError | null }> {
+    try {
+      // First, get all groups the user is a member of
+      const { data: userGroups, error: groupsError } = await supabase
+        .from("group_members")
+        .select(`
+          group_id,
+          groups!inner(
+            id,
+            name
+          )
+        `)
+        .eq("user_id", userId)
+
+      if (groupsError) {
+        console.error("Error getting user groups:", groupsError)
+        return { data: null, error: groupsError }
+      }
+
+      if (!userGroups || userGroups.length === 0) {
+        return { data: [], error: null }
+      }
+
+      // Get group IDs
+      const groupIds = userGroups.map((ug) => ug.group_id)
+
+      // Get recent items from all these groups with group information
+      // Note: We can't directly join items with profiles due to RLS policies
+      // So we'll get the items first, then fetch profile data separately
+      const { data: items, error: itemsError } = await supabase
+        .from("items")
+        .select(`
+          *,
+          groups!inner(
+            id,
+            name
+          )
+        `)
+        .in("group_id", groupIds)
+        .order("created_at", { ascending: false })
+        .limit(limit)
+
+      if (itemsError) {
+        console.error("Error getting recent items from all groups:", itemsError)
+        return { data: null, error: itemsError }
+      }
+
+      if (!items || items.length === 0) {
+        return { data: [], error: null }
+      }
+
+      // Get unique user IDs from the items
+      const userIds = [...new Set(items.map(item => item.user_id))]
+
+      // Fetch profile data for all users
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, avatar_url")
+        .in("id", userIds)
+
+      if (profilesError) {
+        console.error("Error getting profiles:", profilesError)
+        return { data: null, error: profilesError }
+      }
+
+      // Create a map of user ID to profile data
+      const profileMap = new Map()
+      profiles?.forEach(profile => {
+        profileMap.set(profile.id, profile)
+      })
+
+      // Transform the data to match ItemWithProfile interface and add group_name
+      const transformedItems = items.map((item) => {
+        const profile = profileMap.get(item.user_id)
+        return {
+          id: item.id,
+          group_id: item.group_id,
+          user_id: item.user_id,
+          title: item.title,
+          category: item.category,
+          location: item.location,
+          details: item.details,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          image_urls: item.image_urls,
+          profile_id: profile?.id,
+          full_name: profile?.full_name,
+          email: profile?.email,
+          avatar_url: profile?.avatar_url,
+          group_name: item.groups?.name,
+        }
+      })
+
+      return { data: transformedItems, error: null }
+    } catch (error) {
+      console.error("Error getting recent items from all groups:", error)
+      return {
+        data: null,
+        error: error as PostgrestError,
+      }
+    }
+  }
 }

@@ -254,6 +254,7 @@ const $closeButton: ThemedStyle<ViewStyle> = ({ spacing }) => ({
 const $contentContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   padding: spacing.xl,
   paddingTop: spacing.xl + spacing.lg,
+  paddingBottom: spacing.xl + spacing.lg, // Add extra bottom padding for buffer
 })
 
 const $headerContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
