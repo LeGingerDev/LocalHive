@@ -152,7 +152,7 @@ const ProfileScreen = () => {
         </SettingsSection>
 
         {/* Debug Section */}
-        <View style={styles.debugSection}>
+        <View style={[styles.debugSection, { backgroundColor: theme.colors.errorBackground }]}>
           <Text style={styles.debugTitle}>🔧 Debug Tools</Text>
           <View style={styles.debugButtons}>
             <TouchableOpacity style={styles.debugButton} onPress={handleDebugFree}>
@@ -227,7 +227,6 @@ const styles = StyleSheet.create({
     color: "#333333",
   },
   debugSection: {
-    backgroundColor: "#f0f0f0",
     borderRadius: 8,
     padding: spacing.md,
     marginTop: spacing.md,

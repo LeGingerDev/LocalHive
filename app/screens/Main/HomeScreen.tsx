@@ -228,8 +228,6 @@ const $root: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
 const $scrollContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flexGrow: 1,
   justifyContent: "flex-start",
-  paddingHorizontal: spacing.md,
-  paddingTop: spacing.md,
   paddingBottom: spacing.xl * 4, // Increased bottom padding for better access
 })
 

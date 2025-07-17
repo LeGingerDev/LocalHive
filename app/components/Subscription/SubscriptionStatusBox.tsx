@@ -57,20 +57,7 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
     }
   }
 
-  const handleActivateTrial = async () => {
-    if (!userId) return
 
-    try {
-      const { success, error } = await subscription.activateTrial()
-      if (error) {
-        Alert.alert("Error", "Failed to activate trial. Please try again.")
-      } else {
-        Alert.alert("Trial Activated", "Enjoy 3 days of unlimited access!")
-      }
-    } catch (err) {
-      Alert.alert("Error", "Something went wrong. Please try again.")
-    }
-  }
 
   const handleToggleCollapse = useCallback(() => {
     setIsCollapsed(!isCollapsed)
@@ -199,13 +186,6 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
 
             {/* Action Buttons */}
             <View style={themed($actionsSection)}>
-              {subscription.isFree && !isAtLimit && (
-                <TouchableOpacity style={themed($trialButton)} onPress={handleActivateTrial} activeOpacity={0.8}>
-                  <Icon icon="check" size={18} color={themed($trialButtonIconColor).color} />
-                  <Text style={themed($trialButtonText)}>Start Free Trial</Text>
-                </TouchableOpacity>
-              )}
-
               {(subscription.isFree || subscription.isTrial) && (
                 <TouchableOpacity style={themed($upgradeButton)} onPress={handleUpgradePress} activeOpacity={0.8}>
                   <Icon icon="lightning" size={18} color={themed($upgradeButtonIconColor).color} />
@@ -489,30 +469,7 @@ const $actionsSection: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.background,
 })
 
-const $trialButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  backgroundColor: colors.cta,
-  paddingVertical: spacing.sm,
-  paddingHorizontal: spacing.md,
-  borderRadius: 12,
-  alignItems: "center",
-  flexDirection: "row",
-  justifyContent: "center",
-  gap: spacing.xs,
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-  elevation: 2,
-})
 
-const $trialButtonIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
-  color: colors.background,
-})
-
-const $trialButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.bold,
-  fontSize: 14,
-  color: colors.background,
-})
 
 const $upgradeButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.gradientOrange[0],

@@ -1,4 +1,4 @@
-import React, { FC, useState, useCallback, useRef } from "react"
+import React, { FC, useState, useCallback, useRef, useEffect } from "react"
 import {
   View,
   TextInput,
@@ -6,7 +6,11 @@ import {
   FlatList,
   ViewStyle,
   TextStyle,
+  ImageStyle,
   TouchableOpacity,
+  Keyboard,
+  Platform,
+  Image,
 } from "react-native"
 
 import { Header } from "@/components/Header"
@@ -27,8 +31,12 @@ import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 
+// Tab bar height from AnimatedTabBar component
+const TAB_BAR_HEIGHT = 80
+const TAB_BAR_PADDING = 40 // Extra padding for visual comfort
+
 export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
-  const { themed } = useAppTheme()
+  const { themed, theme } = useAppTheme()
   const { trackEvent, events } = useAnalytics()
   const { user } = useAuth()
   const subscription = useSubscription(user?.id || null)
@@ -43,7 +51,9 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
     return requestedAI && subscription.isPro
   })
   const [aiResponse, setAiResponse] = useState<AIQueryResponse | null>(null)
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
+  const flatListRef = useRef<FlatList>(null)
 
   // Track screen view on mount
   React.useEffect(() => {
@@ -54,6 +64,27 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
       },
     })
   }, [trackEvent, events.SCREEN_VIEWED])
+
+  // Keyboard listeners
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setIsKeyboardVisible(true)
+      }
+    )
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false)
+      }
+    )
+
+    return () => {
+      keyboardDidShowListener?.remove()
+      keyboardDidHideListener?.remove()
+    }
+  }, [])
 
   // Debounced search using the vector service
   const handleChange = useCallback(
@@ -183,8 +214,67 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
     setAiResponse(null) // Clear AI response
   }, [isAIMode, query, trackEvent, events.SEARCH_MODE_SWITCHED, subscription.isPro, showAlert])
 
+  const renderItem = useCallback(({ item }: { item: ItemWithProfile }) => (
+    <ItemCard item={item} />
+  ), [])
+
+  const renderEmptyState = useCallback(() => {
+    if (isLoading) {
+      return (
+        <View style={themed($emptyContainer)}>
+          <ActivityIndicator
+            size="small"
+            color={themed($activityIndicator).color}
+          />
+          <Text style={themed($emptyText)} text="Searching..." />
+        </View>
+      )
+    }
+
+    if (error) {
+      return (
+        <View style={themed($emptyContainer)}>
+          <Text style={themed($errorText)} text={error} />
+        </View>
+      )
+    }
+
+    if (query.length > 0 && results.length === 0 && !aiResponse) {
+      return (
+        <View style={themed($emptyContainer)}>
+          <Image 
+            source={require("../../../assets/Visu/Visu_Searching.png")}
+            style={themed($emptyStateImage)}
+            resizeMode="contain"
+          />
+          <Text style={themed($emptyText)} text="No items found" />
+        </View>
+      )
+    }
+
+    if (query.length === 0) {
+      return (
+        <View style={themed($emptyContainer)}>
+          <Image 
+            source={require("../../../assets/Visu/Visu_Searching.png")}
+            style={themed($emptyStateImage)}
+            resizeMode="contain"
+          />
+          <Text style={themed($emptyText)} text={isAIMode ? "Ask about your items..." : "Search your items..."} />
+        </View>
+      )
+    }
+
+    return null
+  }, [isLoading, error, query, results.length, aiResponse, isAIMode, themed])
+
   return (
-    <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top"]}>
+    <Screen 
+      style={themed($root)} 
+      preset="fixed" 
+      safeAreaEdges={["top"]}
+      contentContainerStyle={themed($contentContainer)}
+    >
       <Header
         title="Search"
         rightActions={[
@@ -205,7 +295,23 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
           },
         ]}
       />
-      <View style={themed($content)}>
+      
+      {/* Main Content Area */}
+      <View style={themed($mainContent)}>
+        <FlatList
+          ref={flatListRef}
+          data={results}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={themed($flatListContent)}
+          ListEmptyComponent={renderEmptyState}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        />
+      </View>
+
+      {/* Search Input Area - Fixed at Bottom */}
+      <View style={$searchInputAreaStyle(theme, isKeyboardVisible)}>
         <View style={themed($searchContainer)}>
           <View style={themed($inputWrapper)}>
             <TextInput
@@ -217,6 +323,8 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
               autoCapitalize="none"
               autoCorrect={false}
               clearButtonMode="while-editing"
+              returnKeyType={isAIMode ? "search" : "default"}
+              onSubmitEditing={isAIMode ? handleAISearch : undefined}
             />
           </View>
           {isAIMode && (
@@ -229,63 +337,6 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
             </TouchableOpacity>
           )}
         </View>
-
-        {isLoading && (
-          <ActivityIndicator
-            style={themed($loading)}
-            size="small"
-            color={themed($activityIndicator).color}
-          />
-        )}
-
-        {error && (
-          <View style={themed($errorContainer)}>
-            <Text style={themed($errorText)} text={error} />
-          </View>
-        )}
-
-        {/* AI Response - Hidden, just show filtered items */}
-
-        {!isLoading && !error && results.length === 0 && query.length > 0 && !aiResponse && (
-          <View style={themed($emptyContainer)}>
-            <Text
-              style={themed($emptyText)}
-              text={isAIMode ? "No AI response available." : "No results found."}
-            />
-          </View>
-        )}
-
-        {!isLoading && !error && results.length > 0 && (
-          <View style={themed($resultsHeader)}>
-            <Text
-              style={themed($resultsCount)}
-              text={`${results.length} result${results.length === 1 ? "" : "s"} found`}
-            />
-          </View>
-        )}
-
-        <View style={themed($resultsContainer)}>
-          {results.map((item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              onItemUpdated={(updatedItem) => {
-                // Update the item in the local results state
-                setResults((prevResults) =>
-                  prevResults.map((prevItem) =>
-                    prevItem.id === updatedItem.id ? updatedItem : prevItem,
-                  ),
-                )
-              }}
-              onItemDeleted={(itemId) => {
-                // Remove the item from the local results state
-                setResults((prevResults) =>
-                  prevResults.filter((prevItem) => prevItem.id !== itemId),
-                )
-              }}
-            />
-          ))}
-        </View>
       </View>
     </Screen>
   )
@@ -295,11 +346,19 @@ const $root: ThemedStyle<ViewStyle> = ({ colors }) => ({
   flex: 1,
   backgroundColor: colors.background,
 })
-const $content: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+
+const $contentContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flex: 1,
+  display: "flex",
+  flexDirection: "column",
+})
+
+const $mainContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flex: 1,
   paddingHorizontal: spacing.md,
   paddingTop: spacing.md,
 })
+
 const $inputWrapper: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.palette.neutral200,
   borderColor: colors.palette.neutral400,
@@ -325,67 +384,36 @@ const $textInput: ThemedStyle<TextStyle> = ({ typography, colors }) => ({
 const $placeholderText: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.textDim,
 })
-const $loading: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  marginVertical: spacing.xs,
-})
+
 const $activityIndicator: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.tint,
 })
-const $errorContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  marginVertical: spacing.md,
-  alignItems: "center",
-})
+
 const $errorText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.error,
   fontFamily: typography.primary.normal,
   fontSize: 15,
 })
+
 const $emptyContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   marginVertical: spacing.lg,
   alignItems: "center",
 })
+
 const $emptyText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.textDim,
   fontFamily: typography.primary.normal,
   fontSize: 15,
 })
 
-const $resultsHeader: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  marginTop: spacing.xs,
-  marginBottom: spacing.xs,
-  alignItems: "center",
-})
-const $resultsCount: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  color: colors.textDim,
-  fontFamily: typography.primary.normal,
-  fontSize: 15,
-})
-const $resultsContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  paddingBottom: spacing.xl,
-})
-
-const $aiResponseContainer: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  backgroundColor: colors.palette.neutral100,
-  borderRadius: 8,
-  padding: spacing.md,
-  marginVertical: spacing.sm,
-  borderLeftWidth: 4,
-  borderLeftColor: colors.tint,
-})
-
-const $aiResponseText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  color: colors.text,
-  fontFamily: typography.primary.normal,
-  fontSize: 15,
-  lineHeight: 22,
+const $flatListContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  paddingBottom: spacing.sm,
 })
 
 const $searchContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flexDirection: "row",
   alignItems: "center",
   gap: spacing.sm,
-  marginTop: spacing.md,
-  marginBottom: spacing.md,
 })
 
 const $searchButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
@@ -404,14 +432,6 @@ const $searchButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.medium,
   fontSize: 16,
   fontWeight: "600",
-})
-
-const $aiToggleSection: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: spacing.md,
-  paddingHorizontal: spacing.sm,
 })
 
 const $aiToggleContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
@@ -436,4 +456,27 @@ const $proBadge: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => (
   borderRadius: 4,
   marginLeft: spacing.xs,
   overflow: "hidden",
+})
+
+const $searchInputArea: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
+  backgroundColor: colors.background,
+  paddingHorizontal: spacing.md,
+  paddingVertical: spacing.sm,
+  borderTopWidth: 1,
+  borderTopColor: colors.palette.neutral200,
+})
+
+const $searchInputAreaStyle = (theme: any, isKeyboardVisible: boolean) => ({
+  backgroundColor: theme.colors.background,
+  paddingHorizontal: theme.spacing.md,
+  paddingVertical: theme.spacing.sm,
+  paddingBottom: isKeyboardVisible ? 80 : 120,
+  borderTopWidth: 1,
+  borderTopColor: theme.colors.palette.neutral200,
+})
+
+const $emptyStateImage: ThemedStyle<ImageStyle> = ({ spacing }) => ({
+  width: spacing.xxl,
+  height: spacing.xxl,
+  marginBottom: spacing.md,
 })
