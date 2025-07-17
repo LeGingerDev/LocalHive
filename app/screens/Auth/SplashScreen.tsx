@@ -126,63 +126,64 @@ export const SplashScreen = () => {
           googleAuthResult = await googleAuthService.checkExistingSignIn()
         }
 
-        // Navigate after 3.5 seconds
-        const timer = setTimeout(() => {
-          // Fade out animation for logo and text only
-          Animated.parallel([
-            Animated.timing(logoFadeAnim, {
-              toValue: 0,
-              duration: 500,
-              useNativeDriver: true,
-              easing: Easing.in(Easing.ease),
-            }),
-            Animated.timing(logoTranslateYAnim, {
-              toValue: -20,
-              duration: 500,
-              useNativeDriver: true,
-              easing: Easing.in(Easing.ease),
-            }),
-          ]).start(() => {
-            // Hide navigation bar again before navigating
-            hideNavigationBar().then(() => {
-              // Navigate based on authentication status
-              // Prioritize Supabase session over Google Auth state
-              const isAuthenticated = !!session || googleAuthResult.isAuthenticated
-              if (isAuthenticated) {
-                navigation.reset({
-                  index: 0,
-                  routes: [
-                    {
-                      name: "Main",
-                      state: {
-                        routes: [{ name: "Home" }],
-                      },
-                    },
-                  ],
-                  key: undefined,
-                })
-              } else {
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "Landing" }],
-                  key: undefined,
-                })
-              }
-            })
-          })
-        }, 3500)
+        // Check if user is authenticated
+        const isAuthenticated = !!session || googleAuthResult.isAuthenticated
 
-        return () => clearTimeout(timer)
+        if (isAuthenticated) {
+          // Skip splash entirely for authenticated users - go straight to main app
+          navigation.reset({
+            index: 0,
+            routes: [
+              {
+                name: "Main",
+                state: {
+                  routes: [{ name: "Home" }],
+                },
+              },
+            ],
+            key: undefined,
+          })
+        } else {
+          // For new users, show splash for minimum branding time (1.5 seconds)
+          const timer = setTimeout(() => {
+            // Fade out animation for logo and text only
+            Animated.parallel([
+              Animated.timing(logoFadeAnim, {
+                toValue: 0,
+                duration: 500,
+                useNativeDriver: true,
+                easing: Easing.in(Easing.ease),
+              }),
+              Animated.timing(logoTranslateYAnim, {
+                toValue: -20,
+                duration: 500,
+                useNativeDriver: true,
+                easing: Easing.in(Easing.ease),
+              }),
+            ]).start(() => {
+              // Hide navigation bar again before navigating
+              hideNavigationBar().then(() => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "OnboardingEntry" }],
+                  key: undefined,
+                })
+              })
+            })
+          }, 1500) // Reduced from 3.5 seconds to 1.5 seconds
+
+          return () => clearTimeout(timer)
+        }
       } catch (error) {
         console.error("Error checking authentication status:", error)
-        // Fallback to landing page if there's an error
+        // Fallback to onboarding entry page if there's an error
         const timer = setTimeout(() => {
           navigation.reset({
             index: 0,
-            routes: [{ name: "Landing" }],
+            routes: [{ name: "OnboardingEntry" }],
             key: undefined,
           })
-        }, 3500)
+        }, 1500) // Reduced from 3.5 seconds to 1.5 seconds
 
         return () => clearTimeout(timer)
       }
