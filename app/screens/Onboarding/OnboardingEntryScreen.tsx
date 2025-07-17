@@ -37,8 +37,8 @@ export const OnboardingEntryScreen = () => {
   }, [meerkatFloatAnim])
 
   const handleGetStarted = () => {
-    // Navigate to questionnaire flow
-    navigation.navigate("OnboardingQuestionnaire")
+    // Navigate to slideshow flow
+    navigation.navigate("OnboardingSlideshow")
   }
 
   const handleExistingAccount = () => {
@@ -53,7 +53,7 @@ export const OnboardingEntryScreen = () => {
       {/* Gradient Background */}
       <CustomGradient
         preset="custom"
-        customColors={["#dda7fb", "#FFFFFF"]} // Purple at top, white at bottom
+        customColors={["#4A90E2", "#FFFFFF"]} // Blue at top, white at bottom
         style={styles.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}

@@ -12,7 +12,7 @@ import { SwipeableTabNavigator } from "@/components/SwipeableTabNavigator"
 import Config from "@/config"
 import { LandingScreen } from "@/screens/Auth/LandingScreen"
 import { SplashScreen } from "@/screens/Auth/SplashScreen"
-import { OnboardingEntryScreen, OnboardingQuestionnaireScreen } from "@/screens/Onboarding"
+import { OnboardingEntryScreen, OnboardingSlideshowScreen, OnboardingQuestionnaireScreen } from "@/screens/Onboarding"
 import { ErrorBoundary } from "@/screens/ErrorScreen/ErrorBoundary"
 import { InvitationsScreen } from "@/screens/InvitationsScreen"
 import { CreateGroupScreen } from "@/screens/Main/CreateGroupScreen"
@@ -35,6 +35,7 @@ export type AppStackParamList = {
   Splash: undefined
   Landing: undefined
   OnboardingEntry: undefined
+  OnboardingSlideshow: undefined
   OnboardingQuestionnaire: undefined
   Main: undefined // Main app with bottom tabs
   CreateGroup: undefined
@@ -79,6 +80,7 @@ const AppStack = () => {
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Landing" component={LandingScreen} />
       <Stack.Screen name="OnboardingEntry" component={OnboardingEntryScreen} />
+      <Stack.Screen name="OnboardingSlideshow" component={OnboardingSlideshowScreen} />
       <Stack.Screen name="OnboardingQuestionnaire" component={OnboardingQuestionnaireScreen} />
       <Stack.Screen name="Main" component={SwipeableTabNavigator} />
       <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
