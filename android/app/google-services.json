@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1006015403522-0ttq0h9tous0rl3abtb33j8p0931q8fs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.legingerdev.visu",
+            "certificate_hash": "1dd2027b97557d70f78f7619cb53a60f42dc21e6"
+          }
+        },
+        {
           "client_id": "1006015403522-gjk15libsl177luc6112eb08dgsm5oim.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -90,7 +90,7 @@ export const OnboardingEntryScreen = () => {
         {/* Text Content Section */}
         <View style={styles.textContainer}>
           <Text style={styles.mainHeading}>We've All Been There</Text>
-          <RNText style={styles.problemStatement}>"<RNText style={styles.boldTextItalic}>Get the usual one,</RNText>" no idea what they mean</RNText>
+          <RNText style={styles.problemStatement}>"Get the usual one," no idea what they mean </RNText>
           <RNText style={styles.valueProposition}>
             Create visual guides so groups <RNText style={styles.boldText}>ALWAYS</RNText> know exactly what to get
           </RNText>
@@ -124,10 +124,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md, // Reduced from lg to md
     justifyContent: "space-between",
     paddingTop: spacing.xl * 2,
     paddingBottom: spacing.xl,
+    minHeight: 0, // Ensure flex works properly
   },
   illustrationContainer: {
     flex: 1,
@@ -146,6 +147,8 @@ const styles = StyleSheet.create({
   textContainer: {
     alignItems: "center",
     marginBottom: spacing.xl,
+    paddingHorizontal: spacing.xs, // Reduced from sm to xs
+    flexShrink: 1, // Allow text container to shrink if needed
   },
   mainHeading: {
     fontSize: 32,
@@ -161,8 +164,10 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: "center",
     marginBottom: spacing.md,
+    marginHorizontal: spacing.sm,
     lineHeight: 24,
     fontStyle: "italic",
+    flexWrap: "wrap", // Ensure text wraps properly
   },
   valueProposition: {
     fontSize: 16,
@@ -170,13 +175,13 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: "center",
     lineHeight: 22,
+    flexWrap: "wrap", // Ensure text wraps properly
   },
   boldText: {
     fontFamily: typography.primary.bold,
   },
   boldTextItalic: {
     fontFamily: typography.primary.bold,
-    fontStyle: "italic",
   },
   buttonContainer: {
     gap: spacing.md,
