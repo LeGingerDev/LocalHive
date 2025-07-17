@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react"
 import { View, StyleSheet, StatusBar, TouchableOpacity, Dimensions, ScrollView, Image } from "react-native"
 import { useNavigation } from "@react-navigation/native"
+import ReactNativeHapticFeedback from "react-native-haptic-feedback"
 import { LinearGradient } from "expo-linear-gradient"
 
 import { Screen } from "@/components/Screen"
@@ -8,6 +9,7 @@ import { Text } from "@/components/Text"
 import { colors } from "@/theme/colors"
 import { typography } from "@/theme/typography"
 import { spacing } from "@/theme/spacing"
+import { AnalyticsService } from "@/services/analyticsService"
 
 const { width: screenWidth } = Dimensions.get("window")
 
@@ -45,7 +47,15 @@ export const OnboardingSlideshowScreen = () => {
   const scrollViewRef = useRef<ScrollView>(null)
   const isScrollingProgrammatically = useRef(false)
 
+  // Track screen view on mount
+  React.useEffect(() => {
+    AnalyticsService.trackScreenView({ screenName: "OnboardingSlideshow" })
+  }, [])
+
   const handleBack = () => {
+    // Haptic feedback for navigation
+    ReactNativeHapticFeedback.trigger("selection")
+    
     if (currentIndex > 0) {
       const prevIndex = currentIndex - 1
       isScrollingProgrammatically.current = true
@@ -58,14 +68,35 @@ export const OnboardingSlideshowScreen = () => {
       setTimeout(() => {
         isScrollingProgrammatically.current = false
       }, 300)
+      
+      // Track slide navigation
+      AnalyticsService.trackEvent({
+        name: "onboarding_slide_navigation",
+        properties: {
+          direction: "back",
+          from_slide: currentIndex + 1,
+          to_slide: prevIndex + 1,
+          slide_title: slides[currentIndex].title
+        }
+      })
     } else {
       // Go back to entry screen if on first slide
+      AnalyticsService.trackEvent({
+        name: "onboarding_exit",
+        properties: {
+          source: "slideshow",
+          action: "back_to_entry"
+        }
+      })
       navigation.goBack()
     }
   }
 
   const handleNext = () => {
     if (currentIndex < slides.length - 1) {
+      // Haptic feedback for slide progression
+      ReactNativeHapticFeedback.trigger("selection")
+      
       const nextIndex = currentIndex + 1
       isScrollingProgrammatically.current = true
       setCurrentIndex(nextIndex)
@@ -77,7 +108,30 @@ export const OnboardingSlideshowScreen = () => {
       setTimeout(() => {
         isScrollingProgrammatically.current = false
       }, 300)
+      
+      // Track slide navigation
+      AnalyticsService.trackEvent({
+        name: "onboarding_slide_navigation",
+        properties: {
+          direction: "forward",
+          from_slide: currentIndex + 1,
+          to_slide: nextIndex + 1,
+          slide_title: slides[currentIndex].title
+        }
+      })
     } else {
+      // Haptic feedback for completing onboarding
+      ReactNativeHapticFeedback.trigger("notificationSuccess")
+      
+      // Track completion of slideshow
+      AnalyticsService.trackEvent({
+        name: "onboarding_slideshow_completed",
+        properties: {
+          total_slides: slides.length,
+          last_slide_title: slides[currentIndex].title
+        }
+      })
+      
       // Last slide - navigate to questionnaire
       navigation.navigate("OnboardingQuestionnaire")
     }

@@ -1,21 +1,28 @@
 import React, { useEffect, useRef } from "react"
 import { View, StyleSheet, StatusBar, TouchableOpacity, Image, Text as RNText, Animated } from "react-native"
 import { useNavigation } from "@react-navigation/native"
+import ReactNativeHapticFeedback from "react-native-haptic-feedback"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { CustomGradient } from "@/components/CustomGradient"
 import { colors } from "@/theme/colors"
 import { typography } from "@/theme/typography"
 import { spacing } from "@/theme/spacing"
+import { AnalyticsService } from "@/services/analyticsService"
 
 export const OnboardingEntryScreen = () => {
   const navigation = useNavigation<any>()
   
+
+  
   // Animation for floating meerkat
   const meerkatFloatAnim = useRef(new Animated.Value(0)).current
 
-  // Start floating animation
+  // Start floating animation and track screen view
   useEffect(() => {
+    // Track screen view
+    AnalyticsService.trackScreenView({ screenName: "OnboardingEntry" })
+    
     const startFloating = () => {
       Animated.loop(
         Animated.sequence([
@@ -37,11 +44,35 @@ export const OnboardingEntryScreen = () => {
   }, [meerkatFloatAnim])
 
   const handleGetStarted = () => {
+    // Haptic feedback for primary action
+    ReactNativeHapticFeedback.trigger("selection")
+    
+    // Track analytics event
+    AnalyticsService.trackEvent({
+      name: "onboarding_started",
+      properties: {
+        source: "entry_screen",
+        action: "get_started"
+      }
+    })
+    
     // Navigate to slideshow flow
     navigation.navigate("OnboardingSlideshow")
   }
 
   const handleExistingAccount = () => {
+    // Haptic feedback for secondary action
+    ReactNativeHapticFeedback.trigger("selection")
+    
+    // Track analytics event
+    AnalyticsService.trackEvent({
+      name: "onboarding_skipped",
+      properties: {
+        source: "entry_screen",
+        action: "existing_account"
+      }
+    })
+    
     // Navigate to existing account flow (could be a slide-up modal or separate screen)
     navigation.navigate("Landing")
   }
