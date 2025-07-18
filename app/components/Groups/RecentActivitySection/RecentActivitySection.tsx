@@ -232,14 +232,7 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
             testID={`${testID}_description`}
           />
 
-          {/* Debug info in development */}
-          {__DEV__ && (
-            <Text
-              style={themed($debugText)}
-              text={`ID: ${data.id ?? "N/A"}`}
-              testID={`${testID}_debugInfo`}
-            />
-          )}
+
         </>
       )}
     </View>
@@ -253,12 +246,6 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
   // #endregion
 
   // #region Main Render Logic
-  console.log("RecentActivitySection render check:", {
-    groupId,
-    isLoading,
-    error,
-    hasValidData: _hasValidData,
-  })
 
   if (isLoading) {
     return _renderLoadingState()
@@ -342,13 +329,7 @@ const $emptyText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontStyle: "italic",
 })
 
-const $debugText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 12,
-  color: colors.textDim,
-  marginTop: spacing.xs,
-  opacity: 0.7,
-})
+
 
 const $activityIndicator: ThemedStyle<ViewStyle> = () => ({
   // Color is passed directly to ActivityIndicator component

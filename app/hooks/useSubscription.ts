@@ -15,11 +15,13 @@ export const useSubscription = (userId: string | null) => {
    */
   const loadSubscriptionInfo = useCallback(async () => {
     if (!userId) {
+      console.log(`❌ [useSubscription] No userId provided`)
       setSubscriptionInfo(null)
       setError(null)
       return
     }
 
+    console.log(`🔄 [useSubscription] Loading subscription info for user: ${userId}`)
     setLoading(true)
     setError(null)
 
@@ -27,12 +29,15 @@ export const useSubscription = (userId: string | null) => {
       const { info, error } = await SubscriptionService.getSubscriptionInfo(userId)
       
       if (error) {
+        console.error(`❌ [useSubscription] Error loading subscription info:`, error)
         setError(error.message)
         setSubscriptionInfo(null)
       } else {
+        console.log(`✅ [useSubscription] Subscription info loaded:`, info)
         setSubscriptionInfo(info)
       }
     } catch (err) {
+      console.error(`❌ [useSubscription] Exception loading subscription info:`, err)
       setError(err instanceof Error ? err.message : "Failed to load subscription info")
       setSubscriptionInfo(null)
     } finally {
@@ -173,6 +178,7 @@ export const useSubscription = (userId: string | null) => {
 
   // Load subscription info when userId changes
   useEffect(() => {
+    console.log(`🔍 [useSubscription] Loading subscription info for user: ${userId}`)
     loadSubscriptionInfo()
   }, [loadSubscriptionInfo])
 
@@ -193,6 +199,24 @@ export const useSubscription = (userId: string | null) => {
   const canCreateGroupNow = subscriptionInfo?.can_create_group || false
   const canCreateItemNow = subscriptionInfo?.can_create_item || false
   const canUseAISearchNow = subscriptionInfo?.can_use_ai || false
+
+  // Debug log computed values
+  console.log(`📊 [useSubscription] Computed values:`, {
+    subscriptionStatus: subscriptionInfo?.subscription_status,
+    isFree,
+    isTrial,
+    isPro,
+    isExpired,
+    groupsUsed,
+    groupsLimit,
+    groupsPercentage,
+    itemsUsed,
+    itemsLimit,
+    itemsPercentage,
+    canCreateGroupNow,
+    canCreateItemNow,
+    canUseAISearchNow
+  })
 
   return {
     // Data

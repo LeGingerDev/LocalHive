@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { View, StyleSheet, StatusBar, TouchableOpacity, Animated, Dimensions, Image } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import ReactNativeHapticFeedback from "react-native-haptic-feedback"
@@ -34,6 +34,17 @@ const confettiColors = [
 export const OnboardingThankYouScreen = () => {
   const navigation = useNavigation<any>()
   const [confettiPieces, setConfettiPieces] = useState<ConfettiPiece[]>([])
+
+  // Animation refs
+  const contentFadeAnim = useRef(new Animated.Value(0)).current
+  const imageScaleAnim = useRef(new Animated.Value(0.8)).current
+  const imageRotateAnim = useRef(new Animated.Value(0)).current
+  const titleSlideAnim = useRef(new Animated.Value(50)).current
+  const subtitleFadeAnim = useRef(new Animated.Value(0)).current
+  const featuresAnim = useRef(new Animated.Value(0)).current
+  const buttonScaleAnim = useRef(new Animated.Value(0.8)).current
+  const buttonOpacityAnim = useRef(new Animated.Value(0)).current
+
   const triggerConfetti = () => {
     console.log("🎉 Triggering confetti manually!")
     
@@ -43,7 +54,7 @@ export const OnboardingThankYouScreen = () => {
     // Generate confetti pieces
     const pieces: ConfettiPiece[] = []
     for (let i = 0; i < 30; i++) {
-      const piece = {
+      pieces.push({
         id: i,
         x: new Animated.Value(Math.random() * screenWidth),
         y: new Animated.Value(-20),
@@ -51,19 +62,7 @@ export const OnboardingThankYouScreen = () => {
         scale: new Animated.Value(0),
         opacity: new Animated.Value(1),
         color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
-      }
-      
-      console.log(`🎉 Created piece ${i}:`, {
-        id: piece.id,
-        x: piece.x,
-        y: piece.y,
-        rotation: piece.rotation,
-        scale: piece.scale,
-        opacity: piece.opacity,
-        color: piece.color
       })
-      
-      pieces.push(piece)
     }
     
     console.log(`🎉 Generated ${pieces.length} confetti pieces`)
@@ -78,13 +77,6 @@ export const OnboardingThankYouScreen = () => {
         
         setTimeout(() => {
           console.log(`🎉 Animating piece ${index + 1}/${pieces.length}`)
-          console.log(`🎉 Piece ${index + 1} properties:`, {
-            x: piece.x,
-            y: piece.y,
-            rotation: piece.rotation,
-            scale: piece.scale,
-            opacity: piece.opacity
-          })
           
           // Create parallel animations
           const animations = [
@@ -146,16 +138,116 @@ export const OnboardingThankYouScreen = () => {
       }
     })
     
+    // Start content animations
+    const startContentAnimations = () => {
+      // Animate content fade in
+      Animated.timing(contentFadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }).start()
+
+      // Animate image with bounce effect
+      Animated.sequence([
+        Animated.timing(imageScaleAnim, {
+          toValue: 1.1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(imageScaleAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start()
+
+      // Animate image rotation
+      Animated.timing(imageRotateAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }).start(() => {
+        // After rotation completes, animate back to center
+        Animated.timing(imageRotateAnim, {
+          toValue: 0.5, // Center position (0.5 = no rotation)
+          duration: 500,
+          useNativeDriver: true,
+        }).start()
+      })
+
+      // Animate title slide in
+      setTimeout(() => {
+        Animated.timing(titleSlideAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }).start()
+      }, 200)
+
+      // Animate subtitle fade in
+      setTimeout(() => {
+        Animated.timing(subtitleFadeAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }).start()
+      }, 400)
+
+      // Animate features
+      setTimeout(() => {
+        Animated.timing(featuresAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }).start()
+      }, 600)
+
+      // Animate button
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(buttonScaleAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(buttonOpacityAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ]).start()
+      }, 800)
+    }
+
+    // Start animations after a short delay
+    setTimeout(() => {
+      startContentAnimations()
+    }, 300)
+    
     // Auto-trigger confetti on mount
     setTimeout(() => {
       console.log("🎉 Auto-triggering confetti...")
       triggerConfetti()
     }, 500)
-  }, [])
+  }, [contentFadeAnim, imageScaleAnim, imageRotateAnim, titleSlideAnim, subtitleFadeAnim, featuresAnim, buttonScaleAnim, buttonOpacityAnim])
 
   const handleGetStarted = () => {
     // Haptic feedback for navigation
     ReactNativeHapticFeedback.trigger("selection")
+    
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(buttonScaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start()
     
     // Track final onboarding action
     AnalyticsService.trackEvent({
@@ -180,8 +272,6 @@ export const OnboardingThankYouScreen = () => {
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
       />
-
-
 
       {/* Confetti */}
       <View style={styles.confettiContainer} pointerEvents="none">
@@ -219,26 +309,77 @@ export const OnboardingThankYouScreen = () => {
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: contentFadeAnim,
+          },
+        ]}
+      >
         {/* Celebration Image */}
-        <View style={styles.imageContainer}>
+        <Animated.View 
+          style={[
+            styles.imageContainer,
+            {
+              transform: [
+                { scale: imageScaleAnim },
+                                 {
+                   rotate: imageRotateAnim.interpolate({
+                     inputRange: [0, 0.5, 1],
+                     outputRange: ['-5deg', '0deg', '5deg'],
+                   }),
+                 },
+              ],
+            },
+          ]}
+        >
           <Image 
             source={require("../../../assets/Visu/Visu_Reading.png")}
             style={styles.celebrationImage}
             resizeMode="contain"
           />
-        </View>
+        </Animated.View>
 
         {/* Title */}
-        <Text style={styles.title}>You're All Set!</Text>
+        <Animated.Text 
+          style={[
+            styles.title,
+            {
+              transform: [{ translateY: titleSlideAnim }],
+            },
+          ]}
+        >
+          You're All Set!
+        </Animated.Text>
         
         {/* Subtitle */}
-        <Text style={styles.subtitle}>
+        <Animated.Text 
+          style={[
+            styles.subtitle,
+            {
+              opacity: subtitleFadeAnim,
+            },
+          ]}
+        >
           Welcome to Visu! We're excited to help you organize and share with your group.
-        </Text>
+        </Animated.Text>
 
         {/* Features List */}
-        <View style={styles.featuresContainer}>
+        <Animated.View 
+          style={[
+            styles.featuresContainer,
+            {
+              opacity: featuresAnim,
+              transform: [{
+                translateY: featuresAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [30, 0],
+                }),
+              }],
+            },
+          ]}
+        >
           <View style={styles.featureItem}>
             <Text style={styles.featureIcon}>📱</Text>
             <Text style={styles.featureText}>Snap photos to catalog items instantly</Text>
@@ -251,15 +392,23 @@ export const OnboardingThankYouScreen = () => {
             <Text style={styles.featureIcon}>👥</Text>
             <Text style={styles.featureText}>Share catalogs with your group</Text>
           </View>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
 
       {/* Get Started Button */}
-      <View style={styles.buttonContainer}>
+      <Animated.View 
+        style={[
+          styles.buttonContainer,
+          {
+            opacity: buttonOpacityAnim,
+            transform: [{ scale: buttonScaleAnim }],
+          },
+        ]}
+      >
         <TouchableOpacity style={styles.getStartedButton} onPress={handleGetStarted}>
           <Text style={styles.getStartedButtonText}>Get Started</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </Screen>
   )
 }
@@ -275,7 +424,6 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
   },
-
   confettiContainer: {
     position: "absolute",
     left: 0,

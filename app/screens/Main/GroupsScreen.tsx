@@ -110,7 +110,19 @@ export const GroupsScreen = ({ navigation, route }: any) => {
   }
 
   const handleCreateGroup = () => {
+    console.log(`🔍 [GroupsScreen] handleCreateGroup called`)
+    console.log(`👤 [GroupsScreen] User:`, user?.id)
+    console.log(`📊 [GroupsScreen] Subscription info:`, {
+      canCreateGroupNow: subscription.canCreateGroupNow,
+      groupsUsed: subscription.groupsUsed,
+      groupsLimit: subscription.groupsLimit,
+      subscriptionStatus: subscription.subscriptionStatus,
+      loading: subscription.loading,
+      error: subscription.error
+    })
+
     if (!user) {
+      console.log(`❌ [GroupsScreen] No user found`)
       setAlertTitle("Authentication Required")
       setAlertMessage("Please sign in to create a group.")
       setAlertConfirmStyle("default")
@@ -120,6 +132,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
 
     // Check subscription limits
     if (!subscription.canCreateGroupNow) {
+      console.log(`❌ [GroupsScreen] Group limit reached - showing alert`)
       setAlertTitle("Group Limit Reached")
       setAlertMessage("You've reached your group limit. Upgrade to Pro for unlimited groups!")
       setAlertConfirmStyle("destructive")
@@ -127,6 +140,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
       return
     }
 
+    console.log(`✅ [GroupsScreen] Can create group - navigating to CreateGroup`)
     navigation.navigate("CreateGroup")
   }
 

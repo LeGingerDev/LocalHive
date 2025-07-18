@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react"
-import { View, StyleSheet, StatusBar, TouchableOpacity, Dimensions, ScrollView, Image } from "react-native"
+import { View, StyleSheet, StatusBar, TouchableOpacity, Dimensions, ScrollView, Image, Animated } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import ReactNativeHapticFeedback from "react-native-haptic-feedback"
 import { LinearGradient } from "expo-linear-gradient"
@@ -47,10 +47,66 @@ export const OnboardingSlideshowScreen = () => {
   const scrollViewRef = useRef<ScrollView>(null)
   const isScrollingProgrammatically = useRef(false)
 
+  // Animation refs
+  const slideAnimations = useRef(slides.map(() => ({
+    opacity: new Animated.Value(0),
+    translateY: new Animated.Value(30),
+    scale: new Animated.Value(0.9),
+  }))).current
+
+  const progressAnim = useRef(new Animated.Value(0)).current
+  const buttonScaleAnim = useRef(new Animated.Value(0.8)).current
+  const buttonOpacityAnim = useRef(new Animated.Value(0)).current
+
   // Track screen view on mount
   React.useEffect(() => {
     AnalyticsService.trackScreenView({ screenName: "OnboardingSlideshow" })
+    
+    // Start initial animations
+    startSlideAnimation(0)
+    
+    // Animate progress and buttons
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(progressAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonScaleAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonOpacityAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]).start()
+    }, 300)
   }, [])
+
+  const startSlideAnimation = (index: number) => {
+    const animation = slideAnimations[index]
+    Animated.parallel([
+      Animated.timing(animation.opacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(animation.translateY, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(animation.scale, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start()
+  }
 
   const handleBack = () => {
     // Haptic feedback for navigation
@@ -68,6 +124,9 @@ export const OnboardingSlideshowScreen = () => {
       setTimeout(() => {
         isScrollingProgrammatically.current = false
       }, 300)
+      
+      // Start animation for previous slide
+      startSlideAnimation(prevIndex)
       
       // Track slide navigation
       AnalyticsService.trackEvent({
@@ -109,6 +168,9 @@ export const OnboardingSlideshowScreen = () => {
         isScrollingProgrammatically.current = false
       }, 300)
       
+      // Start animation for next slide
+      startSlideAnimation(nextIndex)
+      
       // Track slide navigation
       AnalyticsService.trackEvent({
         name: "onboarding_slide_navigation",
@@ -122,6 +184,20 @@ export const OnboardingSlideshowScreen = () => {
     } else {
       // Haptic feedback for completing onboarding
       ReactNativeHapticFeedback.trigger("notificationSuccess")
+      
+      // Button press animation
+      Animated.sequence([
+        Animated.timing(buttonScaleAnim, {
+          toValue: 0.95,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonScaleAnim, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start()
       
       // Track completion of slideshow
       AnalyticsService.trackEvent({
@@ -144,41 +220,60 @@ export const OnboardingSlideshowScreen = () => {
     const contentOffset = event.nativeEvent.contentOffset.x
     const index = Math.round(contentOffset / screenWidth)
     setCurrentIndex(index)
+    
+    // Start animation for current slide
+    startSlideAnimation(index)
   }
 
-  const renderSlide = (slide: Slide, index: number) => (
-    <View key={slide.id} style={styles.slide}>
-      {/* Illustration */}
-      <View style={styles.illustrationContainer}>
-        <Image 
-          source={
-            slide.id === 1 
-              ? require("../../../assets/Visu/Onboarding_ADD_GROUPS.png")
-              : slide.id === 2
-              ? require("../../../assets/Visu/Onboarding_ADD_ITEMS.png")
-              : require("../../../assets/Visu/Onboarding_AI_SEARCH.png")
-          }
-          style={styles.illustrationImage}
-          resizeMode="contain"
-        />
-      </View>
+  const renderSlide = (slide: Slide, index: number) => {
+    const animation = slideAnimations[index]
+    
+    return (
+      <Animated.View 
+        key={slide.id} 
+        style={[
+          styles.slide,
+          {
+            opacity: animation.opacity,
+            transform: [
+              { translateY: animation.translateY },
+              { scale: animation.scale },
+            ],
+          },
+        ]}
+      >
+        {/* Illustration */}
+        <View style={styles.illustrationContainer}>
+          <Image 
+            source={
+              slide.id === 1 
+                ? require("../../../assets/Visu/Onboarding_ADD_GROUPS.png")
+                : slide.id === 2
+                ? require("../../../assets/Visu/Onboarding_ADD_ITEMS.png")
+                : require("../../../assets/Visu/Onboarding_AI_SEARCH.png")
+            }
+            style={styles.illustrationImage}
+            resizeMode="contain"
+          />
+        </View>
 
-      {/* Text Content */}
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>
-          {slide.id === 2 ? (
-            <>
-              Snap and Catalog{"\n"}ANYTHING
-            </>
-          ) : (
-            slide.title
-          )}
-        </Text>
-        {slide.subtitle && <Text style={styles.subtitle}>{slide.subtitle}</Text>}
-        {slide.description && <Text style={styles.description}>{slide.description}</Text>}
-      </View>
-    </View>
-  )
+        {/* Text Content */}
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>
+            {slide.id === 2 ? (
+              <>
+                Snap and Catalog{"\n"}ANYTHING
+              </>
+            ) : (
+              slide.title
+            )}
+          </Text>
+          {slide.subtitle && <Text style={styles.subtitle}>{slide.subtitle}</Text>}
+          {slide.description && <Text style={styles.description}>{slide.description}</Text>}
+        </View>
+      </Animated.View>
+    )
+  }
 
   return (
     <Screen preset="fixed" contentContainerStyle={styles.container} safeAreaEdges={[]}>
@@ -222,7 +317,15 @@ export const OnboardingSlideshowScreen = () => {
       </ScrollView>
 
       {/* Navigation */}
-      <View style={styles.navigationContainer}>
+      <Animated.View 
+        style={[
+          styles.navigationContainer,
+          {
+            opacity: buttonOpacityAnim,
+            transform: [{ scale: buttonScaleAnim }],
+          },
+        ]}
+      >
         {/* Back Button */}
         <TouchableOpacity style={styles.skipButton} onPress={handleBack}>
           <Text style={styles.skipButtonText}>Back</Text>
@@ -231,11 +334,20 @@ export const OnboardingSlideshowScreen = () => {
         {/* Progress Dots */}
         <View style={styles.progressDots}>
           {slides.map((_, index) => (
-            <View
+            <Animated.View
               key={index}
               style={[
                 styles.dot,
                 index === currentIndex && styles.activeDot,
+                {
+                  transform: [{
+                    scale: index === currentIndex ? 
+                      progressAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.8, 1.2],
+                      }) : 1
+                  }],
+                },
               ]}
             />
           ))}
@@ -245,7 +357,7 @@ export const OnboardingSlideshowScreen = () => {
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
           <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </Screen>
   )
 }

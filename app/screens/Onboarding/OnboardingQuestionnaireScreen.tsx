@@ -1,5 +1,5 @@
-import React, { useState } from "react"
-import { View, StyleSheet, StatusBar, TouchableOpacity, ScrollView } from "react-native"
+import React, { useState, useRef } from "react"
+import { View, StyleSheet, StatusBar, TouchableOpacity, ScrollView, Animated } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import ReactNativeHapticFeedback from "react-native-haptic-feedback"
 
@@ -68,10 +68,153 @@ export const OnboardingQuestionnaireScreen = () => {
   const currentQuestion = questions[currentQuestionIndex]
   const selectedAnswer = answers[currentQuestion.id]
 
+  // Animation refs
+  const questionFadeAnim = useRef(new Animated.Value(0)).current
+  const questionSlideAnim = useRef(new Animated.Value(30)).current
+  const progressAnim = useRef(new Animated.Value(0)).current
+  const buttonScaleAnim = useRef(new Animated.Value(0.8)).current
+  const buttonOpacityAnim = useRef(new Animated.Value(0)).current
+
+  // Option animations - create animations for each option
+  const optionAnimations = useRef<{ wiggle: Animated.Value; float: Animated.Value; scale: Animated.Value; scaleIn: Animated.Value }[]>(
+    (() => {
+      const animations = [] as { wiggle: Animated.Value; float: Animated.Value; scale: Animated.Value; scaleIn: Animated.Value }[]
+      for (const question of questions) {
+        for (const option of question.options) {
+          animations.push({
+            wiggle: new Animated.Value(0),
+            float: new Animated.Value(0),
+            scale: new Animated.Value(1),
+            scaleIn: new Animated.Value(0.8),
+          })
+        }
+      }
+      return animations
+    })()
+  )
+
   // Track screen view on mount
   React.useEffect(() => {
     AnalyticsService.trackScreenView({ screenName: "OnboardingQuestionnaire" })
+    startQuestionAnimation()
   }, [])
+
+  // Animate when question changes
+  React.useEffect(() => {
+    startQuestionAnimation()
+  }, [currentQuestionIndex])
+
+  const startQuestionAnimation = () => {
+    // Reset animations
+    questionFadeAnim.setValue(0)
+    questionSlideAnim.setValue(30)
+    
+    // Reset option animations for current question
+    const startIndex = currentQuestionIndex * currentQuestion.options.length
+    for (let i = 0; i < currentQuestion.options.length; i++) {
+      const animIndex = startIndex + i
+      if (optionAnimations.current[animIndex]) {
+        optionAnimations.current[animIndex].wiggle.setValue(0)
+        optionAnimations.current[animIndex].float.setValue(0)
+        optionAnimations.current[animIndex].scale.setValue(1)
+        optionAnimations.current[animIndex].scaleIn.setValue(0.8)
+      }
+    }
+    
+    // Animate question
+    Animated.parallel([
+      Animated.timing(questionFadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(questionSlideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start()
+
+    // Animate each option's scale in, staggered
+    for (let i = 0; i < currentQuestion.options.length; i++) {
+      const animIndex = startIndex + i
+      if (optionAnimations.current[animIndex]) {
+        setTimeout(() => {
+          Animated.timing(optionAnimations.current[animIndex].scaleIn, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }).start()
+        }, i * 80)
+      }
+    }
+
+    // Animate progress
+    Animated.timing(progressAnim, {
+      toValue: (currentQuestionIndex + 1) / questions.length,
+      duration: 600,
+      useNativeDriver: false,
+    }).start()
+  }
+
+  const animateOptionSelection = (optionIndex: number) => {
+    const animIndex = currentQuestionIndex * currentQuestion.options.length + optionIndex
+    const animation = optionAnimations.current[animIndex]
+    
+    if (!animation) return
+
+    // Wiggle animation
+    const wiggleSequence = Animated.sequence([
+      Animated.timing(animation.wiggle, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(animation.wiggle, {
+        toValue: -1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(animation.wiggle, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ])
+
+    // Scale animation
+    const scaleSequence = Animated.sequence([
+      Animated.timing(animation.scale, {
+        toValue: 1.05,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(animation.scale, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ])
+
+    // Start wiggle and scale
+    Animated.parallel([wiggleSequence, scaleSequence]).start(() => {
+      // After wiggle, start floating animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(animation.float, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(animation.float, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start()
+    })
+  }
 
   const handleAnswerSelect = (optionIndex: number) => {
     // Haptic feedback for selection
@@ -94,6 +237,23 @@ export const OnboardingQuestionnaireScreen = () => {
       ...prev,
       [currentQuestion.id]: optionIndex
     }))
+
+    // Animate the selected option
+    animateOptionSelection(optionIndex)
+
+    // Animate button appearance
+    Animated.parallel([
+      Animated.timing(buttonScaleAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonOpacityAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start()
   }
 
   const handleNext = () => {
@@ -102,7 +262,25 @@ export const OnboardingQuestionnaireScreen = () => {
     // Haptic feedback for progression
     ReactNativeHapticFeedback.trigger("selection")
     
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(buttonScaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start()
+    
     if (currentQuestionIndex < questions.length - 1) {
+      // Reset button animations for next question
+      buttonScaleAnim.setValue(0.8)
+      buttonOpacityAnim.setValue(0)
+      
       // Track question progression
       AnalyticsService.trackEvent({
         name: "onboarding_question_progress",
@@ -139,6 +317,10 @@ export const OnboardingQuestionnaireScreen = () => {
     ReactNativeHapticFeedback.trigger("selection")
     
     if (currentQuestionIndex > 0) {
+      // Reset button animations for previous question
+      buttonScaleAnim.setValue(0.8)
+      buttonOpacityAnim.setValue(0)
+      
       // Track question navigation back
       AnalyticsService.trackEvent({
         name: "onboarding_question_navigation",
@@ -179,11 +361,20 @@ export const OnboardingQuestionnaireScreen = () => {
         {/* Progress Indicator */}
         <View style={styles.progressContainer}>
           {questions.map((_, index) => (
-            <View
+            <Animated.View
               key={index}
               style={[
                 styles.progressSegment,
-                index <= currentQuestionIndex && styles.progressSegmentActive
+                index <= currentQuestionIndex && styles.progressSegmentActive,
+                {
+                  transform: [{
+                    scale: index === currentQuestionIndex ? 
+                      progressAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.8, 1.2],
+                      }) : 1
+                  }],
+                },
               ]}
             />
           ))}
@@ -198,28 +389,67 @@ export const OnboardingQuestionnaireScreen = () => {
           showsVerticalScrollIndicator={false}
         >
           {/* Question */}
-          <Text style={styles.questionText}>{currentQuestion.question}</Text>
+          <Animated.Text 
+            style={[
+              styles.questionText,
+              {
+                opacity: questionFadeAnim,
+                transform: [{ translateY: questionSlideAnim }],
+              },
+            ]}
+          >
+            {currentQuestion.question}
+          </Animated.Text>
           
           {/* Answer Options */}
           <View style={styles.optionsContainer}>
-            {currentQuestion.options.map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.optionCard,
-                  selectedAnswer === index && styles.optionCardSelected
-                ]}
-                onPress={() => handleAnswerSelect(index)}
-                activeOpacity={0.8}
-              >
-                <Text style={[
-                  styles.optionText,
-                  selectedAnswer === index && styles.optionTextSelected
-                ]}>
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {currentQuestion.options.map((option, index) => {
+              const animIndex = currentQuestionIndex * currentQuestion.options.length + index
+              const animation = optionAnimations.current[animIndex]
+              return (
+                <Animated.View
+                  key={index}
+                  style={{
+                    transform: [
+                      {
+                        scale: animation?.scaleIn || 1,
+                      },
+                      {
+                        translateX: animation?.wiggle.interpolate({
+                          inputRange: [-1, 0, 1],
+                          outputRange: [-5, 0, 5],
+                        }) || 0,
+                      },
+                      {
+                        translateY: animation?.float.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -3],
+                        }) || 0,
+                      },
+                      {
+                        scale: animation?.scale || 1,
+                      },
+                    ],
+                  }}
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.optionCard,
+                      selectedAnswer === index && styles.optionCardSelected,
+                    ]}
+                    onPress={() => handleAnswerSelect(index)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[
+                      styles.optionText,
+                      selectedAnswer === index && styles.optionTextSelected
+                    ]}>
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              )
+            })}
           </View>
         </ScrollView>
 
@@ -232,7 +462,11 @@ export const OnboardingQuestionnaireScreen = () => {
           <TouchableOpacity 
             style={[
               styles.nextButton,
-              selectedAnswer === undefined && styles.nextButtonDisabled
+              selectedAnswer === undefined && styles.nextButtonDisabled,
+              {
+                opacity: buttonOpacityAnim,
+                transform: [{ scale: buttonScaleAnim }],
+              },
             ]} 
             onPress={handleNext}
             disabled={selectedAnswer === undefined}

@@ -4,6 +4,7 @@ import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 import { spacing } from "@/theme/spacing"
 import { useSubscription } from "@/hooks/useSubscription"
+import { useGroups } from "@/hooks/useGroups"
 import { Icon } from "@/components/Icon"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
 
@@ -24,11 +25,22 @@ export const QuickActions: FC<QuickActionsProps> = ({
 }) => {
   const { themed } = useAppTheme()
   const subscription = useSubscription(userId)
+  const { groups, loading: groupsLoading } = useGroups()
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const handleCreateGroup = () => {
+    console.log(`🔍 [QuickActions] handleCreateGroup called`)
+    console.log(`📊 [QuickActions] Subscription info:`, {
+      groupsUsed: subscription.groupsUsed,
+      groupsLimit: subscription.groupsLimit,
+      canCreateGroupNow: subscription.canCreateGroupNow,
+      subscriptionStatus: subscription.subscriptionStatus,
+      loading: subscription.loading
+    })
+
     // Only show alert if actually at the limit (groupsUsed >= groupsLimit)
     if (subscription.groupsUsed >= subscription.groupsLimit) {
+      console.log(`❌ [QuickActions] Group limit reached - showing alert`)
       Alert.alert(
         "Group Limit Reached",
         "You've reached your group limit. Upgrade to Pro for unlimited groups!",
@@ -40,6 +52,7 @@ export const QuickActions: FC<QuickActionsProps> = ({
       return
     }
     
+    console.log(`✅ [QuickActions] Can create group - calling onCreateGroup`)
     if (onCreateGroup) {
       onCreateGroup()
     }
@@ -101,13 +114,16 @@ export const QuickActions: FC<QuickActionsProps> = ({
     setIsCollapsed(!isCollapsed)
   }, [isCollapsed])
 
-  if (subscription.loading) {
+  if (subscription.loading || groupsLoading) {
     return (
       <View style={themed($container)}>
         <Text style={themed($loadingText)}>Loading...</Text>
       </View>
     )
   }
+
+  // Check if user has no groups
+  const hasNoGroups = groups.length === 0
 
   return (
     <View style={themed($container)}>
@@ -140,105 +156,128 @@ export const QuickActions: FC<QuickActionsProps> = ({
         </View>
       ) : (
         <View style={themed($actionsSection)}>
-          <View style={themed($actionsGrid)}>
-            <TouchableOpacity 
-              style={[
-                themed($actionButton), 
-                subscription.groupsUsed >= subscription.groupsLimit && themed($disabledButton)
-              ]} 
-              onPress={handleCreateGroup}
-              disabled={subscription.groupsUsed >= subscription.groupsLimit}
-              activeOpacity={0.8}
-            >
-              <View style={themed($actionIconContainer)}>
-                <Icon 
-                  icon="check" 
-                  size={24} 
-                  color={subscription.groupsUsed >= subscription.groupsLimit ? themed($disabledIconColor).color : themed($actionIconColor).color} 
-                />
-              </View>
-              <Text style={[
-                themed($actionText),
-                subscription.groupsUsed >= subscription.groupsLimit && themed($disabledText)
-              ]}>
-                Create Group
-              </Text>
-              {subscription.groupsUsed >= subscription.groupsLimit && (
-                <View style={themed($limitBadge)}>
-                  <Text style={themed($limitBadgeText)}>Limit Reached</Text>
+          {hasNoGroups ? (
+            // Show "Create your first group!" when user has no groups
+            <View style={themed($firstGroupContainer)}>
+              <Text style={themed($firstGroupText)}>Create your first group!</Text>
+              <TouchableOpacity 
+                style={themed($firstGroupButton)} 
+                onPress={handleCreateGroup}
+                activeOpacity={0.8}
+                testID="create-first-group-button"
+              >
+                <View style={themed($firstGroupButtonContent)}>
+                  <Icon icon="check" size={32} color="#FFFFFF" />
+                  <Text style={themed($firstGroupButtonText)}>Create Group</Text>
                 </View>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[
-                themed($actionButton), 
-                subscription.itemsUsed >= subscription.itemsLimit && themed($disabledButton)
-              ]} 
-              onPress={handleAddItem}
-              disabled={subscription.itemsUsed >= subscription.itemsLimit}
-              activeOpacity={0.8}
-            >
-              <View style={themed($actionIconContainer)}>
-                <Icon 
-                  icon="check" 
-                  size={24} 
-                  color={subscription.itemsUsed >= subscription.itemsLimit ? themed($disabledIconColor).color : themed($actionIconColor).color} 
-                />
-              </View>
-              <Text style={[
-                themed($actionText),
-                subscription.itemsUsed >= subscription.itemsLimit && themed($disabledText)
-              ]}>
-                Add Item
-              </Text>
-              {subscription.itemsUsed >= subscription.itemsLimit && (
-                <View style={themed($limitBadge)}>
-                  <Text style={themed($limitBadgeText)}>Limit Reached</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            // Show regular action grid when user has groups
+            <View style={themed($actionsGrid)}>
+              <TouchableOpacity 
+                style={[
+                  themed($actionButton), 
+                  subscription.groupsUsed >= subscription.groupsLimit && themed($disabledButton)
+                ]} 
+                onPress={handleCreateGroup}
+                disabled={subscription.groupsUsed >= subscription.groupsLimit}
+                activeOpacity={0.8}
+              >
+                <View style={themed($actionIconContainer)}>
+                  <Icon 
+                    icon="check" 
+                    size={24} 
+                    color={subscription.groupsUsed >= subscription.groupsLimit ? themed($disabledIconColor).color : themed($actionIconColor).color} 
+                  />
                 </View>
-              )}
-            </TouchableOpacity>
+                <Text style={[
+                  themed($actionText),
+                  subscription.groupsUsed >= subscription.groupsLimit && themed($disabledText)
+                ]}>
+                  Create Group
+                </Text>
+                {subscription.groupsUsed >= subscription.groupsLimit && (
+                  <View style={themed($limitBadge)}>
+                    <Text style={themed($limitBadgeText)}>Limit Reached</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={[
-                themed($actionButton), 
-                !subscription.canUseAISearchNow && themed($disabledButton)
-              ]} 
-              onPress={handleSearch}
-              disabled={!subscription.canUseAISearchNow}
-              activeOpacity={0.8}
-            >
-              <View style={themed($actionIconContainer)}>
-                <Icon 
-                  icon="lightning" 
-                  size={24} 
-                  color={!subscription.canUseAISearchNow ? themed($disabledIconColor).color : themed($actionIconColor).color} 
-                />
-              </View>
-              <Text style={[
-                themed($actionText),
-                !subscription.canUseAISearchNow && themed($disabledText)
-              ]}>
-                AI Search
-              </Text>
-              {!subscription.canUseAISearchNow && (
-                <View style={themed($limitBadge)}>
-                  <Text style={themed($limitBadgeText)}>Pro Only</Text>
+              <TouchableOpacity 
+                style={[
+                  themed($actionButton), 
+                  subscription.itemsUsed >= subscription.itemsLimit && themed($disabledButton)
+                ]} 
+                onPress={handleAddItem}
+                disabled={subscription.itemsUsed >= subscription.itemsLimit}
+                activeOpacity={0.8}
+              >
+                <View style={themed($actionIconContainer)}>
+                  <Icon 
+                    icon="check" 
+                    size={24} 
+                    color={subscription.itemsUsed >= subscription.itemsLimit ? themed($disabledIconColor).color : themed($actionIconColor).color} 
+                  />
                 </View>
-              )}
-            </TouchableOpacity>
+                <Text style={[
+                  themed($actionText),
+                  subscription.itemsUsed >= subscription.itemsLimit && themed($disabledText)
+                ]}>
+                  Add Item
+                </Text>
+                {subscription.itemsUsed >= subscription.itemsLimit && (
+                  <View style={themed($limitBadge)}>
+                    <Text style={themed($limitBadgeText)}>Limit Reached</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={themed($actionButton)} 
-              onPress={onViewGroups}
-              activeOpacity={0.8}
-            >
-              <View style={themed($actionIconContainer)}>
-                <Icon icon="view" size={24} color={themed($actionIconColor).color} />
-              </View>
-              <Text style={themed($actionText)}>View Groups</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity 
+                style={[
+                  themed($actionButton), 
+                  !subscription.canUseAISearchNow && themed($disabledButton)
+                ]} 
+                onPress={handleSearch}
+                disabled={!subscription.canUseAISearchNow}
+                activeOpacity={0.8}
+              >
+                <View style={themed($actionIconContainer)}>
+                  <Icon 
+                    icon="lightning" 
+                    size={24} 
+                    color={!subscription.canUseAISearchNow ? themed($disabledIconColor).color : themed($actionIconColor).color} 
+                  />
+                </View>
+                <Text style={[
+                  themed($actionText),
+                  !subscription.canUseAISearchNow && themed($disabledText)
+                ]}>
+                  AI Search
+                </Text>
+                {!subscription.canUseAISearchNow && (
+                  <View style={themed($limitBadge)}>
+                    <Text style={themed($limitBadgeText)}>Pro Only</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={themed($actionButton)} 
+                onPress={onViewGroups}
+                activeOpacity={0.8}
+              >
+                <View style={themed($actionIconContainer)}>
+                  <Icon 
+                    icon="view" 
+                    size={24} 
+                    color={themed($actionIconColor).color} 
+                  />
+                </View>
+                <Text style={themed($actionText)}>View Groups</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -252,15 +291,15 @@ const $container: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   marginHorizontal: spacing.md,
   marginVertical: spacing.sm,
   shadowColor: colors.text,
-  shadowOffset: { width: 0, height: 4 },
+  shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 0.1,
-  shadowRadius: 8,
-  elevation: 4,
+  shadowRadius: 4,
+  elevation: 3,
   overflow: "hidden",
 })
 
 const $headerGradient: ThemedStyle<ViewStyle> = () => ({
-  // TouchableOpacity wrapper for the gradient
+  width: "100%",
 })
 
 const $gradientContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
@@ -269,8 +308,8 @@ const $gradientContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
 
 const $headerContent: ThemedStyle<ViewStyle> = () => ({
   flexDirection: "row",
-  justifyContent: "space-between",
   alignItems: "center",
+  justifyContent: "space-between",
 })
 
 const $headerTextContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
@@ -280,59 +319,60 @@ const $headerTextContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
 })
 
 const $arrowIcon: ThemedStyle<{ transform: [{ rotate: string }] }> = () => ({
-  transform: [{ rotate: "90deg" }], // Rotate caretLeft to point down
+  transform: [{ rotate: "90deg" }],
 })
 
 const $headerTitle: ThemedStyle<TextStyle> = ({ typography }) => ({
   fontFamily: typography.primary.bold,
-  fontSize: 18,
+  fontSize: 16,
   color: "#FFFFFF",
 })
 
 const $actionsSection: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  padding: spacing.md,
   backgroundColor: colors.background,
+  padding: spacing.md,
 })
 
 const $collapsedContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  alignItems: "center",
-  paddingVertical: spacing.lg,
   backgroundColor: colors.background,
+  padding: spacing.md,
+  alignItems: "center",
 })
 
 const $collapsedText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.normal,
   fontSize: 14,
   color: colors.textDim,
-  fontStyle: "italic",
 })
 
 const $actionsGrid: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flexDirection: "row",
   flexWrap: "wrap",
-  gap: spacing.md,
+  gap: spacing.sm,
 })
 
 const $actionButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.cardColor,
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-  padding: spacing.sm,
+  borderRadius: 8,
+  padding: spacing.md,
   alignItems: "center",
   justifyContent: "center",
-  width: "47%",
-  minHeight: 70,
-  shadowOffset: { width: 0, height: 2 },
+  minWidth: 80,
+  flex: 1,
+  minHeight: 80,
+  borderWidth: 1,
+  borderColor: colors.palette.neutral200,
+  shadowColor: colors.text,
+  shadowOffset: { width: 0, height: 1 },
   shadowOpacity: 0.05,
-  shadowRadius: 4,
-  elevation: 2,
+  shadowRadius: 2,
+  elevation: 1,
 })
 
 const $disabledButton: ThemedStyle<ViewStyle> = ({ colors }) => ({
-  backgroundColor: colors.border + "20",
-  borderColor: colors.border,
-  opacity: 0.7,
+  backgroundColor: colors.palette.neutral100,
+  borderColor: colors.palette.neutral300,
+  opacity: 0.6,
 })
 
 const $actionIconContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
@@ -344,7 +384,7 @@ const $actionIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
 })
 
 const $disabledIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
-  color: colors.textDim,
+  color: colors.palette.neutral500,
 })
 
 const $actionText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
@@ -355,13 +395,13 @@ const $actionText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
 })
 
 const $disabledText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.textDim,
+  color: colors.palette.neutral500,
 })
 
 const $limitBadge: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  backgroundColor: colors.error + "20",
+  backgroundColor: colors.errorBackground,
   paddingHorizontal: spacing.xs,
-  paddingVertical: spacing.xxs,
+  paddingVertical: 2,
   borderRadius: 4,
   marginTop: spacing.xs,
 })
@@ -370,8 +410,6 @@ const $limitBadgeText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.medium,
   fontSize: 10,
   color: colors.error,
-  textTransform: "uppercase",
-  letterSpacing: 0.5,
 })
 
 const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
@@ -380,4 +418,45 @@ const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.textDim,
   textAlign: "center",
   padding: spacing.lg,
+})
+
+const $firstGroupContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  alignItems: "center",
+  padding: spacing.lg,
+  backgroundColor: colors.palette.neutral100,
+  borderRadius: 8,
+})
+
+const $firstGroupText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
+  color: colors.text,
+  marginBottom: spacing.md,
+  textAlign: "center",
+})
+
+const $firstGroupButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.tint,
+  borderRadius: 12,
+  paddingVertical: spacing.md,
+  paddingHorizontal: spacing.lg,
+  alignItems: "center",
+  justifyContent: "center",
+  shadowColor: colors.tint,
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.3,
+  shadowRadius: 8,
+  elevation: 6,
+})
+
+const $firstGroupButtonContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: spacing.sm,
+})
+
+const $firstGroupButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 16,
+  color: "#FFFFFF",
 }) 

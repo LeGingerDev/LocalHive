@@ -15,9 +15,10 @@ import googleAuthService from "@/services/supabase/googleAuthService"
 import { useAppTheme } from "@/theme/context"
 import { setSystemUIBackgroundColor } from "@/theme/context.utils"
 import { spacing } from "@/theme/spacing"
-import { SubscriptionService } from "@/services/subscriptionService"
+
 import { useSubscription } from "@/hooks/useSubscription"
 import SubscriptionManagementModal from "@/components/Subscription/SubscriptionManagementModal"
+import { PrivacySecurityModal } from "@/components/PrivacySecurityModal"
 import { Icon } from "@/components/Icon"
 import Ionicons from "react-native-vector-icons/Ionicons"
 
@@ -27,6 +28,7 @@ const ProfileScreen = () => {
   const { refreshUser, userProfile } = useAuth()
   const subscription = useSubscription(userProfile?.id || null)
   const [isManageModalVisible, setIsManageModalVisible] = useState(false)
+  const [isPrivacySecurityModalVisible, setIsPrivacySecurityModalVisible] = useState(false)
   // Set the status bar background color to match the header
   useEffect(() => {
     setSystemUIBackgroundColor(theme.colors.headerBackground)
@@ -48,49 +50,7 @@ const ProfileScreen = () => {
     }
   }
 
-  const handleDebugFree = async () => {
-    if (!userProfile?.id) {
-      Alert.alert("Error", "No user ID available")
-      return
-    }
 
-    try {
-      const { success, error } = await SubscriptionService.updateSubscriptionStatus(userProfile.id, "free")
-      if (error) {
-        Alert.alert("Error", `Failed to set to Free: ${error.message}`)
-      } else {
-        Alert.alert("Success", "Subscription set to Free")
-        // Refresh the page or trigger a refresh
-        window.location.reload()
-      }
-    } catch (err) {
-      Alert.alert("Error", "Something went wrong")
-    }
-  }
-
-  const handleDebugPro = async () => {
-    if (!userProfile?.id) {
-      Alert.alert("Error", "No user ID available")
-      return
-    }
-
-    try {
-      // Set expiration to 30 days from now
-      const expiresAt = new Date()
-      expiresAt.setDate(expiresAt.getDate() + 30)
-      
-      const { success, error } = await SubscriptionService.upgradeToPro(userProfile.id, expiresAt.toISOString())
-      if (error) {
-        Alert.alert("Error", `Failed to set to Pro: ${error.message}`)
-      } else {
-        Alert.alert("Success", "Subscription set to Pro")
-        // Refresh the page or trigger a refresh
-        window.location.reload()
-      }
-    } catch (err) {
-      Alert.alert("Error", "Something went wrong")
-    }
-  }
 
   const handleManageSubscription = () => {
     setIsManageModalVisible(true)
@@ -98,6 +58,14 @@ const ProfileScreen = () => {
 
   const handleCloseManageModal = () => {
     setIsManageModalVisible(false)
+  }
+
+  const handlePrivacySecurityPress = () => {
+    setIsPrivacySecurityModalVisible(true)
+  }
+
+  const handleClosePrivacySecurityModal = () => {
+    setIsPrivacySecurityModalVisible(false)
   }
 
   return (
@@ -118,7 +86,7 @@ const ProfileScreen = () => {
         <SettingsSection style={styles.settingsSection}>
           <ThemeToggle />
           <SettingsItem icon="notifications-outline" label="Notifications" />
-          <SettingsItem icon="lock-closed-outline" label="Privacy & Security" />
+          <SettingsItem icon="lock-closed-outline" label="Privacy & Security" onPress={handlePrivacySecurityPress} />
           <SettingsItem icon="help-circle-outline" label="Help & Support" />
           <SettingsItem icon="information-circle-outline" label="About Local Hive" />
           {subscription.isPro && (
@@ -151,18 +119,7 @@ const ProfileScreen = () => {
           <SettingsItem icon="log-out-outline" label="Sign Out" signOut onPress={handleSignOut} />
         </SettingsSection>
 
-        {/* Debug Section */}
-        <View style={[styles.debugSection, { backgroundColor: theme.colors.errorBackground }]}>
-          <Text style={styles.debugTitle}>🔧 Debug Tools</Text>
-          <View style={styles.debugButtons}>
-            <TouchableOpacity style={styles.debugButton} onPress={handleDebugFree}>
-              <Text style={styles.debugButtonText}>Free</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.debugButton} onPress={handleDebugPro}>
-              <Text style={styles.debugButtonText}>Pro</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+
       </ScrollView>
 
       {/* Subscription Management Modal */}
@@ -170,6 +127,12 @@ const ProfileScreen = () => {
         visible={isManageModalVisible}
         onClose={handleCloseManageModal}
         userId={userProfile?.id || null}
+      />
+
+      {/* Privacy & Security Modal */}
+      <PrivacySecurityModal
+        visible={isPrivacySecurityModalVisible}
+        onClose={handleClosePrivacySecurityModal}
       />
     </Screen>
   )
@@ -226,35 +189,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#333333",
   },
-  debugSection: {
-    borderRadius: 8,
-    padding: spacing.md,
-    marginTop: spacing.md,
-  },
-  debugTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: spacing.sm,
-    textAlign: "center",
-  },
-  debugButtons: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    gap: spacing.sm,
-  },
-  debugButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 6,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    flex: 1,
-    alignItems: "center",
-  },
-  debugButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "600",
-  },
+
 })
 
 export default ProfileScreen

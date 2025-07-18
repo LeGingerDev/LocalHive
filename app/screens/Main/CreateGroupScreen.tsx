@@ -31,7 +31,6 @@ export const CreateGroupScreen = ({ navigation }: any) => {
     name: "",
     description: "",
     category: "friends" as GroupCategory,
-    is_public: true,
     member_limit: "",
   })
 
@@ -50,7 +49,7 @@ export const CreateGroupScreen = ({ navigation }: any) => {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         category: formData.category,
-        is_public: formData.is_public,
+        is_public: true, // Default to public for now
         member_limit: formData.member_limit ? parseInt(formData.member_limit) : undefined,
       }
       const result = await createGroup(groupData)
@@ -155,33 +154,6 @@ export const CreateGroupScreen = ({ navigation }: any) => {
             style={themed($pickerContainer)}
             testID="categoryDropdown"
           /> */}
-          <Text style={themed($label)} text="Privacy" />
-          <View style={themed($privacyRow)}>
-            {[
-              { value: true, label: "Public" },
-              { value: false, label: "Private" },
-            ].map((opt) => (
-              <View key={opt.label} style={themed($privacyOption)}>
-                <Button
-                  style={[
-                    themed($privacyRadio),
-                    formData.is_public === opt.value && themed($privacyRadioActive),
-                  ]}
-                  textStyle={[
-                    themed($privacyRadioText),
-                    formData.is_public === opt.value && themed($privacyRadioTextActive),
-                  ]}
-                  onPress={() => setFormData((prev) => ({ ...prev, is_public: opt.value }))}
-                  text={opt.label}
-                />
-              </View>
-            ))}
-          </View>
-          <Text style={themed($privacyDesc)}>
-            {formData.is_public
-              ? "Anyone can find and join this group"
-              : "Only invited members can join"}
-          </Text>
           <Text style={themed($label)} text="Member Limit (Optional)" />
           <TextField
             placeholder="e.g. 50"

@@ -13,16 +13,19 @@ import { AnalyticsService } from "@/services/analyticsService"
 export const OnboardingEntryScreen = () => {
   const navigation = useNavigation<any>()
   
-
-  
-  // Animation for floating meerkat
+  // Animation refs
   const meerkatFloatAnim = useRef(new Animated.Value(0)).current
+  const contentFadeAnim = useRef(new Animated.Value(0)).current
+  const textSlideAnim = useRef(new Animated.Value(50)).current
+  const buttonScaleAnim = useRef(new Animated.Value(0.8)).current
+  const buttonOpacityAnim = useRef(new Animated.Value(0)).current
 
   // Start floating animation and track screen view
   useEffect(() => {
     // Track screen view
     AnalyticsService.trackScreenView({ screenName: "OnboardingEntry" })
     
+    // Start floating animation
     const startFloating = () => {
       Animated.loop(
         Animated.sequence([
@@ -40,12 +43,59 @@ export const OnboardingEntryScreen = () => {
       ).start()
     }
 
+    // Start content animations
+    const startContentAnimations = () => {
+      Animated.parallel([
+        Animated.timing(contentFadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(textSlideAnim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]).start()
+
+      // Stagger button animations
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(buttonScaleAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(buttonOpacityAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ]).start()
+      }, 400)
+    }
+
     startFloating()
-  }, [meerkatFloatAnim])
+    startContentAnimations()
+  }, [meerkatFloatAnim, contentFadeAnim, textSlideAnim, buttonScaleAnim, buttonOpacityAnim])
 
   const handleGetStarted = () => {
     // Haptic feedback for primary action
     ReactNativeHapticFeedback.trigger("selection")
+    
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(buttonScaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start()
     
     // Track analytics event
     AnalyticsService.trackEvent({
@@ -93,7 +143,18 @@ export const OnboardingEntryScreen = () => {
       {/* Main Content */}
       <View style={styles.content}>
         {/* Illustration Section */}
-        <View style={styles.illustrationContainer}>
+        <Animated.View 
+          style={[
+            styles.illustrationContainer,
+            {
+              opacity: contentFadeAnim,
+              transform: [{ translateY: contentFadeAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [30, 0],
+              }) }],
+            },
+          ]}
+        >
           <Animated.View
             style={[
               styles.meerkatContainer,
@@ -116,19 +177,35 @@ export const OnboardingEntryScreen = () => {
               onError={(error) => console.error("Image loading error:", error)}
             />
           </Animated.View>
-        </View>
+        </Animated.View>
 
         {/* Text Content Section */}
-        <View style={styles.textContainer}>
+        <Animated.View 
+          style={[
+            styles.textContainer,
+            {
+              opacity: contentFadeAnim,
+              transform: [{ translateY: textSlideAnim }],
+            },
+          ]}
+        >
           <Text style={styles.mainHeading}>We've All Been There</Text>
           <RNText style={styles.problemStatement}>"Get the usual one," no idea what they mean </RNText>
           <RNText style={styles.valueProposition}>
             Create visual guides so groups <RNText style={styles.boldText}>ALWAYS</RNText> know exactly what to get
           </RNText>
-        </View>
+        </Animated.View>
 
         {/* Call-to-Action Buttons */}
-        <View style={styles.buttonContainer}>
+        <Animated.View 
+          style={[
+            styles.buttonContainer,
+            {
+              opacity: buttonOpacityAnim,
+              transform: [{ scale: buttonScaleAnim }],
+            },
+          ]}
+        >
           <TouchableOpacity style={styles.primaryButton} onPress={handleGetStarted}>
             <Text style={styles.primaryButtonText}>Get started</Text>
           </TouchableOpacity>
@@ -136,7 +213,7 @@ export const OnboardingEntryScreen = () => {
           <TouchableOpacity style={styles.secondaryButton} onPress={handleExistingAccount}>
             <Text style={styles.secondaryButtonText}>I Already Have An Account</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </View>
     </Screen>
   )
@@ -223,22 +300,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     borderRadius: 12,
     alignItems: "center",
-    shadowColor: colors.palette.primary500,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
+    shadowColor: colors.palette.neutral800,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 8,
+    elevation: 6,
   },
   primaryButtonText: {
-    color: colors.palette.neutral100,
     fontSize: 18,
-    fontFamily: typography.primary.semiBold,
+    fontFamily: typography.primary.bold,
+    color: colors.palette.neutral100,
   },
   secondaryButton: {
-    backgroundColor: "transparent",
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.xl,
     borderRadius: 12,
@@ -247,8 +320,8 @@ const styles = StyleSheet.create({
     borderColor: colors.palette.primary500,
   },
   secondaryButtonText: {
-    color: colors.palette.primary500,
     fontSize: 16,
     fontFamily: typography.primary.medium,
+    color: colors.palette.primary500,
   },
 }) 

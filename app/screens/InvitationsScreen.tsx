@@ -219,18 +219,7 @@ const $headerActions = (): ViewStyle => ({
   alignItems: "center",
   gap: spacing.sm,
 })
-const $debugButton = ({ colors }: any): ViewStyle => ({
-  backgroundColor: colors.error,
-  borderRadius: 8,
-  paddingVertical: spacing.xs,
-  paddingHorizontal: spacing.md,
-})
-const $debugButtonText = ({ typography, colors }: any): TextStyle => ({
-  color: colors.background,
-  fontFamily: typography.primary.medium,
-  fontSize: 14,
-  textAlign: "center",
-})
+
 const $loadingContainer = ({ spacing }: any): ViewStyle => ({
   paddingVertical: spacing.lg,
   alignItems: "center",

@@ -166,14 +166,18 @@ export class SubscriptionService {
     error: PostgrestError | null
   }> {
     try {
+      console.log(`🔍 [SubscriptionService] Getting subscription info for user: ${userId}`)
+      
       const { data, error } = await supabase.rpc("get_user_subscription_info", {
         user_uuid: userId,
       })
 
       if (error) {
-        console.error("Error getting subscription info:", error)
+        console.error("❌ [SubscriptionService] Error getting subscription info:", error)
         return { info: null, error }
       }
+
+      console.log(`📊 [SubscriptionService] Raw data from get_user_subscription_info:`, data)
 
       // The function returns a single row with all subscription info
       const info: SubscriptionInfo = {
@@ -190,9 +194,21 @@ export class SubscriptionService {
         subscription_expires_at: data?.[0]?.subscription_expires_at || null,
       }
 
+      console.log(`✅ [SubscriptionService] Processed subscription info:`, {
+        subscription_status: info.subscription_status,
+        groups_count: info.groups_count,
+        max_groups: info.max_groups,
+        can_create_group: info.can_create_group,
+        items_count: info.items_count,
+        max_items: info.max_items,
+        can_create_item: info.can_create_item,
+        ai_search_enabled: info.ai_search_enabled,
+        can_use_ai: info.can_use_ai
+      })
+
       return { info, error: null }
     } catch (error) {
-      console.error("Error getting subscription info:", error)
+      console.error("❌ [SubscriptionService] Error getting subscription info:", error)
       return {
         info: null,
         error: error as PostgrestError,
@@ -493,7 +509,7 @@ export class SubscriptionService {
   }
 
   /**
-   * Check if user is approaching limits (for upgrade prompts)
+   * Check if user is approaching limits
    */
   static async isApproachingLimits(userId: string): Promise<{
     approaching: boolean
@@ -505,37 +521,37 @@ export class SubscriptionService {
   }> {
     try {
       const { info, error } = await this.getSubscriptionInfo(userId)
-
-      if (error || !info) {
+      
+      if (error) {
         return { approaching: false, details: null, error }
       }
 
-      const groupsPercentage = (info.groups_count / info.max_groups) * 100
-      const itemsPercentage = (info.items_count / info.max_items) * 100
+      if (!info) {
+        return { approaching: false, details: null, error: null }
+      }
+
+      const groupsPercentage = info.max_groups > 0 ? (info.groups_count / info.max_groups) * 100 : 0
+      const itemsPercentage = info.max_items > 0 ? (info.items_count / info.max_items) * 100 : 0
 
       const approaching = groupsPercentage >= 80 || itemsPercentage >= 80
 
-      const details = {
+      const details = approaching ? {
         groups: {
           current: info.groups_count,
           max: info.max_groups,
-          percentage: groupsPercentage,
+          percentage: groupsPercentage
         },
         items: {
           current: info.items_count,
           max: info.max_items,
-          percentage: itemsPercentage,
-        },
-      }
+          percentage: itemsPercentage
+        }
+      } : null
 
       return { approaching, details, error: null }
     } catch (error) {
       console.error("Error checking approaching limits:", error)
-      return {
-        approaching: false,
-        details: null,
-        error: error as PostgrestError,
-      }
+      return { approaching: false, details: null, error: error as PostgrestError }
     }
   }
 } 

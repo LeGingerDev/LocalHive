@@ -7,6 +7,7 @@ import {
   View,
   Text,
   Alert,
+  TouchableOpacity,
 } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 
@@ -100,6 +101,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
   const handleCloseManageModal = useCallback(() => {
     setIsManageModalVisible(false)
   }, [])
+
   // #endregion
 
   // #region Effects

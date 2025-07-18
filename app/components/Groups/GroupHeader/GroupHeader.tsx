@@ -169,14 +169,7 @@ export const GroupHeader: FC<GroupHeaderProps> = memo((props) => {
         testID={`${testID}_description`}
       />
 
-      {/* Debug info in development */}
-      {__DEV__ && data && (
-        <Text
-          style={themed($debugText)}
-          text={`ID: ${data.id ?? "N/A"}`}
-          testID={`${testID}_debugInfo`}
-        />
-      )}
+
     </View>
   )
 
@@ -265,13 +258,7 @@ const $emptyText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontStyle: "italic",
 })
 
-const $debugText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 12,
-  color: colors.textDim,
-  marginTop: spacing.xs,
-  opacity: 0.7,
-})
+
 
 const $activityIndicator: ThemedStyle<ViewStyle> = () => ({
   // Color is passed directly to ActivityIndicator component

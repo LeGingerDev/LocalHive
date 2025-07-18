@@ -216,11 +216,11 @@ export function App() {
             <StatusBarManager />
             <AuthProvider>
               <AlertProvider>
-                <AppNavigator
-                  linking={linking}
-                  initialState={initialNavigationState}
-                  onStateChange={onNavigationStateChange}
-                />
+                  <AppNavigator
+                    linking={linking}
+                    initialState={initialNavigationState}
+                    onStateChange={onNavigationStateChange}
+                  />
               </AlertProvider>
             </AuthProvider>
           </ThemeProvider>

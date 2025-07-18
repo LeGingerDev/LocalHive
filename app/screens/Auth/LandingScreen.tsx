@@ -8,6 +8,7 @@ import { CustomGradient } from "@/components/CustomGradient"
 import { RoundedButton } from "@/components/RoundedButton"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
+import { LegalModals } from "@/components/LegalModals"
 import { useAuth } from "@/context/AuthContext"
 import googleAuthService from "@/services/supabase/googleAuthService"
 import { hideNavigationBar } from "@/utils/navigationBarUtils"
@@ -44,6 +45,10 @@ export const LandingScreen = () => {
   const [alertConfirmStyle, setAlertConfirmStyle] = useState<"default" | "destructive" | "success">(
     "default",
   )
+
+  // Legal Modals state
+  const [isTermsModalVisible, setIsTermsModalVisible] = useState(false)
+  const [isPrivacyModalVisible, setIsPrivacyModalVisible] = useState(false)
 
   useEffect(() => {
     hideNavigationBar()
@@ -227,11 +232,11 @@ export const LandingScreen = () => {
           <View style={styles.legalContainer}>
             <Text style={styles.legalText}>
               By continuing, you agree to our{"\n"}
-              <Text style={styles.legalLink} onPress={() => {}}>
+              <Text style={styles.legalLink} onPress={() => setIsTermsModalVisible(true)}>
                 Terms of Service
               </Text>{" "}
               and{" "}
-              <Text style={styles.legalLink} onPress={() => {}}>
+              <Text style={styles.legalLink} onPress={() => setIsPrivacyModalVisible(true)}>
                 Privacy Policy
               </Text>
             </Text>
@@ -246,6 +251,14 @@ export const LandingScreen = () => {
         confirmText="OK"
         confirmStyle={alertConfirmStyle}
         onConfirm={() => setAlertVisible(false)}
+      />
+
+      {/* Legal Modals */}
+      <LegalModals
+        termsVisible={isTermsModalVisible}
+        privacyVisible={isPrivacyModalVisible}
+        onCloseTerms={() => setIsTermsModalVisible(false)}
+        onClosePrivacy={() => setIsPrivacyModalVisible(false)}
       />
     </Screen>
   )
