@@ -538,7 +538,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
                 <Text style={themed($emptyItemsText)} text="No items yet" />
                 <Text
                   style={themed($emptyItemsSubtext)}
-                  text="Click 'Add' above or use the button below to add your first item!"
+                  text="Click 'Add' above to add your first item."
                 />
               </View>
             )}

@@ -44,7 +44,7 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
   const [query, setQuery] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [results, setResults] = useState<ItemWithProfile[]>([])
+  const [results, setResults] = useState<(ItemWithProfile & { group_name?: string })[]>([])
   const [isAIMode, setIsAIMode] = useState(() => {
     // Only enable AI mode by default if user is pro and explicitly requested
     const requestedAI = route.params?.enableAI || false
@@ -110,7 +110,10 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
             const items = await searchItemsByVector(text)
             console.log("[SearchScreen] Search results:", items)
             console.log("[SearchScreen] Number of results:", items.length)
-            setResults(items)
+            
+            // Fetch group names for the search results
+            const itemsWithGroupNames = await fetchGroupNamesForItems(items)
+            setResults(itemsWithGroupNames)
           } catch (e) {
             console.error("[SearchScreen] Search error:", e)
             setError("Failed to search. Please try again.")
@@ -154,7 +157,10 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
 
       const aiResponse = await askAIAboutItems(query, allItems)
       setAiResponse(aiResponse)
-      setResults(aiResponse.relatedItems || [])
+      
+      // Fetch group names for AI search results
+      const itemsWithGroupNames = await fetchGroupNamesForItems(aiResponse.relatedItems || [])
+      setResults(itemsWithGroupNames)
     } catch (e) {
       console.error("[SearchScreen] AI error:", e)
       setError("Failed to get AI response. Please try again.")
@@ -164,6 +170,42 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
   }, [query])
 
   // Handle search mode switch
+  // Function to fetch group names for search results
+  const fetchGroupNamesForItems = useCallback(async (items: ItemWithProfile[]) => {
+    if (items.length === 0) return items
+
+    try {
+      // Get unique group IDs from the items
+      const groupIds = [...new Set(items.map(item => item.group_id))]
+
+      // Fetch group names
+      const { data: groups, error: groupsError } = await supabase
+        .from("groups")
+        .select("id, name")
+        .in("id", groupIds)
+
+      if (groupsError) {
+        console.error("Error fetching group names:", groupsError)
+        return items
+      }
+
+      // Create a map of group ID to group name
+      const groupMap = new Map()
+      groups?.forEach(group => {
+        groupMap.set(group.id, group.name)
+      })
+
+      // Add group names to items
+      return items.map(item => ({
+        ...item,
+        group_name: groupMap.get(item.group_id)
+      }))
+    } catch (error) {
+      console.error("Error fetching group names:", error)
+      return items
+    }
+  }, [])
+
   const handleModeSwitch = useCallback(() => {
     const newMode = !isAIMode
 
@@ -214,9 +256,9 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
     setAiResponse(null) // Clear AI response
   }, [isAIMode, query, trackEvent, events.SEARCH_MODE_SWITCHED, subscription.isPro, showAlert])
 
-  const renderItem = useCallback(({ item }: { item: ItemWithProfile }) => (
-    <ItemCard item={item} />
-  ), [])
+  const renderItem = useCallback(({ item }: { item: ItemWithProfile & { group_name?: string } }) => {
+    return <ItemCard item={item} groupName={item.group_name} />
+  }, [])
 
   const renderEmptyState = useCallback(() => {
     if (isLoading) {

@@ -349,6 +349,7 @@ const $actionsGrid: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flexDirection: "row",
   flexWrap: "wrap",
   gap: spacing.sm,
+  justifyContent: "space-between",
 })
 
 const $actionButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
@@ -357,8 +358,7 @@ const $actionButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   padding: spacing.md,
   alignItems: "center",
   justifyContent: "center",
-  minWidth: 80,
-  flex: 1,
+  width: "48%",
   minHeight: 80,
   borderWidth: 1,
   borderColor: colors.palette.neutral200,

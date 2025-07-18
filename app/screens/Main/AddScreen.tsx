@@ -608,7 +608,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
             />
             <Text
               style={themed($notesHint)}
-              text="The more details you add, the more helpful it is for your group"
+              text="The more details you add, the more helpful it is for your group and AI recognition"
             />
           </>
         )}

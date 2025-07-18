@@ -58,7 +58,20 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
         NSCameraUsageDescription: "This app uses the camera to scan items and add them to your groups.",
         NSPhotoLibraryUsageDescription: "This app accesses your photo library to select images for items.",
         NSMicrophoneUsageDescription: "This app may use the microphone for voice input.",
+        CFBundleURLTypes: [
+          {
+            CFBundleURLName: "com.legingerdev.visu",
+            CFBundleURLSchemes: ["com.legingerdev.visu"]
+          }
+        ],
+        LSApplicationQueriesSchemes: [
+          "googlechromes",
+          "firefox",
+          "opera-http",
+          "opera-https"
+        ]
       },
+      googleServicesFile: "./ios/GoogleService-Info.plist",
     },
     android: {
       ...config.android,

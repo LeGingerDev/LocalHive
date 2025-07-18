@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext"
 import googleAuthService from "@/services/supabase/googleAuthService"
 import { hideNavigationBar } from "@/utils/navigationBarUtils"
 import { useSafeAreaInsetsStyle } from "@/utils/useSafeAreaInsetsStyle"
+import { useDemoMode } from "@/hooks/useDemoMode"
 
 // Get screen dimensions
 const { height } = Dimensions.get("window")
@@ -34,9 +35,13 @@ export const LandingScreen = () => {
   const navigation = useNavigation<any>()
   const { refreshUser } = useAuth()
   const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false)
+  const [isDemoSigningIn, setIsDemoSigningIn] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
   const translateYAnim = useRef(new Animated.Value(50)).current
   const $containerInsets = useSafeAreaInsetsStyle(["top", "bottom"])
+
+  // Demo mode hook
+  const { isDemoEnabled, isLoading: isDemoLoading, signInWithDemo } = useDemoMode()
 
   // Alert state
   const [alertVisible, setAlertVisible] = useState(false)
@@ -136,6 +141,35 @@ export const LandingScreen = () => {
     }
   }
 
+  const handleDemoSignIn = async () => {
+    if (isDemoSigningIn) return
+
+    setIsDemoSigningIn(true)
+    try {
+      const result = await signInWithDemo()
+
+      if (result.success) {
+        // Refresh user state to ensure it's properly updated
+        await refreshUser()
+
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Main" }],
+        })
+      } else {
+        showAlert(
+          "Demo Sign-In Failed",
+          result.error || "An error occurred during demo sign-in. Please try again.",
+        )
+      }
+    } catch (error) {
+      console.error("Demo sign-in error:", error)
+      showAlert("Demo Sign-In Error", "An unexpected error occurred. Please try again.")
+    } finally {
+      setIsDemoSigningIn(false)
+    }
+  }
+
   return (
     <Screen preset="fixed" contentContainerStyle={styles.container} safeAreaEdges={[]}>
       <CustomGradient
@@ -196,6 +230,23 @@ export const LandingScreen = () => {
                 disabled={isGoogleSigningIn}
               />
             </View>
+
+            {/* Demo Mode Button - Only visible when demo is enabled */}
+            {isDemoEnabled && (
+              <View style={styles.buttonWrapper}>
+                <View style={styles.iconContainer}>
+                  <FontAwesome name="play" size={20} color="#007AFF" />
+                </View>
+                <RoundedButton
+                  text={isDemoSigningIn ? "Loading Demo..." : "Try Demo"}
+                  preset="primary"
+                  onPress={handleDemoSignIn}
+                  style={styles.authButton}
+                  loading={isDemoSigningIn}
+                  disabled={isDemoSigningIn || isGoogleSigningIn}
+                />
+              </View>
+            )}
           </View>
 
           {/* Features List */}
