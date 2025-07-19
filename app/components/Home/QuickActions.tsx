@@ -1,5 +1,5 @@
-import React, { FC, useState, useCallback } from "react"
-import { View, Text, TouchableOpacity, Alert, ViewStyle, TextStyle } from "react-native"
+import React, { FC, useState, useCallback, useEffect, useRef } from "react"
+import { View, Text, TouchableOpacity, Alert, ViewStyle, TextStyle, Animated } from "react-native"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 import { spacing } from "@/theme/spacing"
@@ -27,6 +27,54 @@ export const QuickActions: FC<QuickActionsProps> = ({
   const subscription = useSubscription(userId)
   const { groups, loading: groupsLoading } = useGroups()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  
+  // Animation refs for pulsating effect
+  const pulseAnim = useRef(new Animated.Value(1)).current
+  const scaleAnim = useRef(new Animated.Value(1)).current
+
+  // Pulsating animation effect
+  useEffect(() => {
+    const startPulseAnimation = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start()
+    }
+
+    // Start the pulsating animation
+    startPulseAnimation()
+
+    return () => {
+      pulseAnim.stopAnimation()
+    }
+  }, [pulseAnim])
+
+  // Scale animation for button press
+  const handleButtonPressIn = () => {
+    Animated.timing(scaleAnim, {
+      toValue: 0.95,
+      duration: 100,
+      useNativeDriver: true,
+    }).start()
+  }
+
+  const handleButtonPressOut = () => {
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 100,
+      useNativeDriver: true,
+    }).start()
+  }
 
   const handleCreateGroup = () => {
     console.log(`🔍 [QuickActions] handleCreateGroup called`)
@@ -160,17 +208,29 @@ export const QuickActions: FC<QuickActionsProps> = ({
             // Show "Create your first group!" when user has no groups
             <View style={themed($firstGroupContainer)}>
               <Text style={themed($firstGroupText)}>Create your first group!</Text>
-              <TouchableOpacity 
-                style={themed($firstGroupButton)} 
-                onPress={handleCreateGroup}
-                activeOpacity={0.8}
-                testID="create-first-group-button"
+              <Animated.View
+                style={[
+                  themed($firstGroupButton),
+                  {
+                    transform: [
+                      { scale: Animated.multiply(pulseAnim, scaleAnim) }
+                    ]
+                  }
+                ]}
               >
-                <View style={themed($firstGroupButtonContent)}>
-                  <Icon icon="check" size={32} color="#FFFFFF" />
-                  <Text style={themed($firstGroupButtonText)}>Create Group</Text>
-                </View>
-              </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={handleCreateGroup}
+                  onPressIn={handleButtonPressIn}
+                  onPressOut={handleButtonPressOut}
+                  activeOpacity={1}
+                  testID="create-first-group-button"
+                >
+                  <View style={themed($firstGroupButtonContent)}>
+                    <Icon icon="check" size={32} color="#FFFFFF" />
+                    <Text style={themed($firstGroupButtonText)}>Create Group</Text>
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           ) : (
             // Show regular action grid when user has groups

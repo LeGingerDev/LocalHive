@@ -17,7 +17,7 @@
   "android": {
     "icon": "./assets/images/app-icon-android-legacy.png",
     "package": "com.legingerdev.visu",
-    "versionCode": 1,
+    "versionCode": 2,
     "googleServicesFile": "./android/app/google-services.json",
     "adaptiveIcon": {
       "foregroundImage": "./assets/images/app-icon-android-adaptive-foreground.png",

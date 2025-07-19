@@ -1,4 +1,4 @@
-import React, { FC, memo, useCallback, useState } from "react"
+import React, { FC, memo, useCallback, useState, forwardRef, useImperativeHandle } from "react"
 import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator, TouchableOpacity } from "react-native"
 
 import { ItemCard } from "@/components/ItemCard"
@@ -32,6 +32,10 @@ export interface RecentActivitySectionProps {
    */
   testID?: string
 }
+
+export interface RecentActivitySectionRef {
+  refresh: () => void
+}
 // #endregion
 
 // #region Component
@@ -47,8 +51,9 @@ export interface RecentActivitySectionProps {
  * - Memoized for performance
  * - Wrapped in Card component for consistency
  * - Uses ItemCard for visual consistency
+ * - Supports ref for external refresh
  */
-export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props) => {
+export const RecentActivitySection = forwardRef<RecentActivitySectionRef, RecentActivitySectionProps>((props, ref) => {
   // #region Props Destructuring with Defaults
   const {
     style,
@@ -63,6 +68,11 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
   const { items, loading, error, refresh } = useRecentItemsFromAllGroups(limit)
   const [isCollapsed, setIsCollapsed] = useState(false)
   // #endregion
+
+  // Expose refresh method to parent component
+  useImperativeHandle(ref, () => ({
+    refresh,
+  }), [refresh])
 
   // #region Event Handlers
   const _handleItemPress = useCallback((item: RecentItemWithGroup) => {

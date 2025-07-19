@@ -21,6 +21,7 @@ export interface ScreenViewEvent {
 export class AnalyticsService {
   private static analyticsInstance: any = null
   private static isInitialized = false
+  private static flushCounter: number = 0 // Counter for forced flushes
 
   /**
    * Initialize analytics
@@ -74,59 +75,33 @@ export class AnalyticsService {
   }
 
   /**
-   * Track a custom event
+   * Track an analytics event
    */
   static async trackEvent(event: AnalyticsEvent): Promise<void> {
     try {
-      console.log('[Analytics] Attempting to track event:', event.name)
+      if (__DEV__) {
+        console.log('[Analytics] 📊 Tracking event:', event.name, event.properties)
+      }
       
       const analytics = await this.getAnalyticsInstance()
       
-      // Additional debug info for development
-      if (__DEV__) {
-        try {
-          const appInstanceId = await getAppInstanceId(analytics)
-          console.log('[Analytics] App Instance ID:', appInstanceId)
-        } catch (idError) {
-          console.log('[Analytics] Could not get App Instance ID:', idError)
-        }
-        
-        // Test network connectivity to Firebase
-        try {
-          const controller = new AbortController()
-          const timeoutId = setTimeout(() => controller.abort(), 5000)
-          
-          const response = await fetch('https://www.google-analytics.com/g/collect', {
-            method: 'HEAD',
-            signal: controller.signal,
-          })
-          clearTimeout(timeoutId)
-          console.log('[Analytics] Network test to Google Analytics:', response.status)
-        } catch (networkError) {
-          console.error('[Analytics] Network test failed:', networkError)
-        }
-      }
-      
       // Log the event to Firebase
       await logEvent(analytics, event.name, event.properties)
-      console.log('[Analytics] ✅ Event logged to Firebase:', event.name, event.properties)
       
-      // Force flush in development
       if (__DEV__) {
-        // Try to force a flush by enabling collection again
-        await setAnalyticsCollectionEnabled(analytics, true)
-        console.log('[Analytics] Forced analytics flush')
+        console.log('[Analytics] ✅ Event logged to Firebase:', event.name, event.properties)
         
-        // Add a small delay to allow events to be sent
-        setTimeout(async () => {
-          try {
-            // Force another flush
-            await setAnalyticsCollectionEnabled(analytics, true)
-            console.log('[Analytics] Secondary flush completed')
-          } catch (flushError) {
-            console.error('[Analytics] Secondary flush failed:', flushError)
+        // Only force flush occasionally in development to reduce noise
+        // Use a simple counter to limit flush frequency
+        if (!this.flushCounter) this.flushCounter = 0
+        this.flushCounter++
+        
+        if (this.flushCounter % 5 === 0) { // Only flush every 5th event
+          await setAnalyticsCollectionEnabled(analytics, true)
+          if (__DEV__) {
+            console.log('[Analytics] Forced analytics flush (every 5th event)')
           }
-        }, 1000)
+        }
       }
       
     } catch (error) {
@@ -284,6 +259,7 @@ export class AnalyticsService {
       // Re-initialize analytics
       this.isInitialized = false
       this.analyticsInstance = null
+      this.flushCounter = 0 // Reset flush counter
       
       const analytics = await this.initializeAnalytics()
       console.log('[Analytics] ✅ Session reset completed')

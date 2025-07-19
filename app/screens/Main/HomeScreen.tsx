@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect, useCallback } from "react"
+import React, { FC, useState, useEffect, useCallback, useRef } from "react"
 import {
   ViewStyle,
   TextStyle,
@@ -15,7 +15,7 @@ import { Header } from "@/components/Header"
 import { Screen } from "@/components/Screen"
 import { SubscriptionStatusBox } from "@/components/Subscription"
 import SubscriptionManagementModal from "@/components/Subscription/SubscriptionManagementModal"
-import { QuickActions, WelcomeMessage, RecentActivitySection } from "@/components/Home"
+import { QuickActions, WelcomeMessage, RecentActivitySection, type RecentActivitySectionRef } from "@/components/Home"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
@@ -53,6 +53,9 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
   const { trackScreenView } = useAnalytics()
   const { user } = useAuth()
   const subscription = useSubscription(user?.id || null)
+  
+  // Ref for RecentActivitySection to refresh data
+  const recentActivityRef = useRef<RecentActivitySectionRef | null>(null)
   // #endregion
 
   // #region Data Fetching Functions
@@ -122,6 +125,10 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
       if (user?.id) {
         console.log("[HomeScreen] Screen focused - refreshing subscription data")
         subscription.refresh()
+        // Refresh recent activity data
+        if (recentActivityRef.current) {
+          recentActivityRef.current.refresh()
+        }
       }
     }, [user?.id]) // Only depend on user?.id, not the subscription object
   )
@@ -178,7 +185,10 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
         />
 
         {/* Recent Activity Section */}
-        <RecentActivitySection limit={5} />
+        <RecentActivitySection 
+          limit={5} 
+          ref={recentActivityRef}
+        />
 
         {/* Tips Section */}
         <View style={themed($tipsSection)}>

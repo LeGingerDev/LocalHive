@@ -47,8 +47,9 @@
     "production": {
       "environment": "production",
       "android": {
-        "buildType": "apk",
-        "credentialsSource": "remote"
+        "buildType": "app-bundle",
+        "credentialsSource": "remote",
+        "autoIncrement": "versionCode"
       }
     }
   },

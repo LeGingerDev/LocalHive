@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "1006015403522-pbkmqr6jppn8vntub2r8nltbu4asnv84.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.legingerdev.visu",
+            "certificate_hash": "03033cdd089d38242b3f53b579e8ff9aa28564ba"
+          }
+        },
+        {
           "client_id": "1006015403522-gjk15libsl177luc6112eb08dgsm5oim.apps.googleusercontent.com",
           "client_type": 3
         }

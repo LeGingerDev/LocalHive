@@ -166,21 +166,21 @@ export function App() {
           },
         })
         
-        // Get debug info
+        // Get debug info only once on startup
         if (__DEV__) {
           await AnalyticsService.getDebugInfo()
         }
         
-        // Force flush events
+        // Single flush after initialization instead of multiple
         if (__DEV__) {
           setTimeout(async () => {
             try {
               await setAnalyticsCollectionEnabled(analytics, true)
-              console.log('[App] Forced analytics flush')
+              console.log('[App] Initial analytics flush completed')
             } catch (flushError) {
               console.error('[App] Failed to flush analytics:', flushError)
             }
-          }, 1000)
+          }, 2000) // Increased delay to reduce frequency
         }
       } catch (error) {
         console.error('[App] Failed to initialize analytics:', error)

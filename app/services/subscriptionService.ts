@@ -166,7 +166,9 @@ export class SubscriptionService {
     error: PostgrestError | null
   }> {
     try {
-      console.log(`🔍 [SubscriptionService] Getting subscription info for user: ${userId}`)
+      if (__DEV__) {
+        console.log(`🔍 [SubscriptionService] Getting subscription info for user: ${userId}`)
+      }
       
       const { data, error } = await supabase.rpc("get_user_subscription_info", {
         user_uuid: userId,
@@ -177,7 +179,9 @@ export class SubscriptionService {
         return { info: null, error }
       }
 
-      console.log(`📊 [SubscriptionService] Raw data from get_user_subscription_info:`, data)
+      if (__DEV__) {
+        console.log(`📊 [SubscriptionService] Raw data from get_user_subscription_info:`, data)
+      }
 
       // The function returns a single row with all subscription info
       const info: SubscriptionInfo = {
@@ -194,17 +198,19 @@ export class SubscriptionService {
         subscription_expires_at: data?.[0]?.subscription_expires_at || null,
       }
 
-      console.log(`✅ [SubscriptionService] Processed subscription info:`, {
-        subscription_status: info.subscription_status,
-        groups_count: info.groups_count,
-        max_groups: info.max_groups,
-        can_create_group: info.can_create_group,
-        items_count: info.items_count,
-        max_items: info.max_items,
-        can_create_item: info.can_create_item,
-        ai_search_enabled: info.ai_search_enabled,
-        can_use_ai: info.can_use_ai
-      })
+      if (__DEV__) {
+        console.log(`✅ [SubscriptionService] Processed subscription info:`, {
+          subscription_status: info.subscription_status,
+          groups_count: info.groups_count,
+          max_groups: info.max_groups,
+          can_create_group: info.can_create_group,
+          items_count: info.items_count,
+          max_items: info.max_items,
+          can_create_item: info.can_create_item,
+          ai_search_enabled: info.ai_search_enabled,
+          can_use_ai: info.can_use_ai
+        })
+      }
 
       return { info, error: null }
     } catch (error) {

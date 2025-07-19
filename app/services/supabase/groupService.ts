@@ -20,63 +20,59 @@ import { supabase } from "./supabase"
  */
 export class GroupService {
   /**
-   * Get all groups for the current user
+   * Get all groups that the current user is a member of
    */
   static async getUserGroups(): Promise<{ data: Group[] | null; error: PostgrestError | null }> {
-    console.log("🔍 [GroupService] getUserGroups called")
-
+    if (__DEV__) {
+      console.log("🔍 [GroupService] getUserGroups called")
+    }
+    
     try {
-      console.log("🔍 [GroupService] Getting current user")
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      console.log("🔍 [GroupService] User auth result:", {
-        hasUser: !!user,
-        userId: user?.id,
-      })
-
-      if (!user) {
-        console.log("🔍 [GroupService] No user found, returning auth error")
-        return {
-          data: null,
-          error: {
-            message: "User not authenticated",
-            details: "",
-            hint: "",
-            code: "401",
-          } as PostgrestError,
-        }
+      const { data: authResult } = await supabase.auth.getUser()
+      if (__DEV__) {
+        console.log("🔍 [GroupService] User auth result:", {
+          hasUser: !!authResult.user,
+          userId: authResult.user?.id
+        })
       }
 
-      console.log("🔍 [GroupService] Getting user group memberships")
-      // First get group IDs where user is a member (avoids recursion)
+      if (!authResult.user) {
+        return { data: null, error: null }
+      }
+
+      if (__DEV__) {
+        console.log("🔍 [GroupService] Getting user group memberships")
+      }
+
+      // First get group IDs where user is a member
       const { data: membershipData, error: membershipError } = await supabase
         .from("group_members")
         .select("group_id")
-        .eq("user_id", user.id)
-
-      console.log("🔍 [GroupService] Membership query result:", {
-        hasData: !!membershipData,
-        dataLength: membershipData?.length || 0,
-        hasError: !!membershipError,
-        error: membershipError,
-      })
+        .eq("user_id", authResult.user.id)
 
       if (membershipError) {
-        console.log("🔍 [GroupService] Membership error, returning:", membershipError)
+        console.error("Error getting group memberships:", membershipError)
         return { data: null, error: membershipError }
       }
 
+      if (__DEV__) {
+        console.log("🔍 [GroupService] Membership query result:", {
+          hasData: !!membershipData,
+          dataLength: membershipData?.length || 0,
+          hasError: !!membershipError,
+          error: membershipError ? (membershipError as any).message || 'Unknown error' : null
+        })
+      }
+
       if (!membershipData || membershipData.length === 0) {
-        console.log("🔍 [GroupService] No memberships found, returning empty array")
+        if (__DEV__) {
+          console.log("🔍 [GroupService] No memberships found, returning empty array")
+        }
         return { data: [], error: null }
       }
 
       const groupIds = membershipData.map((m) => m.group_id)
-      console.log("🔍 [GroupService] Group IDs found:", groupIds)
 
-      console.log("🔍 [GroupService] Getting groups data")
       // Get the groups with member counts and item counts
       const { data: groupsData, error: groupsError } = await supabase
         .from("groups")
@@ -90,19 +86,11 @@ export class GroupService {
         .in("id", groupIds)
         .order("created_at", { ascending: false })
 
-      console.log("🔍 [GroupService] Groups query result:", {
-        hasData: !!groupsData,
-        dataLength: groupsData?.length || 0,
-        hasError: !!groupsError,
-        error: groupsError,
-      })
-
       if (groupsError || !groupsData) {
-        console.log("🔍 [GroupService] Groups error, returning:", groupsError)
+        console.error("Error getting groups:", groupsError)
         return { data: null, error: groupsError }
       }
 
-      console.log("🔍 [GroupService] Getting creator profiles")
       // Get creator profiles
       const creatorIds = [...new Set(groupsData.map((g) => g.creator_id))]
       const { data: creatorProfiles } = await supabase
@@ -110,35 +98,18 @@ export class GroupService {
         .select("*")
         .in("id", creatorIds)
 
-      console.log("🔍 [GroupService] Creator profiles result:", {
-        hasData: !!creatorProfiles,
-        dataLength: creatorProfiles?.length || 0,
-      })
-
       // Combine data and ensure member_count and item_count are numbers
       const enrichedGroups = groupsData.map((group) => ({
         ...group,
         member_count: group.member_count?.[0]?.count || 0,
         item_count: group.item_count?.[0]?.count || 0,
-        creator: creatorProfiles?.find((profile) => profile.id === group.creator_id) || null,
+        creator: creatorProfiles?.find((profile) => profile.id === group.creator_id) || undefined,
       }))
-
-      console.log("🔍 [GroupService] Returning enriched groups:", {
-        count: enrichedGroups.length,
-        groups: enrichedGroups.map((g) => ({ id: g.id, name: g.name })),
-      })
 
       return { data: enrichedGroups as Group[], error: null }
     } catch (error) {
-      console.error("🔍 [GroupService] Exception getting user groups:", error)
-      console.error("🔍 [GroupService] Exception details:", {
-        message: error instanceof Error ? error.message : "Unknown error",
-        stack: error instanceof Error ? error.stack : undefined,
-      })
-      return {
-        data: null,
-        error: error as PostgrestError,
-      }
+      console.error("Error getting user groups:", error)
+      return { data: null, error: error as PostgrestError }
     }
   }
 

@@ -1,6 +1,16 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useMemo } from "react"
 
 import { SubscriptionService, type SubscriptionInfo, type SubscriptionStatus } from "@/services/subscriptionService"
+
+// Global cache to prevent multiple API calls for the same user
+const subscriptionCache = new Map<string, {
+  data: SubscriptionInfo | null
+  error: string | null
+  timestamp: number
+  promise: Promise<{ info: SubscriptionInfo | null; error: any }> | null
+}>()
+
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 /**
  * Hook for managing subscription data and operations
@@ -11,7 +21,7 @@ export const useSubscription = (userId: string | null) => {
   const [error, setError] = useState<string | null>(null)
 
   /**
-   * Load subscription information
+   * Load subscription information with caching and deduplication
    */
   const loadSubscriptionInfo = useCallback(async () => {
     if (!userId) {
@@ -21,36 +31,103 @@ export const useSubscription = (userId: string | null) => {
       return
     }
 
+    // Check cache first
+    const cached = subscriptionCache.get(userId)
+    const now = Date.now()
+    
+    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+      console.log(`📋 [useSubscription] Using cached data for user: ${userId}`)
+      setSubscriptionInfo(cached.data)
+      setError(cached.error)
+      setLoading(false)
+      return
+    }
+
+    // Check if there's already a request in progress
+    if (cached?.promise) {
+      console.log(`⏳ [useSubscription] Request already in progress for user: ${userId}`)
+      setLoading(true)
+      try {
+        const { info, error } = await cached.promise
+        setSubscriptionInfo(info)
+        setError(error?.message || null)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load subscription info")
+        setSubscriptionInfo(null)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     console.log(`🔄 [useSubscription] Loading subscription info for user: ${userId}`)
     setLoading(true)
     setError(null)
 
+    // Create the promise and store it to prevent duplicate requests
+    const promise = SubscriptionService.getSubscriptionInfo(userId)
+    subscriptionCache.set(userId, {
+      data: null,
+      error: null,
+      timestamp: now,
+      promise
+    })
+
     try {
-      const { info, error } = await SubscriptionService.getSubscriptionInfo(userId)
+      const { info, error } = await promise
       
       if (error) {
         console.error(`❌ [useSubscription] Error loading subscription info:`, error)
         setError(error.message)
         setSubscriptionInfo(null)
+        
+        // Update cache with error
+        subscriptionCache.set(userId, {
+          data: null,
+          error: error.message,
+          timestamp: now,
+          promise: null
+        })
       } else {
         console.log(`✅ [useSubscription] Subscription info loaded:`, info)
         setSubscriptionInfo(info)
+        
+        // Update cache with success data
+        subscriptionCache.set(userId, {
+          data: info,
+          error: null,
+          timestamp: now,
+          promise: null
+        })
       }
     } catch (err) {
       console.error(`❌ [useSubscription] Exception loading subscription info:`, err)
-      setError(err instanceof Error ? err.message : "Failed to load subscription info")
+      const errorMessage = err instanceof Error ? err.message : "Failed to load subscription info"
+      setError(errorMessage)
       setSubscriptionInfo(null)
+      
+      // Update cache with error
+      subscriptionCache.set(userId, {
+        data: null,
+        error: errorMessage,
+        timestamp: now,
+        promise: null
+      })
     } finally {
       setLoading(false)
     }
   }, [userId])
 
   /**
-   * Refresh subscription information
+   * Refresh subscription information (bypasses cache)
    */
   const refresh = useCallback(() => {
+    if (userId) {
+      // Clear cache for this user to force fresh data
+      subscriptionCache.delete(userId)
+    }
     loadSubscriptionInfo()
-  }, [loadSubscriptionInfo])
+  }, [userId, loadSubscriptionInfo])
 
   /**
    * Activate trial for the user
@@ -70,7 +147,8 @@ export const useSubscription = (userId: string | null) => {
       }
 
       if (success) {
-        // Refresh subscription info after trial activation
+        // Clear cache and refresh subscription info after trial activation
+        subscriptionCache.delete(userId)
         await loadSubscriptionInfo()
       }
 
@@ -102,7 +180,8 @@ export const useSubscription = (userId: string | null) => {
       }
 
       if (success) {
-        // Refresh subscription info after upgrade
+        // Clear cache and refresh subscription info after upgrade
+        subscriptionCache.delete(userId)
         await loadSubscriptionInfo()
       }
 
@@ -178,45 +257,52 @@ export const useSubscription = (userId: string | null) => {
 
   // Load subscription info when userId changes
   useEffect(() => {
-    console.log(`🔍 [useSubscription] Loading subscription info for user: ${userId}`)
     loadSubscriptionInfo()
   }, [loadSubscriptionInfo])
 
-  // Computed values for easy access
-  const isFree = subscriptionInfo?.subscription_status === "free"
-  const isTrial = subscriptionInfo?.subscription_status === "trial"
-  const isPro = subscriptionInfo?.subscription_status === "pro"
-  const isExpired = subscriptionInfo?.subscription_status === "expired"
+  // Computed values for easy access - memoized to prevent unnecessary recalculations
+  const computedValues = useMemo(() => {
+    const isFree = subscriptionInfo?.subscription_status === "free"
+    const isTrial = subscriptionInfo?.subscription_status === "trial"
+    const isPro = subscriptionInfo?.subscription_status === "pro"
+    const isExpired = subscriptionInfo?.subscription_status === "expired"
 
-  const groupsUsed = subscriptionInfo?.groups_count || 0
-  const groupsLimit = subscriptionInfo?.max_groups || 1
-  const itemsUsed = subscriptionInfo?.items_count || 0
-  const itemsLimit = subscriptionInfo?.max_items || 10
+    const groupsUsed = subscriptionInfo?.groups_count || 0
+    const groupsLimit = subscriptionInfo?.max_groups || 1
+    const itemsUsed = subscriptionInfo?.items_count || 0
+    const itemsLimit = subscriptionInfo?.max_items || 10
 
-  const groupsPercentage = groupsLimit > 0 ? (groupsUsed / groupsLimit) * 100 : 0
-  const itemsPercentage = itemsLimit > 0 ? (itemsUsed / itemsLimit) * 100 : 0
+    const groupsPercentage = groupsLimit > 0 ? (groupsUsed / groupsLimit) * 100 : 0
+    const itemsPercentage = itemsLimit > 0 ? (itemsUsed / itemsLimit) * 100 : 0
 
-  const canCreateGroupNow = subscriptionInfo?.can_create_group || false
-  const canCreateItemNow = subscriptionInfo?.can_create_item || false
-  const canUseAISearchNow = subscriptionInfo?.can_use_ai || false
+    const canCreateGroupNow = subscriptionInfo?.can_create_group || false
+    const canCreateItemNow = subscriptionInfo?.can_create_item || false
+    const canUseAISearchNow = subscriptionInfo?.can_use_ai || false
 
-  // Debug log computed values
-  console.log(`📊 [useSubscription] Computed values:`, {
-    subscriptionStatus: subscriptionInfo?.subscription_status,
-    isFree,
-    isTrial,
-    isPro,
-    isExpired,
-    groupsUsed,
-    groupsLimit,
-    groupsPercentage,
-    itemsUsed,
-    itemsLimit,
-    itemsPercentage,
-    canCreateGroupNow,
-    canCreateItemNow,
-    canUseAISearchNow
-  })
+    return {
+      isFree,
+      isTrial,
+      isPro,
+      isExpired,
+      groupsUsed,
+      groupsLimit,
+      groupsPercentage,
+      itemsUsed,
+      itemsLimit,
+      itemsPercentage,
+      canCreateGroupNow,
+      canCreateItemNow,
+      canUseAISearchNow
+    }
+  }, [subscriptionInfo])
+
+  // Only log computed values in development and when they actually change
+  if (__DEV__) {
+    console.log(`📊 [useSubscription] Computed values:`, {
+      subscriptionStatus: subscriptionInfo?.subscription_status,
+      ...computedValues
+    })
+  }
 
   return {
     // Data
@@ -224,23 +310,7 @@ export const useSubscription = (userId: string | null) => {
     subscriptionStatus: subscriptionInfo?.subscription_status || "free",
     
     // Computed values
-    isFree,
-    isTrial,
-    isPro,
-    isExpired,
-    
-    // Usage
-    groupsUsed,
-    groupsLimit,
-    groupsPercentage,
-    itemsUsed,
-    itemsLimit,
-    itemsPercentage,
-    
-    // Permissions
-    canCreateGroupNow,
-    canCreateItemNow,
-    canUseAISearchNow,
+    ...computedValues,
     
     // State
     loading,
