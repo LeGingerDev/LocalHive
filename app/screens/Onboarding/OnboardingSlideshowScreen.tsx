@@ -1,15 +1,24 @@
 import React, { useState, useRef } from "react"
-import { View, StyleSheet, StatusBar, TouchableOpacity, Dimensions, ScrollView, Image, Animated } from "react-native"
+import {
+  View,
+  StyleSheet,
+  StatusBar,
+  TouchableOpacity,
+  Dimensions,
+  ScrollView,
+  Image,
+  Animated,
+} from "react-native"
+import { LinearGradient } from "expo-linear-gradient"
 import { useNavigation } from "@react-navigation/native"
 import ReactNativeHapticFeedback from "react-native-haptic-feedback"
-import { LinearGradient } from "expo-linear-gradient"
 
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
-import { colors } from "@/theme/colors"
-import { typography } from "@/theme/typography"
-import { spacing } from "@/theme/spacing"
 import { AnalyticsService } from "@/services/analyticsService"
+import { colors } from "@/theme/colors"
+import { spacing } from "@/theme/spacing"
+import { typography } from "@/theme/typography"
 
 const { width: screenWidth } = Dimensions.get("window")
 
@@ -31,13 +40,15 @@ const slides: Slide[] = [
     id: 2,
     title: "Snap and Catalog ANYTHING ",
     subtitle: "",
-    description: "Take photos or choose from gallery to instantly add things of interest to your group's catalog",
+    description:
+      "Take photos or choose from gallery to instantly add things of interest to your group's catalog",
   },
   {
     id: 3,
     title: "Find Anything Instantly",
     subtitle: "",
-    description: "Ask for 'Mums Shampoo' or 'Jordan's favourite restaurant' and AI will find exactly what you mean",
+    description:
+      "Ask for 'Mums Shampoo' or 'Jordan's favourite restaurant' and AI will find exactly what you mean",
   },
 ]
 
@@ -48,11 +59,13 @@ export const OnboardingSlideshowScreen = () => {
   const isScrollingProgrammatically = useRef(false)
 
   // Animation refs
-  const slideAnimations = useRef(slides.map(() => ({
-    opacity: new Animated.Value(0),
-    translateY: new Animated.Value(30),
-    scale: new Animated.Value(0.9),
-  }))).current
+  const slideAnimations = useRef(
+    slides.map(() => ({
+      opacity: new Animated.Value(0),
+      translateY: new Animated.Value(30),
+      scale: new Animated.Value(0.9),
+    })),
+  ).current
 
   const progressAnim = useRef(new Animated.Value(0)).current
   const buttonScaleAnim = useRef(new Animated.Value(0.8)).current
@@ -61,10 +74,10 @@ export const OnboardingSlideshowScreen = () => {
   // Track screen view on mount
   React.useEffect(() => {
     AnalyticsService.trackScreenView({ screenName: "OnboardingSlideshow" })
-    
+
     // Start initial animations
     startSlideAnimation(0)
-    
+
     // Animate progress and buttons
     setTimeout(() => {
       Animated.parallel([
@@ -111,7 +124,7 @@ export const OnboardingSlideshowScreen = () => {
   const handleBack = () => {
     // Haptic feedback for navigation
     ReactNativeHapticFeedback.trigger("selection")
-    
+
     if (currentIndex > 0) {
       const prevIndex = currentIndex - 1
       isScrollingProgrammatically.current = true
@@ -124,10 +137,10 @@ export const OnboardingSlideshowScreen = () => {
       setTimeout(() => {
         isScrollingProgrammatically.current = false
       }, 300)
-      
+
       // Start animation for previous slide
       startSlideAnimation(prevIndex)
-      
+
       // Track slide navigation
       AnalyticsService.trackEvent({
         name: "onboarding_slide_navigation",
@@ -135,8 +148,8 @@ export const OnboardingSlideshowScreen = () => {
           direction: "back",
           from_slide: currentIndex + 1,
           to_slide: prevIndex + 1,
-          slide_title: slides[currentIndex].title
-        }
+          slide_title: slides[currentIndex].title,
+        },
       })
     } else {
       // Go back to entry screen if on first slide
@@ -144,8 +157,8 @@ export const OnboardingSlideshowScreen = () => {
         name: "onboarding_exit",
         properties: {
           source: "slideshow",
-          action: "back_to_entry"
-        }
+          action: "back_to_entry",
+        },
       })
       navigation.goBack()
     }
@@ -155,7 +168,7 @@ export const OnboardingSlideshowScreen = () => {
     if (currentIndex < slides.length - 1) {
       // Haptic feedback for slide progression
       ReactNativeHapticFeedback.trigger("selection")
-      
+
       const nextIndex = currentIndex + 1
       isScrollingProgrammatically.current = true
       setCurrentIndex(nextIndex)
@@ -167,10 +180,10 @@ export const OnboardingSlideshowScreen = () => {
       setTimeout(() => {
         isScrollingProgrammatically.current = false
       }, 300)
-      
+
       // Start animation for next slide
       startSlideAnimation(nextIndex)
-      
+
       // Track slide navigation
       AnalyticsService.trackEvent({
         name: "onboarding_slide_navigation",
@@ -178,13 +191,13 @@ export const OnboardingSlideshowScreen = () => {
           direction: "forward",
           from_slide: currentIndex + 1,
           to_slide: nextIndex + 1,
-          slide_title: slides[currentIndex].title
-        }
+          slide_title: slides[currentIndex].title,
+        },
       })
     } else {
       // Haptic feedback for completing onboarding
       ReactNativeHapticFeedback.trigger("notificationSuccess")
-      
+
       // Button press animation
       Animated.sequence([
         Animated.timing(buttonScaleAnim, {
@@ -198,16 +211,16 @@ export const OnboardingSlideshowScreen = () => {
           useNativeDriver: true,
         }),
       ]).start()
-      
+
       // Track completion of slideshow
       AnalyticsService.trackEvent({
         name: "onboarding_slideshow_completed",
         properties: {
           total_slides: slides.length,
-          last_slide_title: slides[currentIndex].title
-        }
+          last_slide_title: slides[currentIndex].title,
+        },
       })
-      
+
       // Last slide - navigate to questionnaire
       navigation.navigate("OnboardingQuestionnaire")
     }
@@ -216,41 +229,38 @@ export const OnboardingSlideshowScreen = () => {
   const handleScroll = (event: any) => {
     // Don't update index if we're scrolling programmatically
     if (isScrollingProgrammatically.current) return
-    
+
     const contentOffset = event.nativeEvent.contentOffset.x
     const index = Math.round(contentOffset / screenWidth)
     setCurrentIndex(index)
-    
+
     // Start animation for current slide
     startSlideAnimation(index)
   }
 
   const renderSlide = (slide: Slide, index: number) => {
     const animation = slideAnimations[index]
-    
+
     return (
-      <Animated.View 
-        key={slide.id} 
+      <Animated.View
+        key={slide.id}
         style={[
           styles.slide,
           {
             opacity: animation.opacity,
-            transform: [
-              { translateY: animation.translateY },
-              { scale: animation.scale },
-            ],
+            transform: [{ translateY: animation.translateY }, { scale: animation.scale }],
           },
         ]}
       >
         {/* Illustration */}
         <View style={styles.illustrationContainer}>
-          <Image 
+          <Image
             source={
-              slide.id === 1 
+              slide.id === 1
                 ? require("../../../assets/Visu/Onboarding_ADD_GROUPS.png")
                 : slide.id === 2
-                ? require("../../../assets/Visu/Onboarding_ADD_ITEMS.png")
-                : require("../../../assets/Visu/Onboarding_AI_SEARCH.png")
+                  ? require("../../../assets/Visu/Onboarding_ADD_ITEMS.png")
+                  : require("../../../assets/Visu/Onboarding_AI_SEARCH.png")
             }
             style={styles.illustrationImage}
             resizeMode="contain"
@@ -260,13 +270,7 @@ export const OnboardingSlideshowScreen = () => {
         {/* Text Content */}
         <View style={styles.textContainer}>
           <Text style={styles.title}>
-            {slide.id === 2 ? (
-              <>
-                Snap and Catalog{"\n"}ANYTHING
-              </>
-            ) : (
-              slide.title
-            )}
+            {slide.id === 2 ? <>Snap and Catalog{"\n"}ANYTHING</> : slide.title}
           </Text>
           {slide.subtitle && <Text style={styles.subtitle}>{slide.subtitle}</Text>}
           {slide.description && <Text style={styles.description}>{slide.description}</Text>}
@@ -278,7 +282,7 @@ export const OnboardingSlideshowScreen = () => {
   return (
     <Screen preset="fixed" contentContainerStyle={styles.container} safeAreaEdges={[]}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
-      
+
       {/* Main gradient background */}
       <LinearGradient
         colors={["#4A90E2", "#FFFFFF"]}
@@ -287,14 +291,14 @@ export const OnboardingSlideshowScreen = () => {
         end={{ x: 0, y: 1 }}
         pointerEvents="none"
       />
-      
+
       {/* Concentric circles */}
       <View style={styles.circleContainer} pointerEvents="none">
         <View style={styles.outerCircle} />
         <View style={styles.middleCircle} />
         <View style={styles.innerCircle} />
       </View>
-      
+
       {/* Wave-like gradient bands */}
       <View style={styles.waveContainer} pointerEvents="none">
         <View style={styles.wave1} />
@@ -317,7 +321,7 @@ export const OnboardingSlideshowScreen = () => {
       </ScrollView>
 
       {/* Navigation */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.navigationContainer,
           {
@@ -340,13 +344,17 @@ export const OnboardingSlideshowScreen = () => {
                 styles.dot,
                 index === currentIndex && styles.activeDot,
                 {
-                  transform: [{
-                    scale: index === currentIndex ? 
-                      progressAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.8, 1.2],
-                      }) : 1
-                  }],
+                  transform: [
+                    {
+                      scale:
+                        index === currentIndex
+                          ? progressAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.8, 1.2],
+                            })
+                          : 1,
+                    },
+                  ],
                 },
               ]}
             />
@@ -363,192 +371,95 @@ export const OnboardingSlideshowScreen = () => {
 }
 
 const styles = StyleSheet.create({
+  activeDot: {
+    backgroundColor: colors.palette.primary500,
+    borderRadius: 6,
+    height: 12,
+    width: 12,
+  },
+  backgroundContainer: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  boldText: {
+    fontFamily: typography.primary.bold,
+  },
+  circleContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: "35%",
+  },
   container: {
     flex: 1,
   },
+  description: {
+    color: colors.text,
+    fontFamily: typography.primary.normal,
+    fontSize: 16,
+    lineHeight: 22,
+    paddingHorizontal: spacing.sm,
+    textAlign: "center",
+  },
+  dot: {
+    backgroundColor: colors.palette.neutral400,
+    borderRadius: 4,
+    height: 8,
+    marginHorizontal: 4,
+    width: 8,
+  },
   gradient: {
-    position: "absolute",
+    bottom: 0,
     left: 0,
+    position: "absolute",
     right: 0,
     top: 0,
-    bottom: 0,
   },
-  backgroundContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  },
-  circleContainer: {
-    position: "absolute",
-    top: "35%",
-    left: 0,
-    right: 0,
+  illustrationContainer: {
     alignItems: "center",
+    flex: 1,
     justifyContent: "center",
+    marginBottom: spacing.xxl,
   },
-  outerCircle: {
-    width: 750,
-    height: 750,
-    borderRadius: 375,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    position: "absolute",
-    shadowColor: "rgba(255, 255, 255, 0.3)",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  middleCircle: {
-    width: 500,
-    height: 500,
-    borderRadius: 250,
-    backgroundColor: "rgba(74, 144, 226, 0.2)",
-    position: "absolute",
-    shadowColor: "rgba(74, 144, 226, 0.4)",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 15,
-    elevation: 8,
+  illustrationImage: {
+    height: 300,
+    width: 300,
   },
   innerCircle: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
     backgroundColor: "rgba(255, 255, 255, 0.5)",
+    borderRadius: 125,
+    elevation: 6,
+    height: 250,
     position: "absolute",
     shadowColor: "rgba(255, 255, 255, 0.5)",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.7,
     shadowRadius: 12,
-    elevation: 6,
+    width: 250,
   },
-  waveContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 2000,
-    bottom: 0,
-  },
-  wave1: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 60,
+  middleCircle: {
     backgroundColor: "rgba(74, 144, 226, 0.2)",
-    borderRadius: 30,
-    transform: [{ scaleY: 2 }],
-  },
-  wave2: {
+    borderRadius: 250,
+    elevation: 8,
+    height: 500,
     position: "absolute",
-    top: 40,
-    left: 0,
-    right: 0,
-    height: 50,
-    backgroundColor: "rgba(74, 144, 226, 0.15)",
-    borderRadius: 25,
-    transform: [{ scaleY: 1.5 }],
-  },
-  wave3: {
-    position: "absolute",
-    top: 80,
-    left: 0,
-    right: 0,
-    height: 40,
-    backgroundColor: "rgba(74, 144, 226, 0.1)",
-    borderRadius: 20,
-    transform: [{ scaleY: 1.2 }],
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    width: screenWidth * slides.length,
-  },
-  slide: {
-    width: screenWidth,
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    justifyContent: "space-between",
-    paddingTop: spacing.xl * 2,
-    paddingBottom: spacing.xl,
-  },
-  illustrationContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing.xxl,
-  },
-  illustrationImage: {
-    width: 300,
-    height: 300,
-  },
-  textContainer: {
-    alignItems: "center",
-    marginBottom: spacing.xl,
-  },
-  title: {
-    fontSize: 28,
-    fontFamily: typography.primary.bold,
-    color: colors.text,
-    textAlign: "center",
-    marginBottom: spacing.sm,
-    lineHeight: 34,
-  },
-  subtitle: {
-    fontSize: 16,
-    fontFamily: typography.primary.normal,
-    color: colors.text,
-    textAlign: "center",
-    marginBottom: spacing.md,
-    lineHeight: 22,
-  },
-  description: {
-    fontSize: 16,
-    fontFamily: typography.primary.normal,
-    color: colors.text,
-    textAlign: "center",
-    lineHeight: 22,
-    paddingHorizontal: spacing.sm,
+    shadowColor: "rgba(74, 144, 226, 0.4)",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 15,
+    width: 500,
   },
   navigationContainer: {
+    alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
-  },
-  skipButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    minWidth: 60, // Fixed width to prevent shifting
-    alignItems: "center",
-  },
-  skipButtonText: {
-    color: colors.text,
-    fontSize: 16,
-    fontFamily: typography.primary.medium,
-  },
-  progressDots: {
-    flexDirection: "row",
-    alignItems: "center",
-    minWidth: 80, // Fixed width to prevent shifting
-    justifyContent: "center",
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.palette.neutral400,
-    marginHorizontal: 4,
-  },
-  activeDot: {
-    backgroundColor: colors.palette.primary500,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    paddingHorizontal: spacing.lg,
   },
   nextButton: {
     paddingVertical: spacing.sm,
@@ -558,10 +469,107 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     color: colors.text,
-    fontSize: 16,
     fontFamily: typography.primary.medium,
+    fontSize: 16,
   },
-  boldText: {
+  outerCircle: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 375,
+    elevation: 10,
+    height: 750,
+    position: "absolute",
+    shadowColor: "rgba(255, 255, 255, 0.3)",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    width: 750,
+  },
+  progressDots: {
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 80, // Fixed width to prevent shifting
+    justifyContent: "center",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    width: screenWidth * slides.length,
+  },
+  skipButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    minWidth: 60, // Fixed width to prevent shifting
+    alignItems: "center",
+  },
+  skipButtonText: {
+    color: colors.text,
+    fontFamily: typography.primary.medium,
+    fontSize: 16,
+  },
+  slide: {
+    flex: 1,
+    justifyContent: "space-between",
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl * 2,
+    width: screenWidth,
+  },
+  subtitle: {
+    color: colors.text,
+    fontFamily: typography.primary.normal,
+    fontSize: 16,
+    lineHeight: 22,
+    marginBottom: spacing.md,
+    textAlign: "center",
+  },
+  textContainer: {
+    alignItems: "center",
+    marginBottom: spacing.xl,
+  },
+  title: {
+    color: colors.text,
     fontFamily: typography.primary.bold,
+    fontSize: 28,
+    lineHeight: 34,
+    marginBottom: spacing.sm,
+    textAlign: "center",
   },
-}) 
+  wave1: {
+    backgroundColor: "rgba(74, 144, 226, 0.2)",
+    borderRadius: 30,
+    height: 60,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    transform: [{ scaleY: 2 }],
+  },
+  wave2: {
+    backgroundColor: "rgba(74, 144, 226, 0.15)",
+    borderRadius: 25,
+    height: 50,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 40,
+    transform: [{ scaleY: 1.5 }],
+  },
+  wave3: {
+    backgroundColor: "rgba(74, 144, 226, 0.1)",
+    borderRadius: 20,
+    height: 40,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 80,
+    transform: [{ scaleY: 1.2 }],
+  },
+  waveContainer: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 2000,
+  },
+})

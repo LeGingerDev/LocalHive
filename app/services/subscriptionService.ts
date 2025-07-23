@@ -1,7 +1,7 @@
 import { PostgrestError } from "@supabase/supabase-js"
 
-import { supabase } from "./supabase/supabase"
 import { AnalyticsService, AnalyticsEvents } from "./analyticsService"
+import { supabase } from "./supabase/supabase"
 
 /**
  * Subscription status types
@@ -169,7 +169,7 @@ export class SubscriptionService {
       if (__DEV__) {
         console.log(`🔍 [SubscriptionService] Getting subscription info for user: ${userId}`)
       }
-      
+
       const { data, error } = await supabase.rpc("get_user_subscription_info", {
         user_uuid: userId,
       })
@@ -208,7 +208,7 @@ export class SubscriptionService {
           max_items: info.max_items,
           can_create_item: info.can_create_item,
           ai_search_enabled: info.ai_search_enabled,
-          can_use_ai: info.can_use_ai
+          can_use_ai: info.can_use_ai,
         })
       }
 
@@ -331,10 +331,7 @@ export class SubscriptionService {
         updateData.subscription_expires_at = options.subscription_expires_at
       }
 
-      const { error } = await supabase
-        .from("profiles")
-        .update(updateData)
-        .eq("id", userId)
+      const { error } = await supabase.from("profiles").update(updateData).eq("id", userId)
 
       if (error) {
         console.error("Error updating subscription status:", error)
@@ -527,7 +524,7 @@ export class SubscriptionService {
   }> {
     try {
       const { info, error } = await this.getSubscriptionInfo(userId)
-      
+
       if (error) {
         return { approaching: false, details: null, error }
       }
@@ -541,18 +538,20 @@ export class SubscriptionService {
 
       const approaching = groupsPercentage >= 80 || itemsPercentage >= 80
 
-      const details = approaching ? {
-        groups: {
-          current: info.groups_count,
-          max: info.max_groups,
-          percentage: groupsPercentage
-        },
-        items: {
-          current: info.items_count,
-          max: info.max_items,
-          percentage: itemsPercentage
-        }
-      } : null
+      const details = approaching
+        ? {
+            groups: {
+              current: info.groups_count,
+              max: info.max_groups,
+              percentage: groupsPercentage,
+            },
+            items: {
+              current: info.items_count,
+              max: info.max_items,
+              percentage: itemsPercentage,
+            },
+          }
+        : null
 
       return { approaching, details, error: null }
     } catch (error) {
@@ -560,4 +559,4 @@ export class SubscriptionService {
       return { approaching: false, details: null, error: error as PostgrestError }
     }
   }
-} 
+}

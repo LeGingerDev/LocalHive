@@ -119,28 +119,28 @@ export const CreateGroupScreen = ({ navigation }: any) => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-          <Text style={themed($label)} text="Group Name" />
-          <TextField
-            placeholder="Enter group name"
-            value={formData.name}
-            onChangeText={(text) => setFormData((prev) => ({ ...prev, name: text }))}
-            style={themed($input)}
-            containerStyle={themed($inputContainerFlat)}
-            autoCapitalize="words"
-            autoFocus
-          />
-          <Text style={themed($label)} text="Description" />
-          <TextField
-            placeholder="Tell others what this group is about..."
-            value={formData.description}
-            onChangeText={(text) => setFormData((prev) => ({ ...prev, description: text }))}
-            style={themed($input)}
-            containerStyle={themed($inputContainerFlat)}
-            multiline
-            numberOfLines={3}
-          />
-          {/* TODO: When we need categories, re-enable this section */}
-          {/* <Text style={themed($label)} text="Category" />
+        <Text style={themed($label)} text="Group Name" />
+        <TextField
+          placeholder="Enter group name"
+          value={formData.name}
+          onChangeText={(text) => setFormData((prev) => ({ ...prev, name: text }))}
+          style={themed($input)}
+          containerStyle={themed($inputContainerFlat)}
+          autoCapitalize="words"
+          autoFocus
+        />
+        <Text style={themed($label)} text="Description" />
+        <TextField
+          placeholder="Tell others what this group is about..."
+          value={formData.description}
+          onChangeText={(text) => setFormData((prev) => ({ ...prev, description: text }))}
+          style={themed($input)}
+          containerStyle={themed($inputContainerFlat)}
+          multiline
+          numberOfLines={3}
+        />
+        {/* TODO: When we need categories, re-enable this section */}
+        {/* <Text style={themed($label)} text="Category" />
           <CustomDropdown
             options={groupCategories.map((cat) => ({
               label: cat.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
@@ -154,28 +154,28 @@ export const CreateGroupScreen = ({ navigation }: any) => {
             style={themed($pickerContainer)}
             testID="categoryDropdown"
           /> */}
-          <Text style={themed($label)} text="Member Limit (Optional)" />
-          <TextField
-            placeholder="e.g. 50"
-            value={formData.member_limit}
-            onChangeText={(text) => setFormData((prev) => ({ ...prev, member_limit: text }))}
-            keyboardType="numeric"
-            style={themed($input)}
-            containerStyle={themed($inputContainerFlat)}
-          />
-          <View style={themed($buttonRow)}>
-            <CustomGradient preset="primary" style={getGradientButtonStyle()}>
-              <Button
-                text="Create Group"
-                textStyle={themed($gradientButtonTextWhite)}
-                style={themed($gradientButtonInner)}
-                onPress={handleCreateGroup}
-                preset="reversed"
-                disabled={!isFormValid()}
-              />
-            </CustomGradient>
-          </View>
-        </ScrollView>
+        <Text style={themed($label)} text="Member Limit (Optional)" />
+        <TextField
+          placeholder="e.g. 50"
+          value={formData.member_limit}
+          onChangeText={(text) => setFormData((prev) => ({ ...prev, member_limit: text }))}
+          keyboardType="numeric"
+          style={themed($input)}
+          containerStyle={themed($inputContainerFlat)}
+        />
+        <View style={themed($buttonRow)}>
+          <CustomGradient preset="primary" style={getGradientButtonStyle()}>
+            <Button
+              text="Create Group"
+              textStyle={themed($gradientButtonTextWhite)}
+              style={themed($gradientButtonInner)}
+              onPress={handleCreateGroup}
+              preset="reversed"
+              disabled={!isFormValid()}
+            />
+          </CustomGradient>
+        </View>
+      </ScrollView>
     </Screen>
   )
 }

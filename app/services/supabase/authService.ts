@@ -1,3 +1,5 @@
+import { Platform } from "react-native"
+import { makeRedirectUri } from "expo-auth-session"
 import { AuthError, AuthResponse, Session, User } from "@supabase/supabase-js"
 
 import { DatabaseService } from "./databaseService"
@@ -13,10 +15,16 @@ export class AuthService {
    */
   static async signInWithProvider(provider: "google" | "apple"): Promise<void> {
     try {
+      let redirectTo: string
+      if (Platform.OS === "web") {
+        redirectTo = window.location.origin
+      } else {
+        redirectTo = makeRedirectUri({ scheme: "com.legingerdev.visu" })
+      }
       await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: window.location.origin,
+          redirectTo,
         },
       })
     } catch (error) {
@@ -30,7 +38,7 @@ export class AuthService {
   static async signOut(): Promise<{ error: AuthError | null }> {
     try {
       const { error } = await supabase.auth.signOut()
-      
+
       if (!error) {
         // Track sign out event
         await AnalyticsService.trackEvent({
@@ -38,7 +46,7 @@ export class AuthService {
         })
         await AnalyticsService.clearUserId()
       }
-      
+
       return { error }
     } catch (error) {
       console.error("Error signing out:", error)

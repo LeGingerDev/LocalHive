@@ -23,7 +23,10 @@ export const useRecentItemsFromAllGroups = (limit: number = 5) => {
     setError(null)
 
     try {
-      const { data, error: fetchError } = await ItemService.getRecentItemsFromAllGroups(user.id, limit)
+      const { data, error: fetchError } = await ItemService.getRecentItemsFromAllGroups(
+        user.id,
+        limit,
+      )
 
       if (fetchError) {
         setError(fetchError.message)
@@ -49,4 +52,4 @@ export const useRecentItemsFromAllGroups = (limit: number = 5) => {
     error,
     refresh: fetchRecentItems,
   }
-} 
+}

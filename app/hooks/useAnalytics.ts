@@ -1,9 +1,15 @@
-import { useCallback } from 'react'
-import { AnalyticsService, AnalyticsEvents, type AnalyticsEvent, type ScreenViewEvent } from '@/services/analyticsService'
+import { useCallback } from "react"
+
+import {
+  AnalyticsService,
+  AnalyticsEvents,
+  type AnalyticsEvent,
+  type ScreenViewEvent,
+} from "@/services/analyticsService"
 
 /**
  * Custom hook for analytics
- * 
+ *
  * Provides easy access to analytics functions throughout the app.
  * Wraps the AnalyticsService with React hooks for better integration.
  */
@@ -59,4 +65,4 @@ export const useAnalytics = () => {
     setAnalyticsCollectionEnabled,
     events: AnalyticsEvents,
   }
-} 
+}

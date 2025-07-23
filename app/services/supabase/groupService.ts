@@ -26,13 +26,13 @@ export class GroupService {
     if (__DEV__) {
       console.log("🔍 [GroupService] getUserGroups called")
     }
-    
+
     try {
       const { data: authResult } = await supabase.auth.getUser()
       if (__DEV__) {
         console.log("🔍 [GroupService] User auth result:", {
           hasUser: !!authResult.user,
-          userId: authResult.user?.id
+          userId: authResult.user?.id,
         })
       }
 
@@ -60,7 +60,7 @@ export class GroupService {
           hasData: !!membershipData,
           dataLength: membershipData?.length || 0,
           hasError: !!membershipError,
-          error: membershipError ? (membershipError as any).message || 'Unknown error' : null
+          error: membershipError ? (membershipError as any).message || "Unknown error" : null,
         })
       }
 
@@ -1214,12 +1214,12 @@ export class GroupService {
         try {
           const supabaseUrl = Config.SUPABASE_URL
           const supabaseKey = Config.SUPABASE_KEY
-          
+
           if (!supabaseUrl || !supabaseKey) {
             console.warn("⚠️  Supabase config not available during build time")
             return
           }
-          
+
           const apiUrl = `${supabaseUrl}/rest/v1/profiles?select=id,email&limit=1`
           const response = await fetch(apiUrl, {
             headers: {

@@ -1,10 +1,18 @@
 import React, { useRef, useEffect } from "react"
-import { View, ViewStyle, TouchableOpacity, ScrollView, Modal, Animated, TextStyle } from "react-native"
+import {
+  View,
+  ViewStyle,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  Animated,
+  TextStyle,
+} from "react-native"
 
 import { Text } from "@/components/Text"
-import { useAppTheme } from "@/theme/context"
 import { PRIVACY_POLICY_TEXT } from "@/constants/privacyPolicy"
 import { TERMS_OF_SERVICE_TEXT } from "@/constants/termsOfService"
+import { useAppTheme } from "@/theme/context"
 
 interface LegalModalsProps {
   termsVisible: boolean
@@ -13,14 +21,14 @@ interface LegalModalsProps {
   onClosePrivacy: () => void
 }
 
-export const LegalModals = ({ 
-  termsVisible, 
-  privacyVisible, 
-  onCloseTerms, 
-  onClosePrivacy 
+export const LegalModals = ({
+  termsVisible,
+  privacyVisible,
+  onCloseTerms,
+  onClosePrivacy,
 }: LegalModalsProps) => {
   const { themed } = useAppTheme()
-  
+
   // Animation refs
   const scaleAnim = useRef(new Animated.Value(0)).current
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -72,16 +80,14 @@ export const LegalModals = ({
           >
             <View style={themed($contentContainer)}>
               <Text style={themed($title)}>Terms of Service</Text>
-              
-              <ScrollView 
-                style={themed($scrollContainer)} 
+
+              <ScrollView
+                style={themed($scrollContainer)}
                 showsVerticalScrollIndicator={true}
                 indicatorStyle="white"
                 contentContainerStyle={themed($scrollContent)}
               >
-                <Text style={themed($policyText)}>
-                  {TERMS_OF_SERVICE_TEXT}
-                </Text>
+                <Text style={themed($policyText)}>{TERMS_OF_SERVICE_TEXT}</Text>
               </ScrollView>
 
               <TouchableOpacity
@@ -97,7 +103,12 @@ export const LegalModals = ({
       </Modal>
 
       {/* Privacy Policy Modal */}
-      <Modal visible={privacyVisible} transparent animationType="none" onRequestClose={onClosePrivacy}>
+      <Modal
+        visible={privacyVisible}
+        transparent
+        animationType="none"
+        onRequestClose={onClosePrivacy}
+      >
         <Animated.View style={[themed($overlay), { opacity: fadeAnim }]}>
           <Animated.View
             style={[
@@ -110,16 +121,14 @@ export const LegalModals = ({
           >
             <View style={themed($contentContainer)}>
               <Text style={themed($title)}>Privacy Policy</Text>
-              
-              <ScrollView 
-                style={themed($scrollContainer)} 
+
+              <ScrollView
+                style={themed($scrollContainer)}
                 showsVerticalScrollIndicator={true}
                 indicatorStyle="white"
                 contentContainerStyle={themed($scrollContent)}
               >
-                <Text style={themed($policyText)}>
-                  {PRIVACY_POLICY_TEXT}
-                </Text>
+                <Text style={themed($policyText)}>{PRIVACY_POLICY_TEXT}</Text>
               </ScrollView>
 
               <TouchableOpacity
@@ -202,4 +211,4 @@ const $closeButtonText = ({ colors, typography }: any): TextStyle => ({
   fontFamily: typography.primary.bold,
   fontSize: 16,
   textAlign: "center",
-}) 
+})

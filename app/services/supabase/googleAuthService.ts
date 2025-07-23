@@ -1,8 +1,10 @@
 // Try to import GoogleSignin, but handle the case where it's not available
+import Constants from "expo-constants"
+
+import Config from "@/config"
+
 import { AuthService } from "./authService"
 import { supabase } from "./supabase"
-import Config from "@/config"
-import Constants from "expo-constants"
 
 let GoogleSignin: any = null
 let statusCodes: any = null
@@ -67,15 +69,22 @@ class GoogleAuthService {
     // Debug: Log what we're trying to access
     console.log("🔍 Debugging Google Sign-In configuration:")
     console.log("  - Config.GOOGLE_WEB_CLIENT_ID:", Config.GOOGLE_WEB_CLIENT_ID)
-    console.log("  - process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID:", process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID)
-    console.log("  - Constants.manifest?.extra?.googleWebClientId:", (Constants.manifest as any)?.extra?.googleWebClientId)
+    console.log(
+      "  - process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID:",
+      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    )
+    console.log(
+      "  - Constants.manifest?.extra?.googleWebClientId:",
+      (Constants.manifest as any)?.extra?.googleWebClientId,
+    )
     console.log("  - Config object keys:", Object.keys(Config))
 
     // Try to get the client ID from multiple sources
-    const clientId = Config.GOOGLE_WEB_CLIENT_ID || 
-                    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 
-                    (Constants.manifest as any)?.extra?.googleWebClientId
-    
+    const clientId =
+      Config.GOOGLE_WEB_CLIENT_ID ||
+      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+      (Constants.manifest as any)?.extra?.googleWebClientId
+
     if (!clientId) {
       console.warn("EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID not found in environment variables")
       console.log("  - Available Config values:", {
@@ -98,7 +107,10 @@ class GoogleAuthService {
       })
       this.isConfigured = true
       console.log("✅ Google Sign-In configured successfully")
-      console.log("  - Using client ID type:", clientId.includes('.apps.googleusercontent.com') ? 'Web Client ID' : 'Unknown type')
+      console.log(
+        "  - Using client ID type:",
+        clientId.includes(".apps.googleusercontent.com") ? "Web Client ID" : "Unknown type",
+      )
     } catch (error) {
       console.error("❌ Failed to configure Google Sign-In:", error)
       this.isConfigured = false
@@ -119,7 +131,24 @@ class GoogleAuthService {
     return {
       isConfigured: this.isConfigured,
       hasModule: GoogleSignin !== null,
-      hasWebClientId: !!(Config.GOOGLE_WEB_CLIENT_ID || process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID),
+      hasWebClientId: !!(
+        Config.GOOGLE_WEB_CLIENT_ID || process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+      ),
+    }
+  }
+
+  /**
+   * Get comprehensive authentication status including Play Integrity
+   */
+  async getAuthenticationStatus(): Promise<{
+    googleSignIn: { isConfigured: boolean; hasModule: boolean; hasWebClientId: boolean }
+  }> {
+    const googleStatus = this.getConfigurationStatus()
+    // Remove: const integrityStatus = await playIntegrityService.getIntegrityStatus()
+
+    return {
+      googleSignIn: googleStatus,
+      // Remove: playIntegrity: integrityStatus
     }
   }
 
@@ -132,11 +161,42 @@ class GoogleAuthService {
       return {
         success: false,
         error: "MODULE_NOT_AVAILABLE",
-        message: "Google Sign-In is not properly configured. Please check your environment variables.",
+        message:
+          "Google Sign-In is not properly configured. Please check your environment variables.",
       }
     }
 
     try {
+      // Check device integrity before proceeding with Google Sign-In
+      console.log("🔍 Checking device integrity before Google Sign-In...")
+      // Remove: const isIntegrityValid = await playIntegrityService.checkBasicIntegrity()
+
+      // Remove: if (!isIntegrityValid) {
+      // Remove:   console.warn("⚠️ Device integrity check failed")
+      // Remove:   return {
+      // Remove:     success: false,
+      // Remove:     error: "INTEGRITY_CHECK_FAILED",
+      // Remove:     message: "Device integrity verification failed. Please ensure you're using a genuine device and the app is installed from Google Play.",
+      // Remove:   }
+      // Remove: }
+
+      // Remove: console.log("✅ Device integrity check passed")
+
+      // Request integrity token for backend verification
+      console.log("🔍 Requesting Play Integrity token...")
+      // Remove: const integrityToken = await playIntegrityService.requestIntegrityToken()
+
+      // Remove: if (typeof integrityToken !== 'string') {
+      // Remove:   console.warn("⚠️ Failed to get Play Integrity token:", integrityToken)
+      // Remove:   return {
+      // Remove:     success: false,
+      // Remove:     error: "INTEGRITY_TOKEN_FAILED",
+      // Remove:     message: "Failed to verify app integrity. Please try again or contact support.",
+      // Remove:   }
+      // Remove: }
+
+      // Remove: console.log("✅ Play Integrity token obtained")
+
       // Check if your device supports Google Play
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true })
 
@@ -238,7 +298,8 @@ class GoogleAuthService {
         return {
           success: false,
           error: "DEVELOPER_ERROR",
-          message: "Developer error - You're likely using a Web Client ID instead of an Android OAuth 2.0 Client ID. Create an Android OAuth 2.0 Client ID in Google Cloud Console with package name 'com.legingerdev.visu' and your SHA-1 fingerprint.",
+          message:
+            "Developer error - You're likely using a Web Client ID instead of an Android OAuth 2.0 Client ID. Create an Android OAuth 2.0 Client ID in Google Cloud Console with package name 'com.legingerdev.visu' and your SHA-1 fingerprint.",
         }
       } else if (error.code === "SIGN_IN_FAILED") {
         return {

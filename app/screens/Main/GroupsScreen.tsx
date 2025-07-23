@@ -118,7 +118,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
       groupsLimit: subscription.groupsLimit,
       subscriptionStatus: subscription.subscriptionStatus,
       loading: subscription.loading,
-      error: subscription.error
+      error: subscription.error,
     })
 
     if (!user) {

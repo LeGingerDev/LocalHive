@@ -1,1 +1,1 @@
-export { LegalModals } from "./LegalModals" 
+export { LegalModals } from "./LegalModals"

@@ -1,14 +1,24 @@
 import React, { FC, memo, useCallback, useState, forwardRef, useImperativeHandle } from "react"
-import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator, TouchableOpacity } from "react-native"
+import {
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+  View,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native"
 
+import { CustomGradient } from "@/components/Gradient/CustomGradient"
+import { Icon } from "@/components/Icon"
 import { ItemCard } from "@/components/ItemCard"
 import { Text } from "@/components/Text"
-import { Icon } from "@/components/Icon"
-import { useRecentItemsFromAllGroups, RecentItemWithGroup } from "@/hooks/useRecentItemsFromAllGroups"
+import {
+  useRecentItemsFromAllGroups,
+  RecentItemWithGroup,
+} from "@/hooks/useRecentItemsFromAllGroups"
+import { navigate } from "@/navigators/navigationUtilities"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
-import { navigate } from "@/navigators/navigationUtilities"
-import { CustomGradient } from "@/components/Gradient/CustomGradient"
 
 // #region Types & Interfaces
 export interface RecentActivitySectionProps {
@@ -53,14 +63,12 @@ export interface RecentActivitySectionRef {
  * - Uses ItemCard for visual consistency
  * - Supports ref for external refresh
  */
-export const RecentActivitySection = forwardRef<RecentActivitySectionRef, RecentActivitySectionProps>((props, ref) => {
+export const RecentActivitySection = forwardRef<
+  RecentActivitySectionRef,
+  RecentActivitySectionProps
+>((props, ref) => {
   // #region Props Destructuring with Defaults
-  const {
-    style,
-    limit = 5,
-    onItemPress,
-    testID = "recentActivitySectionComponent",
-  } = props
+  const { style, limit = 5, onItemPress, testID = "recentActivitySectionComponent" } = props
   // #endregion
 
   // #region Hooks & Context
@@ -70,19 +78,26 @@ export const RecentActivitySection = forwardRef<RecentActivitySectionRef, Recent
   // #endregion
 
   // Expose refresh method to parent component
-  useImperativeHandle(ref, () => ({
-    refresh,
-  }), [refresh])
+  useImperativeHandle(
+    ref,
+    () => ({
+      refresh,
+    }),
+    [refresh],
+  )
 
   // #region Event Handlers
-  const _handleItemPress = useCallback((item: RecentItemWithGroup) => {
-    if (onItemPress) {
-      onItemPress(item)
-    } else {
-      // Default navigation to group detail screen
-      navigate("GroupDetail", { groupId: item.group_id })
-    }
-  }, [onItemPress])
+  const _handleItemPress = useCallback(
+    (item: RecentItemWithGroup) => {
+      if (onItemPress) {
+        onItemPress(item)
+      } else {
+        // Default navigation to group detail screen
+        navigate("GroupDetail", { groupId: item.group_id })
+      }
+    },
+    [onItemPress],
+  )
 
   const _handleRetry = useCallback(() => {
     refresh()
@@ -133,8 +148,8 @@ export const RecentActivitySection = forwardRef<RecentActivitySectionRef, Recent
   return (
     <View style={themed([$container, style])} testID={testID}>
       {/* Header with Gradient Background */}
-      <TouchableOpacity 
-        style={themed($headerGradient)} 
+      <TouchableOpacity
+        style={themed($headerGradient)}
         onPress={_handleToggleCollapse}
         activeOpacity={0.8}
       >
@@ -144,9 +159,9 @@ export const RecentActivitySection = forwardRef<RecentActivitySectionRef, Recent
               <Icon icon="view" size={20} color="#FFFFFF" />
               <Text style={themed($sectionTitle)} text="Recent Activity" />
             </View>
-            <Icon 
-              icon={isCollapsed ? "caretRight" : "caretLeft"} 
-              size={20} 
+            <Icon
+              icon={isCollapsed ? "caretRight" : "caretLeft"}
+              size={20}
               color="#FFFFFF"
               style={themed($arrowIcon)}
             />
@@ -292,4 +307,4 @@ const $emptySubtext: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontSize: 14,
   color: colors.textDim,
 })
-// #endregion 
+// #endregion

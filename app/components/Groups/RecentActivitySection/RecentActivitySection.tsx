@@ -128,7 +128,12 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
 
   // #region Hooks & Context
   const { themed } = useAppTheme()
-  const { items: hookItems, loading: itemsLoading, error: itemsError, getRecentItems } = useItems(groupId)
+  const {
+    items: hookItems,
+    loading: itemsLoading,
+    error: itemsError,
+    getRecentItems,
+  } = useItems(groupId)
   // #endregion
 
   // #region Memoized Values
@@ -213,7 +218,13 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
           ) : (
             <>
               {itemsToShow.map((item, index) => (
-                <ItemCard key={item.id} item={item} onPress={onItemPress} onItemDeleted={onItemDeleted} deletable={deletable} />
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  onPress={onItemPress}
+                  onItemDeleted={onItemDeleted}
+                  deletable={deletable}
+                />
               ))}
               {itemsToShow.length === 0 && (
                 <Text style={themed($emptyText)} text="No recent items" />
@@ -231,8 +242,6 @@ export const RecentActivitySection: FC<RecentActivitySectionProps> = memo((props
             text={_displayDescription}
             testID={`${testID}_description`}
           />
-
-
         </>
       )}
     </View>
@@ -328,8 +337,6 @@ const $emptyText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   textAlign: "center",
   fontStyle: "italic",
 })
-
-
 
 const $activityIndicator: ThemedStyle<ViewStyle> = () => ({
   // Color is passed directly to ActivityIndicator component

@@ -14,16 +14,16 @@ export class ShareService {
   static async shareText(text: string, title?: string): Promise<boolean> {
     try {
       // For text sharing, we need to create a temporary file
-      const { writeAsStringAsync, documentDirectory } = await import('expo-file-system')
-      
+      const { writeAsStringAsync, documentDirectory } = await import("expo-file-system")
+
       if (!documentDirectory) {
         console.error("Document directory not available")
         return false
       }
 
       const fileUri = `${documentDirectory}/share_text.txt`
-      await writeAsStringAsync(fileUri, text, { encoding: 'utf8' })
-      
+      await writeAsStringAsync(fileUri, text, { encoding: "utf8" })
+
       const isAvailable = await Sharing.isAvailableAsync()
       if (!isAvailable) {
         console.error("Sharing not available on this device")
@@ -31,7 +31,7 @@ export class ShareService {
       }
 
       await Sharing.shareAsync(fileUri, {
-        mimeType: 'text/plain',
+        mimeType: "text/plain",
         dialogTitle: title || "Share Code",
       })
 

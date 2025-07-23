@@ -12,12 +12,11 @@ import {
   Alert,
 } from "react-native"
 
-
 import { Icon } from "@/components/Icon"
-import { useAppTheme } from "@/theme/context"
-import type { ThemedStyle } from "@/theme/types"
 import { useSubscription } from "@/hooks/useSubscription"
 import { SubscriptionService } from "@/services/subscriptionService"
+import { useAppTheme } from "@/theme/context"
+import type { ThemedStyle } from "@/theme/types"
 
 export interface SubscriptionManagementModalProps {
   visible: boolean
@@ -41,37 +40,41 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
       "Are you sure you want to cancel your Pro subscription? You'll lose access to unlimited features at the end of your current billing period.",
       [
         { text: "Keep Subscription", style: "cancel" },
-        { 
-          text: "Cancel Subscription", 
+        {
+          text: "Cancel Subscription",
           style: "destructive",
           onPress: async () => {
             try {
               // For now, just set to free - in a real app you'd integrate with payment provider
               if (userId) {
-                const { success, error } = await SubscriptionService.updateSubscriptionStatus(userId, "free")
+                const { success, error } = await SubscriptionService.updateSubscriptionStatus(
+                  userId,
+                  "free",
+                )
                 if (error) {
                   Alert.alert("Error", "Failed to cancel subscription. Please try again.")
                 } else {
-                  Alert.alert("Success", "Your subscription has been cancelled. You'll keep Pro access until the end of your billing period.")
+                  Alert.alert(
+                    "Success",
+                    "Your subscription has been cancelled. You'll keep Pro access until the end of your billing period.",
+                  )
                   onClose()
                 }
               }
             } catch (err) {
               Alert.alert("Error", "Something went wrong. Please try again.")
             }
-          }
+          },
         },
-      ]
+      ],
     )
   }
 
-
-
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     })
   }
 
@@ -79,14 +82,14 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
     const now = new Date()
     const end = new Date(endDate)
     const diff = end.getTime() - now.getTime()
-    
+
     if (diff <= 0) {
       return "Expired"
     }
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-    
+
     if (days > 0) {
       return `${days} days, ${hours} hours`
     } else {
@@ -107,12 +110,7 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
   }
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={themed($overlay)}>
         <View style={[themed($modalContainer), style]}>
           {/* Close button */}
@@ -368,8 +366,6 @@ const $buttonContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   gap: spacing.md,
 })
 
-
-
 const $cancelButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   borderWidth: 1,
   borderColor: colors.error,
@@ -395,4 +391,4 @@ const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   padding: 40,
 })
 
-export default SubscriptionManagementModal 
+export default SubscriptionManagementModal

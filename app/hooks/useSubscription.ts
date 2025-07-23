@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useState, useMemo } from "react"
 
-import { SubscriptionService, type SubscriptionInfo, type SubscriptionStatus } from "@/services/subscriptionService"
+import {
+  SubscriptionService,
+  type SubscriptionInfo,
+  type SubscriptionStatus,
+} from "@/services/subscriptionService"
 
 // Global cache to prevent multiple API calls for the same user
-const subscriptionCache = new Map<string, {
-  data: SubscriptionInfo | null
-  error: string | null
-  timestamp: number
-  promise: Promise<{ info: SubscriptionInfo | null; error: any }> | null
-}>()
+const subscriptionCache = new Map<
+  string,
+  {
+    data: SubscriptionInfo | null
+    error: string | null
+    timestamp: number
+    promise: Promise<{ info: SubscriptionInfo | null; error: any }> | null
+  }
+>()
 
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
@@ -34,8 +41,8 @@ export const useSubscription = (userId: string | null) => {
     // Check cache first
     const cached = subscriptionCache.get(userId)
     const now = Date.now()
-    
-    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+
+    if (cached && now - cached.timestamp < CACHE_DURATION) {
       console.log(`📋 [useSubscription] Using cached data for user: ${userId}`)
       setSubscriptionInfo(cached.data)
       setError(cached.error)
@@ -70,34 +77,34 @@ export const useSubscription = (userId: string | null) => {
       data: null,
       error: null,
       timestamp: now,
-      promise
+      promise,
     })
 
     try {
       const { info, error } = await promise
-      
+
       if (error) {
         console.error(`❌ [useSubscription] Error loading subscription info:`, error)
         setError(error.message)
         setSubscriptionInfo(null)
-        
+
         // Update cache with error
         subscriptionCache.set(userId, {
           data: null,
           error: error.message,
           timestamp: now,
-          promise: null
+          promise: null,
         })
       } else {
         console.log(`✅ [useSubscription] Subscription info loaded:`, info)
         setSubscriptionInfo(info)
-        
+
         // Update cache with success data
         subscriptionCache.set(userId, {
           data: info,
           error: null,
           timestamp: now,
-          promise: null
+          promise: null,
         })
       }
     } catch (err) {
@@ -105,13 +112,13 @@ export const useSubscription = (userId: string | null) => {
       const errorMessage = err instanceof Error ? err.message : "Failed to load subscription info"
       setError(errorMessage)
       setSubscriptionInfo(null)
-      
+
       // Update cache with error
       subscriptionCache.set(userId, {
         data: null,
         error: errorMessage,
         timestamp: now,
-        promise: null
+        promise: null,
       })
     } finally {
       setLoading(false)
@@ -140,7 +147,7 @@ export const useSubscription = (userId: string | null) => {
 
     try {
       const { success, error } = await SubscriptionService.activateTrial(userId)
-      
+
       if (error) {
         setError(error.message)
         return { success: false, error: error.message }
@@ -165,35 +172,38 @@ export const useSubscription = (userId: string | null) => {
   /**
    * Upgrade user to pro subscription
    */
-  const upgradeToPro = useCallback(async (expiresAt: string) => {
-    if (!userId) return { success: false, error: "No user ID" }
+  const upgradeToPro = useCallback(
+    async (expiresAt: string) => {
+      if (!userId) return { success: false, error: "No user ID" }
 
-    setLoading(true)
-    setError(null)
+      setLoading(true)
+      setError(null)
 
-    try {
-      const { success, error } = await SubscriptionService.upgradeToPro(userId, expiresAt)
-      
-      if (error) {
-        setError(error.message)
-        return { success: false, error: error.message }
+      try {
+        const { success, error } = await SubscriptionService.upgradeToPro(userId, expiresAt)
+
+        if (error) {
+          setError(error.message)
+          return { success: false, error: error.message }
+        }
+
+        if (success) {
+          // Clear cache and refresh subscription info after upgrade
+          subscriptionCache.delete(userId)
+          await loadSubscriptionInfo()
+        }
+
+        return { success, error: null }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to upgrade to pro"
+        setError(errorMessage)
+        return { success: false, error: errorMessage }
+      } finally {
+        setLoading(false)
       }
-
-      if (success) {
-        // Clear cache and refresh subscription info after upgrade
-        subscriptionCache.delete(userId)
-        await loadSubscriptionInfo()
-      }
-
-      return { success, error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to upgrade to pro"
-      setError(errorMessage)
-      return { success: false, error: errorMessage }
-    } finally {
-      setLoading(false)
-    }
-  }, [userId, loadSubscriptionInfo])
+    },
+    [userId, loadSubscriptionInfo],
+  )
 
   /**
    * Check if user can create a group
@@ -292,7 +302,7 @@ export const useSubscription = (userId: string | null) => {
       itemsPercentage,
       canCreateGroupNow,
       canCreateItemNow,
-      canUseAISearchNow
+      canUseAISearchNow,
     }
   }, [subscriptionInfo])
 
@@ -300,7 +310,7 @@ export const useSubscription = (userId: string | null) => {
   if (__DEV__) {
     console.log(`📊 [useSubscription] Computed values:`, {
       subscriptionStatus: subscriptionInfo?.subscription_status,
-      ...computedValues
+      ...computedValues,
     })
   }
 
@@ -308,14 +318,14 @@ export const useSubscription = (userId: string | null) => {
     // Data
     subscriptionInfo,
     subscriptionStatus: subscriptionInfo?.subscription_status || "free",
-    
+
     // Computed values
     ...computedValues,
-    
+
     // State
     loading,
     error,
-    
+
     // Actions
     refresh,
     activateTrial,
@@ -325,4 +335,4 @@ export const useSubscription = (userId: string | null) => {
     canUseAISearch,
     isApproachingLimits,
   }
-} 
+}

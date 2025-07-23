@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react"
+import { useMemo } from "react"
 import { View, ScrollView, ViewStyle, TextStyle, TouchableOpacity, Modal } from "react-native"
 
 import { CustomAlert } from "@/components/Alert"
@@ -19,7 +20,6 @@ import { GroupService } from "@/services/supabase/groupService"
 import { ItemService, ItemWithProfile } from "@/services/supabase/itemService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
-import { useMemo } from "react"
 
 interface GroupDetailScreenProps {
   route: { params: { groupId: string } }
@@ -75,7 +75,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   // Update recentItems whenever items change
   useEffect(() => {
     // Get the 3 most recent items (by created_at desc)
-    const sorted = [...items].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    const sorted = [...items].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )
     setRecentItems(sorted.slice(0, 3))
   }, [items])
 

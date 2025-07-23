@@ -13,15 +13,16 @@ import {
   Image,
 } from "react-native"
 
+import { useAlert } from "@/components/Alert"
 import { Header } from "@/components/Header"
 import { ItemCard } from "@/components/ItemCard"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { Switch } from "@/components/Toggle/Switch"
+import { useAuth } from "@/context/AuthContext"
 import { useAnalytics } from "@/hooks/useAnalytics"
 import { useSubscription } from "@/hooks/useSubscription"
-import { useAuth } from "@/context/AuthContext"
-import { useAlert } from "@/components/Alert"
+import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { askAIAboutItems, AIQueryResponse } from "@/services/openaiService"
 import { ItemWithProfile, ItemService } from "@/services/supabase/itemService"
 import { supabase } from "@/services/supabase/supabase"
@@ -29,7 +30,6 @@ import { searchItemsByVector } from "@/services/vectorSearchService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
-import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 
 // Tab bar height from AnimatedTabBar component
 const TAB_BAR_HEIGHT = 80
@@ -68,16 +68,16 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
   // Keyboard listeners
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       () => {
         setIsKeyboardVisible(true)
-      }
+      },
     )
     const keyboardDidHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => {
         setIsKeyboardVisible(false)
-      }
+      },
     )
 
     return () => {
@@ -110,7 +110,7 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
             const items = await searchItemsByVector(text)
             console.log("[SearchScreen] Search results:", items)
             console.log("[SearchScreen] Number of results:", items.length)
-            
+
             // Fetch group names for the search results
             const itemsWithGroupNames = await fetchGroupNamesForItems(items)
             setResults(itemsWithGroupNames)
@@ -157,7 +157,7 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
 
       const aiResponse = await askAIAboutItems(query, allItems)
       setAiResponse(aiResponse)
-      
+
       // Fetch group names for AI search results
       const itemsWithGroupNames = await fetchGroupNamesForItems(aiResponse.relatedItems || [])
       setResults(itemsWithGroupNames)
@@ -176,7 +176,7 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
 
     try {
       // Get unique group IDs from the items
-      const groupIds = [...new Set(items.map(item => item.group_id))]
+      const groupIds = [...new Set(items.map((item) => item.group_id))]
 
       // Fetch group names
       const { data: groups, error: groupsError } = await supabase
@@ -191,14 +191,14 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
 
       // Create a map of group ID to group name
       const groupMap = new Map()
-      groups?.forEach(group => {
+      groups?.forEach((group) => {
         groupMap.set(group.id, group.name)
       })
 
       // Add group names to items
-      return items.map(item => ({
+      return items.map((item) => ({
         ...item,
-        group_name: groupMap.get(item.group_id)
+        group_name: groupMap.get(item.group_id),
       }))
     } catch (error) {
       console.error("Error fetching group names:", error)
@@ -213,7 +213,8 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
     if (newMode && !subscription.isPro) {
       showAlert({
         title: "AI Search Requires Pro",
-        message: "AI-powered search is a Pro feature. Upgrade to Pro to unlock advanced AI search capabilities and get intelligent answers about your items.",
+        message:
+          "AI-powered search is a Pro feature. Upgrade to Pro to unlock advanced AI search capabilities and get intelligent answers about your items.",
         buttons: [
           {
             label: "Maybe Later",
@@ -227,7 +228,8 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
               // For now, we'll just show a message
               showAlert({
                 title: "Upgrade to Pro",
-                message: "To upgrade to Pro, please go to your Profile screen and tap on the subscription management option.",
+                message:
+                  "To upgrade to Pro, please go to your Profile screen and tap on the subscription management option.",
                 buttons: [{ label: "OK", preset: "filled" }],
               })
             },
@@ -256,18 +258,18 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
     setAiResponse(null) // Clear AI response
   }, [isAIMode, query, trackEvent, events.SEARCH_MODE_SWITCHED, subscription.isPro, showAlert])
 
-  const renderItem = useCallback(({ item }: { item: ItemWithProfile & { group_name?: string } }) => {
-    return <ItemCard item={item} groupName={item.group_name} />
-  }, [])
+  const renderItem = useCallback(
+    ({ item }: { item: ItemWithProfile & { group_name?: string } }) => {
+      return <ItemCard item={item} groupName={item.group_name} />
+    },
+    [],
+  )
 
   const renderEmptyState = useCallback(() => {
     if (isLoading) {
       return (
         <View style={themed($emptyContainer)}>
-          <ActivityIndicator
-            size="small"
-            color={themed($activityIndicator).color}
-          />
+          <ActivityIndicator size="small" color={themed($activityIndicator).color} />
           <Text style={themed($emptyText)} text="Searching..." />
         </View>
       )
@@ -284,7 +286,7 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
     if (query.length > 0 && results.length === 0 && !aiResponse) {
       return (
         <View style={themed($emptyContainer)}>
-          <Image 
+          <Image
             source={require("../../../assets/Visu/Visu_Searching.png")}
             style={themed($emptyStateImage)}
             resizeMode="contain"
@@ -297,12 +299,15 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
     if (query.length === 0) {
       return (
         <View style={themed($emptyContainer)}>
-          <Image 
+          <Image
             source={require("../../../assets/Visu/Visu_Searching.png")}
             style={themed($emptyStateImage)}
             resizeMode="contain"
           />
-          <Text style={themed($emptyText)} text={isAIMode ? "Ask about your items..." : "Search your items..."} />
+          <Text
+            style={themed($emptyText)}
+            text={isAIMode ? "Ask about your items..." : "Search your items..."}
+          />
         </View>
       )
     }
@@ -311,9 +316,9 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
   }, [isLoading, error, query, results.length, aiResponse, isAIMode, themed])
 
   return (
-    <Screen 
-      style={themed($root)} 
-      preset="fixed" 
+    <Screen
+      style={themed($root)}
+      preset="fixed"
       safeAreaEdges={["top"]}
       contentContainerStyle={themed($contentContainer)}
     >
@@ -324,20 +329,18 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
             customComponent: (
               <View style={themed($aiToggleContainer)}>
                 <Text style={themed($aiToggleText)}>Use AI</Text>
-                <Switch 
-                  value={isAIMode} 
+                <Switch
+                  value={isAIMode}
                   onValueChange={handleModeSwitch}
                   disabled={!subscription.isPro}
                 />
-                {!subscription.isPro && (
-                  <Text style={themed($proBadge)}>PRO</Text>
-                )}
+                {!subscription.isPro && <Text style={themed($proBadge)}>PRO</Text>}
               </View>
             ),
           },
         ]}
       />
-      
+
       {/* Main Content Area */}
       <View style={themed($mainContent)}>
         <FlatList

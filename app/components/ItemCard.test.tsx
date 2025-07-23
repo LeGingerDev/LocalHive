@@ -2,13 +2,13 @@ import { NavigationContainer } from "@react-navigation/native"
 import { render, fireEvent } from "@testing-library/react-native"
 
 import { ItemCard } from "./ItemCard"
-import { ThemeProvider } from "../theme/context"
 import { ItemWithProfile } from "../services/supabase/itemService"
+import { ThemeProvider } from "../theme/context"
 
 // Mock the ItemService
 jest.mock("../services/supabase/itemService", () => ({
   ItemService: {
-    deleteItem: jest.fn(),
+    deleteItem: jest.fn(() => Promise.resolve({ error: null })),
   },
 }))
 
@@ -37,7 +37,7 @@ describe("ItemCard", () => {
         </NavigationContainer>
       </ThemeProvider>,
     )
-    
+
     expect(getByText("Test Item")).toBeDefined()
     expect(getByText("electronics")).toBeDefined()
     expect(getByText("Test User")).toBeDefined()
@@ -47,23 +47,25 @@ describe("ItemCard", () => {
     const { getByText, queryByText } = render(
       <ThemeProvider>
         <NavigationContainer>
-          <ItemCard item={mockItem} />
+          <ItemCard item={mockItem} deletable={true} />
         </NavigationContainer>
       </ThemeProvider>,
     )
-    
+
     // Initially, delete dialog should not be visible
     expect(queryByText("Delete Item")).toBeNull()
-    
+
     // Find the TouchableOpacity and trigger long press
     const itemCard = getByText("Test Item").parent?.parent
     if (itemCard) {
       fireEvent(itemCard, "longPress")
     }
-    
+
     // After long press, delete dialog should be visible
     expect(getByText("Delete Item")).toBeDefined()
-    expect(getByText('Are you sure you want to delete "Test Item"? This action cannot be undone.')).toBeDefined()
+    expect(
+      getByText('Are you sure you want to delete "Test Item"? This action cannot be undone.'),
+    ).toBeDefined()
     expect(getByText("Cancel")).toBeDefined()
     expect(getByText("Delete")).toBeDefined()
   })
@@ -73,21 +75,24 @@ describe("ItemCard", () => {
     const { getByText } = render(
       <ThemeProvider>
         <NavigationContainer>
-          <ItemCard item={mockItem} onItemDeleted={mockOnItemDeleted} />
+          <ItemCard item={mockItem} onItemDeleted={mockOnItemDeleted} deletable={true} />
         </NavigationContainer>
       </ThemeProvider>,
     )
-    
+
     // Trigger long press to show delete dialog
     const itemCard = getByText("Test Item").parent?.parent
     if (itemCard) {
       fireEvent(itemCard, "longPress")
     }
-    
+
     // Click the Delete button
     const deleteButton = getByText("Delete")
     fireEvent.press(deleteButton)
-    
+
+    // Wait for the async operation to complete
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
     // The onItemDeleted callback should be called
     expect(mockOnItemDeleted).toHaveBeenCalledWith("test-item-id")
   })
@@ -96,25 +101,25 @@ describe("ItemCard", () => {
     const { getByText, queryByText } = render(
       <ThemeProvider>
         <NavigationContainer>
-          <ItemCard item={mockItem} />
+          <ItemCard item={mockItem} deletable={true} />
         </NavigationContainer>
       </ThemeProvider>,
     )
-    
+
     // Trigger long press to show delete dialog
     const itemCard = getByText("Test Item").parent?.parent
     if (itemCard) {
       fireEvent(itemCard, "longPress")
     }
-    
+
     // Verify dialog is visible
     expect(getByText("Delete Item")).toBeDefined()
-    
+
     // Click the Cancel button
     const cancelButton = getByText("Cancel")
     fireEvent.press(cancelButton)
-    
+
     // Dialog should be hidden
     expect(queryByText("Delete Item")).toBeNull()
   })
-}) 
+})

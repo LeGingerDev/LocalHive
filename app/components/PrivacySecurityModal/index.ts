@@ -1,1 +1,1 @@
-export { PrivacySecurityModal } from "./PrivacySecurityModal" 
+export { PrivacySecurityModal } from "./PrivacySecurityModal"

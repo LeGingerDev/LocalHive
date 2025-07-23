@@ -5,15 +5,14 @@ import FontAwesome from "react-native-vector-icons/FontAwesome"
 
 import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { CustomGradient } from "@/components/CustomGradient"
+import { LegalModals } from "@/components/LegalModals"
 import { RoundedButton } from "@/components/RoundedButton"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
-import { LegalModals } from "@/components/LegalModals"
 import { useAuth } from "@/context/AuthContext"
-import googleAuthService from "@/services/supabase/googleAuthService"
+import { useDemoMode, useGoogleAuthWithIntegrity } from "@/hooks"
 import { hideNavigationBar } from "@/utils/navigationBarUtils"
 import { useSafeAreaInsetsStyle } from "@/utils/useSafeAreaInsetsStyle"
-import { useDemoMode } from "@/hooks/useDemoMode"
 
 // Get screen dimensions
 const { height } = Dimensions.get("window")
@@ -34,7 +33,6 @@ const AppleIcon = () => (
 export const LandingScreen = () => {
   const navigation = useNavigation<any>()
   const { refreshUser } = useAuth()
-  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false)
   const [isDemoSigningIn, setIsDemoSigningIn] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
   const translateYAnim = useRef(new Animated.Value(50)).current
@@ -42,6 +40,9 @@ export const LandingScreen = () => {
 
   // Demo mode hook
   const { isDemoEnabled, isLoading: isDemoLoading, signInWithDemo } = useDemoMode()
+
+  // Google authentication with integrity checks
+  const { isSigningIn: isGoogleSigningIn, signInWithGoogle } = useGoogleAuthWithIntegrity()
 
   // Alert state
   const [alertVisible, setAlertVisible] = useState(false)
@@ -88,9 +89,8 @@ export const LandingScreen = () => {
   const handleGoogleSignIn = async () => {
     if (isGoogleSigningIn) return
 
-    setIsGoogleSigningIn(true)
     try {
-      const result = await googleAuthService.signInWithGoogle()
+      const result = await signInWithGoogle()
 
       if (result.success) {
         // Refresh user state to ensure it's properly updated
@@ -103,6 +103,18 @@ export const LandingScreen = () => {
       } else {
         if (result.error === "CANCELLED") {
           return
+        } else if (result.error === "INTEGRITY_CHECK_FAILED") {
+          showAlert(
+            "Device Verification Failed",
+            "Your device couldn't be verified. Please ensure you're using a genuine Android device and the app is installed from Google Play Store.",
+            "destructive",
+          )
+        } else if (result.error === "INTEGRITY_TOKEN_FAILED") {
+          showAlert(
+            "App Verification Failed",
+            "We couldn't verify this app installation. Please try again or contact support if the issue persists.",
+            "destructive",
+          )
         } else if (result.error === "PLAY_SERVICES_NOT_AVAILABLE") {
           showAlert(
             "Google Play Services Required",
@@ -136,8 +148,6 @@ export const LandingScreen = () => {
         return
       }
       showAlert("Sign-In Error", "An unexpected error occurred. Please try again.")
-    } finally {
-      setIsGoogleSigningIn(false)
     }
   }
 

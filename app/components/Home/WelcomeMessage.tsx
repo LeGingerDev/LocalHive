@@ -1,8 +1,9 @@
 import React, { FC } from "react"
 import { View, Text, ViewStyle, TextStyle } from "react-native"
+
 import { useAppTheme } from "@/theme/context"
-import type { ThemedStyle } from "@/theme/types"
 import { spacing } from "@/theme/spacing"
+import type { ThemedStyle } from "@/theme/types"
 
 interface WelcomeMessageProps {
   userEmail?: string | null
@@ -20,17 +21,16 @@ export const WelcomeMessage: FC<WelcomeMessageProps> = ({ userEmail }) => {
 
   const getUserName = () => {
     if (!userEmail) return ""
-    return userEmail.split('@')[0]
+    return userEmail.split("@")[0]
   }
 
   return (
     <View style={themed($container)}>
       <Text style={themed($greeting)}>
-        {getGreeting()}{getUserName() ? `, ${getUserName()}` : ''}! 👋
+        {getGreeting()}
+        {getUserName() ? `, ${getUserName()}` : ""}! 👋
       </Text>
-      <Text style={themed($subtitle)}>
-        Manage your groups and items with ease
-      </Text>
+      <Text style={themed($subtitle)}>Manage your groups and items with ease</Text>
     </View>
   )
 }
@@ -53,4 +53,4 @@ const $subtitle: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.normal,
   fontSize: 16,
   color: colors.textDim,
-}) 
+})

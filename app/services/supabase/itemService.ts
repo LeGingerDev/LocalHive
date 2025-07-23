@@ -352,18 +352,23 @@ export class ItemService {
   static async getRecentItemsFromAllGroups(
     userId: string,
     limit: number = 5,
-  ): Promise<{ data: (ItemWithProfile & { group_name: string })[] | null; error: PostgrestError | null }> {
+  ): Promise<{
+    data: (ItemWithProfile & { group_name: string })[] | null
+    error: PostgrestError | null
+  }> {
     try {
       // First, get all groups the user is a member of
       const { data: userGroups, error: groupsError } = await supabase
         .from("group_members")
-        .select(`
+        .select(
+          `
           group_id,
           groups!inner(
             id,
             name
           )
-        `)
+        `,
+        )
         .eq("user_id", userId)
 
       if (groupsError) {
@@ -383,13 +388,15 @@ export class ItemService {
       // So we'll get the items first, then fetch profile data separately
       const { data: items, error: itemsError } = await supabase
         .from("items")
-        .select(`
+        .select(
+          `
           *,
           groups!inner(
             id,
             name
           )
-        `)
+        `,
+        )
         .in("group_id", groupIds)
         .order("created_at", { ascending: false })
         .limit(limit)
@@ -404,7 +411,7 @@ export class ItemService {
       }
 
       // Get unique user IDs from the items
-      const userIds = [...new Set(items.map(item => item.user_id))]
+      const userIds = [...new Set(items.map((item) => item.user_id))]
 
       // Fetch profile data for all users
       const { data: profiles, error: profilesError } = await supabase
@@ -419,7 +426,7 @@ export class ItemService {
 
       // Create a map of user ID to profile data
       const profileMap = new Map()
-      profiles?.forEach(profile => {
+      profiles?.forEach((profile) => {
         profileMap.set(profile.id, profile)
       })
 

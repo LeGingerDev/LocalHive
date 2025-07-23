@@ -51,12 +51,7 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
   ]
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={themed($overlay)}>
         <View style={[themed($modalContainer), style]}>
           {/* Close button */}
@@ -84,9 +79,7 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
                   </View>
                   <View style={themed($featureTextContainer)}>
                     <Text style={themed($featureTitle)}>{feature.title}</Text>
-                    <Text style={themed($featureDescription)}>
-                      {feature.description}
-                    </Text>
+                    <Text style={themed($featureDescription)}>{feature.description}</Text>
                   </View>
                 </View>
               ))}
@@ -239,4 +232,4 @@ const $buttonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   textAlign: "center",
 })
 
-export default VisuProModal 
+export default VisuProModal

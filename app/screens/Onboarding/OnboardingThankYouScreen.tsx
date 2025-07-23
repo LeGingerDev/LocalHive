@@ -1,15 +1,23 @@
 import React, { useEffect, useState, useRef } from "react"
-import { View, StyleSheet, StatusBar, TouchableOpacity, Animated, Dimensions, Image } from "react-native"
+import {
+  View,
+  StyleSheet,
+  StatusBar,
+  TouchableOpacity,
+  Animated,
+  Dimensions,
+  Image,
+} from "react-native"
+import { LinearGradient } from "expo-linear-gradient"
 import { useNavigation } from "@react-navigation/native"
 import ReactNativeHapticFeedback from "react-native-haptic-feedback"
-import { LinearGradient } from "expo-linear-gradient"
 
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
-import { colors } from "@/theme/colors"
-import { typography } from "@/theme/typography"
-import { spacing } from "@/theme/spacing"
 import { AnalyticsService } from "@/services/analyticsService"
+import { colors } from "@/theme/colors"
+import { spacing } from "@/theme/spacing"
+import { typography } from "@/theme/typography"
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window")
 
@@ -47,10 +55,10 @@ export const OnboardingThankYouScreen = () => {
 
   const triggerConfetti = () => {
     console.log("🎉 Triggering confetti manually!")
-    
+
     // Haptic feedback for celebration
     ReactNativeHapticFeedback.trigger("notificationSuccess")
-    
+
     // Generate confetti pieces
     const pieces: ConfettiPiece[] = []
     for (let i = 0; i < 30; i++) {
@@ -64,20 +72,20 @@ export const OnboardingThankYouScreen = () => {
         color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
       })
     }
-    
+
     console.log(`🎉 Generated ${pieces.length} confetti pieces`)
     setConfettiPieces(pieces)
 
     // Animate confetti
     setTimeout(() => {
       console.log("🎉 Starting confetti animations...")
-      
+
       pieces.forEach((piece, index) => {
         const delay = index * 50 // Stagger the animations
-        
+
         setTimeout(() => {
           console.log(`🎉 Animating piece ${index + 1}/${pieces.length}`)
-          
+
           // Create parallel animations
           const animations = [
             // Fall down
@@ -114,7 +122,7 @@ export const OnboardingThankYouScreen = () => {
               useNativeDriver: true,
             }),
           ]
-          
+
           Animated.parallel(animations).start(() => {
             console.log(`🎉 Animation completed for piece ${index + 1}`)
           })
@@ -125,19 +133,19 @@ export const OnboardingThankYouScreen = () => {
 
   useEffect(() => {
     console.log("🎉 OnboardingThankYouScreen mounted")
-    
+
     // Track screen view
     AnalyticsService.trackScreenView({ screenName: "OnboardingThankYou" })
-    
+
     // Track onboarding completion
     AnalyticsService.trackEvent({
       name: "onboarding_completed",
       properties: {
         completion_time: Date.now(),
-        total_screens: 4 // Entry, Slideshow, Questionnaire, ThankYou
-      }
+        total_screens: 4, // Entry, Slideshow, Questionnaire, ThankYou
+      },
     })
-    
+
     // Start content animations
     const startContentAnimations = () => {
       // Animate content fade in
@@ -223,18 +231,27 @@ export const OnboardingThankYouScreen = () => {
     setTimeout(() => {
       startContentAnimations()
     }, 300)
-    
+
     // Auto-trigger confetti on mount
     setTimeout(() => {
       console.log("🎉 Auto-triggering confetti...")
       triggerConfetti()
     }, 500)
-  }, [contentFadeAnim, imageScaleAnim, imageRotateAnim, titleSlideAnim, subtitleFadeAnim, featuresAnim, buttonScaleAnim, buttonOpacityAnim])
+  }, [
+    contentFadeAnim,
+    imageScaleAnim,
+    imageRotateAnim,
+    titleSlideAnim,
+    subtitleFadeAnim,
+    featuresAnim,
+    buttonScaleAnim,
+    buttonOpacityAnim,
+  ])
 
   const handleGetStarted = () => {
     // Haptic feedback for navigation
     ReactNativeHapticFeedback.trigger("selection")
-    
+
     // Button press animation
     Animated.sequence([
       Animated.timing(buttonScaleAnim, {
@@ -248,23 +265,23 @@ export const OnboardingThankYouScreen = () => {
         useNativeDriver: true,
       }),
     ]).start()
-    
+
     // Track final onboarding action
     AnalyticsService.trackEvent({
       name: "onboarding_final_action",
       properties: {
         action: "get_started",
-        destination: "landing_screen"
-      }
+        destination: "landing_screen",
+      },
     })
-    
+
     navigation.navigate("Landing")
   }
 
   return (
     <Screen preset="fixed" contentContainerStyle={styles.container} safeAreaEdges={[]}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
-      
+
       {/* Gradient Background */}
       <LinearGradient
         colors={[colors.palette.primary400, colors.palette.primary500]}
@@ -281,7 +298,7 @@ export const OnboardingThankYouScreen = () => {
             console.log(`🎉 Skipping piece ${piece.id} - missing Animated.Value properties`)
             return null
           }
-          
+
           return (
             <Animated.View
               key={piece.id}
@@ -295,7 +312,7 @@ export const OnboardingThankYouScreen = () => {
                     {
                       rotate: piece.rotation.interpolate({
                         inputRange: [0, 1],
-                        outputRange: ['0deg', '360deg'],
+                        outputRange: ["0deg", "360deg"],
                       }),
                     },
                     { scale: piece.scale },
@@ -309,7 +326,7 @@ export const OnboardingThankYouScreen = () => {
       </View>
 
       {/* Content */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.content,
           {
@@ -318,23 +335,23 @@ export const OnboardingThankYouScreen = () => {
         ]}
       >
         {/* Celebration Image */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.imageContainer,
             {
               transform: [
                 { scale: imageScaleAnim },
-                                 {
-                   rotate: imageRotateAnim.interpolate({
-                     inputRange: [0, 0.5, 1],
-                     outputRange: ['-5deg', '0deg', '5deg'],
-                   }),
-                 },
+                {
+                  rotate: imageRotateAnim.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: ["-5deg", "0deg", "5deg"],
+                  }),
+                },
               ],
             },
           ]}
         >
-          <Image 
+          <Image
             source={require("../../../assets/Visu/Visu_Reading.png")}
             style={styles.celebrationImage}
             resizeMode="contain"
@@ -342,7 +359,7 @@ export const OnboardingThankYouScreen = () => {
         </Animated.View>
 
         {/* Title */}
-        <Animated.Text 
+        <Animated.Text
           style={[
             styles.title,
             {
@@ -352,9 +369,9 @@ export const OnboardingThankYouScreen = () => {
         >
           You're All Set!
         </Animated.Text>
-        
+
         {/* Subtitle */}
-        <Animated.Text 
+        <Animated.Text
           style={[
             styles.subtitle,
             {
@@ -366,17 +383,19 @@ export const OnboardingThankYouScreen = () => {
         </Animated.Text>
 
         {/* Features List */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.featuresContainer,
             {
               opacity: featuresAnim,
-              transform: [{
-                translateY: featuresAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [30, 0],
-                }),
-              }],
+              transform: [
+                {
+                  translateY: featuresAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [30, 0],
+                  }),
+                },
+              ],
             },
           ]}
         >
@@ -396,7 +415,7 @@ export const OnboardingThankYouScreen = () => {
       </Animated.View>
 
       {/* Get Started Button */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.buttonContainer,
           {
@@ -414,109 +433,109 @@ export const OnboardingThankYouScreen = () => {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  buttonContainer: {
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
-  gradient: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+  celebrationImage: {
+    height: "100%",
+    width: "100%",
   },
   confettiContainer: {
-    position: "absolute",
+    bottom: 0,
     left: 0,
+    position: "absolute",
     right: 0,
     top: 0,
-    bottom: 0,
     zIndex: 999,
   },
   confettiPiece: {
+    borderRadius: 5,
+    height: 10,
     position: "absolute",
     width: 10,
-    height: 10,
-    borderRadius: 5,
+  },
+  container: {
+    flex: 1,
   },
   content: {
+    alignItems: "center",
     flex: 1,
     justifyContent: "flex-start",
-    alignItems: "center",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-  },
-  imageContainer: {
-    width: "100%",
-    height: 250,
-    marginTop: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing.xl,
-  },
-  celebrationImage: {
-    width: "100%",
-    height: "100%",
-  },
-  title: {
-    fontSize: 32,
-    fontFamily: typography.primary.bold,
-    color: colors.palette.neutral100,
-    textAlign: "center",
-    marginBottom: spacing.md,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontFamily: typography.primary.normal,
-    color: "rgba(255, 255, 255, 0.9)",
-    textAlign: "center",
-    marginBottom: spacing.xl,
-    lineHeight: 26,
-    paddingHorizontal: spacing.md,
-  },
-  featuresContainer: {
-    width: "100%",
-    maxWidth: 300,
-    gap: spacing.md,
-  },
-  featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   featureIcon: {
     fontSize: 20,
     marginRight: spacing.sm,
   },
+  featureItem: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
   featureText: {
-    fontSize: 16,
-    fontFamily: typography.primary.medium,
     color: colors.palette.neutral100,
     flex: 1,
+    fontFamily: typography.primary.medium,
+    fontSize: 16,
   },
-  buttonContainer: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
+  featuresContainer: {
+    gap: spacing.md,
+    maxWidth: 300,
+    width: "100%",
   },
   getStartedButton: {
-    backgroundColor: colors.palette.neutral100,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 12,
     alignItems: "center",
+    backgroundColor: colors.palette.neutral100,
+    borderRadius: 12,
+    elevation: 6,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
     shadowColor: colors.palette.neutral800,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 6,
   },
   getStartedButtonText: {
-    fontSize: 18,
-    fontFamily: typography.primary.bold,
     color: colors.palette.primary400,
+    fontFamily: typography.primary.bold,
+    fontSize: 18,
   },
-}) 
+  gradient: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  imageContainer: {
+    alignItems: "center",
+    height: 250,
+    justifyContent: "center",
+    marginBottom: spacing.xl,
+    marginTop: 50,
+    width: "100%",
+  },
+  subtitle: {
+    color: "rgba(255, 255, 255, 0.9)",
+    fontFamily: typography.primary.normal,
+    fontSize: 18,
+    lineHeight: 26,
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.md,
+    textAlign: "center",
+  },
+  title: {
+    color: colors.palette.neutral100,
+    fontFamily: typography.primary.bold,
+    fontSize: 32,
+    marginBottom: spacing.md,
+    textAlign: "center",
+  },
+})

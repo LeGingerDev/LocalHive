@@ -12,11 +12,16 @@ import { SwipeableTabNavigator } from "@/components/SwipeableTabNavigator"
 import Config from "@/config"
 import { LandingScreen } from "@/screens/Auth/LandingScreen"
 import { SplashScreen } from "@/screens/Auth/SplashScreen"
-import { OnboardingEntryScreen, OnboardingSlideshowScreen, OnboardingQuestionnaireScreen, OnboardingThankYouScreen } from "@/screens/Onboarding"
 import { ErrorBoundary } from "@/screens/ErrorScreen/ErrorBoundary"
 import { InvitationsScreen } from "@/screens/InvitationsScreen"
 import { CreateGroupScreen } from "@/screens/Main/CreateGroupScreen"
 import { GroupDetailScreen } from "@/screens/Main/GroupDetailScreen"
+import {
+  OnboardingEntryScreen,
+  OnboardingSlideshowScreen,
+  OnboardingQuestionnaireScreen,
+  OnboardingThankYouScreen,
+} from "@/screens/Onboarding"
 import { useAppTheme } from "@/theme/context"
 
 import { BottomTabNavigator } from "./BottomTabNavigator"

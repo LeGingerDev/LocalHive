@@ -4,6 +4,7 @@ import { View, Text, StyleProp, ViewStyle, TextStyle, TouchableOpacity } from "r
 import { Icon } from "@/components/Icon"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
+
 import VisuProModal from "./VisuProModal"
 // import LinearGradient from "react-native-linear-gradient" // Remove if not installed
 

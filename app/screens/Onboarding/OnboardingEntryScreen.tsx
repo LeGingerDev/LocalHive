@@ -1,18 +1,27 @@
 import React, { useEffect, useRef } from "react"
-import { View, StyleSheet, StatusBar, TouchableOpacity, Image, Text as RNText, Animated } from "react-native"
+import {
+  View,
+  StyleSheet,
+  StatusBar,
+  TouchableOpacity,
+  Image,
+  Text as RNText,
+  Animated,
+} from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import ReactNativeHapticFeedback from "react-native-haptic-feedback"
+
+import { CustomGradient } from "@/components/CustomGradient"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
-import { CustomGradient } from "@/components/CustomGradient"
-import { colors } from "@/theme/colors"
-import { typography } from "@/theme/typography"
-import { spacing } from "@/theme/spacing"
 import { AnalyticsService } from "@/services/analyticsService"
+import { colors } from "@/theme/colors"
+import { spacing } from "@/theme/spacing"
+import { typography } from "@/theme/typography"
 
 export const OnboardingEntryScreen = () => {
   const navigation = useNavigation<any>()
-  
+
   // Animation refs
   const meerkatFloatAnim = useRef(new Animated.Value(0)).current
   const contentFadeAnim = useRef(new Animated.Value(0)).current
@@ -24,7 +33,7 @@ export const OnboardingEntryScreen = () => {
   useEffect(() => {
     // Track screen view
     AnalyticsService.trackScreenView({ screenName: "OnboardingEntry" })
-    
+
     // Start floating animation
     const startFloating = () => {
       Animated.loop(
@@ -39,7 +48,7 @@ export const OnboardingEntryScreen = () => {
             duration: 2000,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       ).start()
     }
 
@@ -82,7 +91,7 @@ export const OnboardingEntryScreen = () => {
   const handleGetStarted = () => {
     // Haptic feedback for primary action
     ReactNativeHapticFeedback.trigger("selection")
-    
+
     // Button press animation
     Animated.sequence([
       Animated.timing(buttonScaleAnim, {
@@ -96,16 +105,16 @@ export const OnboardingEntryScreen = () => {
         useNativeDriver: true,
       }),
     ]).start()
-    
+
     // Track analytics event
     AnalyticsService.trackEvent({
       name: "onboarding_started",
       properties: {
         source: "entry_screen",
-        action: "get_started"
-      }
+        action: "get_started",
+      },
     })
-    
+
     // Navigate to slideshow flow
     navigation.navigate("OnboardingSlideshow")
   }
@@ -113,16 +122,16 @@ export const OnboardingEntryScreen = () => {
   const handleExistingAccount = () => {
     // Haptic feedback for secondary action
     ReactNativeHapticFeedback.trigger("selection")
-    
+
     // Track analytics event
     AnalyticsService.trackEvent({
       name: "onboarding_skipped",
       properties: {
         source: "entry_screen",
-        action: "existing_account"
-      }
+        action: "existing_account",
+      },
     })
-    
+
     // Navigate to existing account flow (could be a slide-up modal or separate screen)
     navigation.navigate("Landing")
   }
@@ -130,7 +139,7 @@ export const OnboardingEntryScreen = () => {
   return (
     <Screen preset="fixed" contentContainerStyle={styles.container} safeAreaEdges={[]}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
-      
+
       {/* Gradient Background */}
       <CustomGradient
         preset="custom"
@@ -143,15 +152,19 @@ export const OnboardingEntryScreen = () => {
       {/* Main Content */}
       <View style={styles.content}>
         {/* Illustration Section */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.illustrationContainer,
             {
               opacity: contentFadeAnim,
-              transform: [{ translateY: contentFadeAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [30, 0],
-              }) }],
+              transform: [
+                {
+                  translateY: contentFadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [30, 0],
+                  }),
+                },
+              ],
             },
           ]}
         >
@@ -170,7 +183,7 @@ export const OnboardingEntryScreen = () => {
               },
             ]}
           >
-            <Image 
+            <Image
               source={require("../../../assets/Visu/Visu_Searching_Faded.png")}
               style={styles.meerkatImage}
               resizeMode="contain"
@@ -180,7 +193,7 @@ export const OnboardingEntryScreen = () => {
         </Animated.View>
 
         {/* Text Content Section */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.textContainer,
             {
@@ -190,14 +203,17 @@ export const OnboardingEntryScreen = () => {
           ]}
         >
           <Text style={styles.mainHeading}>We've All Been There</Text>
-          <RNText style={styles.problemStatement}>"Get the usual one," no idea what they mean </RNText>
+          <RNText style={styles.problemStatement}>
+            "Get the usual one," no idea what they mean{" "}
+          </RNText>
           <RNText style={styles.valueProposition}>
-            Create visual guides so groups <RNText style={styles.boldText}>ALWAYS</RNText> know exactly what to get
+            Create visual guides so groups <RNText style={styles.boldText}>ALWAYS</RNText> know
+            exactly what to get
           </RNText>
         </Animated.View>
 
         {/* Call-to-Action Buttons */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.buttonContainer,
             {
@@ -209,7 +225,7 @@ export const OnboardingEntryScreen = () => {
           <TouchableOpacity style={styles.primaryButton} onPress={handleGetStarted}>
             <Text style={styles.primaryButtonText}>Get started</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.secondaryButton} onPress={handleExistingAccount}>
             <Text style={styles.secondaryButtonText}>I Already Have An Account</Text>
           </TouchableOpacity>
@@ -220,71 +236,6 @@ export const OnboardingEntryScreen = () => {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  gradient: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: spacing.md, // Reduced from lg to md
-    justifyContent: "space-between",
-    paddingTop: spacing.xl * 2,
-    paddingBottom: spacing.xl,
-    minHeight: 0, // Ensure flex works properly
-  },
-  illustrationContainer: {
-    flex: 1,
-    justifyContent: "flex-end",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  meerkatContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  meerkatImage: {
-    width: 450,
-    height: 450, 
-  },
-  textContainer: {
-    alignItems: "center",
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.xs, // Reduced from sm to xs
-    flexShrink: 1, // Allow text container to shrink if needed
-  },
-  mainHeading: {
-    fontSize: 32,
-    fontFamily: typography.primary.bold,
-    color: colors.text,
-    textAlign: "center",
-    marginBottom: spacing.md,
-    lineHeight: 38,
-  },
-  problemStatement: {
-    fontSize: 18,
-    fontFamily: typography.primary.normal,
-    color: colors.text,
-    textAlign: "center",
-    marginBottom: spacing.md,
-    marginHorizontal: spacing.sm,
-    lineHeight: 24,
-    fontStyle: "italic",
-    flexWrap: "wrap", // Ensure text wraps properly
-  },
-  valueProposition: {
-    fontSize: 16,
-    fontFamily: typography.primary.normal,
-    color: colors.text,
-    textAlign: "center",
-    lineHeight: 22,
-    flexWrap: "wrap", // Ensure text wraps properly
-  },
   boldText: {
     fontFamily: typography.primary.bold,
   },
@@ -294,34 +245,99 @@ const styles = StyleSheet.create({
   buttonContainer: {
     gap: spacing.md,
   },
-  primaryButton: {
-    backgroundColor: colors.palette.primary500,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 12,
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: spacing.md, // Reduced from lg to md
+    justifyContent: "space-between",
+    paddingTop: spacing.xl * 2,
+    paddingBottom: spacing.xl,
+    minHeight: 0, // Ensure flex works properly
+  },
+  gradient: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  illustrationContainer: {
     alignItems: "center",
+    flex: 1,
+    justifyContent: "flex-end",
+    marginBottom: spacing.lg,
+  },
+  mainHeading: {
+    color: colors.text,
+    fontFamily: typography.primary.bold,
+    fontSize: 32,
+    lineHeight: 38,
+    marginBottom: spacing.md,
+    textAlign: "center",
+  },
+  meerkatContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  meerkatImage: {
+    height: 450,
+    width: 450,
+  },
+  primaryButton: {
+    alignItems: "center",
+    backgroundColor: colors.palette.primary500,
+    borderRadius: 12,
+    elevation: 6,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
     shadowColor: colors.palette.neutral800,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 6,
   },
   primaryButtonText: {
-    fontSize: 18,
-    fontFamily: typography.primary.bold,
     color: colors.palette.neutral100,
+    fontFamily: typography.primary.bold,
+    fontSize: 18,
+  },
+  problemStatement: {
+    color: colors.text,
+    flexWrap: "wrap",
+    fontFamily: typography.primary.normal,
+    fontSize: 18,
+    fontStyle: "italic",
+    lineHeight: 24,
+    marginBottom: spacing.md,
+    marginHorizontal: spacing.sm,
+    textAlign: "center", // Ensure text wraps properly
   },
   secondaryButton: {
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 12,
     alignItems: "center",
-    borderWidth: 2,
     borderColor: colors.palette.primary500,
+    borderRadius: 12,
+    borderWidth: 2,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
   },
   secondaryButtonText: {
-    fontSize: 16,
-    fontFamily: typography.primary.medium,
     color: colors.palette.primary500,
+    fontFamily: typography.primary.medium,
+    fontSize: 16,
   },
-}) 
+  textContainer: {
+    alignItems: "center",
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.xs, // Reduced from sm to xs
+    flexShrink: 1, // Allow text container to shrink if needed
+  },
+  valueProposition: {
+    color: colors.text,
+    flexWrap: "wrap",
+    fontFamily: typography.primary.normal,
+    fontSize: 16,
+    lineHeight: 22,
+    textAlign: "center", // Ensure text wraps properly
+  },
+})

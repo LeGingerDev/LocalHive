@@ -1,12 +1,13 @@
 import React, { FC, useState, useCallback, useEffect, useRef } from "react"
 import { View, Text, TouchableOpacity, Alert, ViewStyle, TextStyle, Animated } from "react-native"
-import { useAppTheme } from "@/theme/context"
-import type { ThemedStyle } from "@/theme/types"
-import { spacing } from "@/theme/spacing"
-import { useSubscription } from "@/hooks/useSubscription"
-import { useGroups } from "@/hooks/useGroups"
-import { Icon } from "@/components/Icon"
+
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
+import { Icon } from "@/components/Icon"
+import { useGroups } from "@/hooks/useGroups"
+import { useSubscription } from "@/hooks/useSubscription"
+import { useAppTheme } from "@/theme/context"
+import { spacing } from "@/theme/spacing"
+import type { ThemedStyle } from "@/theme/types"
 
 interface QuickActionsProps {
   userId: string | null
@@ -27,7 +28,7 @@ export const QuickActions: FC<QuickActionsProps> = ({
   const subscription = useSubscription(userId)
   const { groups, loading: groupsLoading } = useGroups()
   const [isCollapsed, setIsCollapsed] = useState(false)
-  
+
   // Animation refs for pulsating effect
   const pulseAnim = useRef(new Animated.Value(1)).current
   const scaleAnim = useRef(new Animated.Value(1)).current
@@ -47,7 +48,7 @@ export const QuickActions: FC<QuickActionsProps> = ({
             duration: 1000,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       ).start()
     }
 
@@ -83,7 +84,7 @@ export const QuickActions: FC<QuickActionsProps> = ({
       groupsLimit: subscription.groupsLimit,
       canCreateGroupNow: subscription.canCreateGroupNow,
       subscriptionStatus: subscription.subscriptionStatus,
-      loading: subscription.loading
+      loading: subscription.loading,
     })
 
     // Only show alert if actually at the limit (groupsUsed >= groupsLimit)
@@ -95,11 +96,11 @@ export const QuickActions: FC<QuickActionsProps> = ({
         [
           { text: "Cancel", style: "cancel" },
           { text: "Upgrade", onPress: () => handleUpgrade() },
-        ]
+        ],
       )
       return
     }
-    
+
     console.log(`✅ [QuickActions] Can create group - calling onCreateGroup`)
     if (onCreateGroup) {
       onCreateGroup()
@@ -115,11 +116,11 @@ export const QuickActions: FC<QuickActionsProps> = ({
         [
           { text: "Cancel", style: "cancel" },
           { text: "Upgrade", onPress: () => handleUpgrade() },
-        ]
+        ],
       )
       return
     }
-    
+
     if (onAddItem) {
       onAddItem()
     }
@@ -133,11 +134,11 @@ export const QuickActions: FC<QuickActionsProps> = ({
         [
           { text: "Cancel", style: "cancel" },
           { text: "Upgrade", onPress: () => handleUpgrade() },
-        ]
+        ],
       )
       return
     }
-    
+
     if (onSearch) {
       onSearch()
     }
@@ -146,16 +147,15 @@ export const QuickActions: FC<QuickActionsProps> = ({
   const handleUpgrade = () => {
     // This will be handled by the subscription status box
     // For now, just show an alert
-    Alert.alert(
-      "Upgrade to Pro",
-      "Get unlimited groups, items, and AI search for $5.99/month!",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Learn More", onPress: () => {
+    Alert.alert("Upgrade to Pro", "Get unlimited groups, items, and AI search for $5.99/month!", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Learn More",
+        onPress: () => {
           // Navigate to subscription management or show upgrade modal
-        }},
-      ]
-    )
+        },
+      },
+    ])
   }
 
   const handleToggleCollapse = useCallback(() => {
@@ -176,8 +176,8 @@ export const QuickActions: FC<QuickActionsProps> = ({
   return (
     <View style={themed($container)}>
       {/* Header with Gradient Background */}
-      <TouchableOpacity 
-        style={themed($headerGradient)} 
+      <TouchableOpacity
+        style={themed($headerGradient)}
         onPress={handleToggleCollapse}
         activeOpacity={0.8}
       >
@@ -187,9 +187,9 @@ export const QuickActions: FC<QuickActionsProps> = ({
               <Icon icon="lightning" size={20} color="#FFFFFF" />
               <Text style={themed($headerTitle)}>Quick Actions</Text>
             </View>
-            <Icon 
-              icon={isCollapsed ? "caretRight" : "caretLeft"} 
-              size={20} 
+            <Icon
+              icon={isCollapsed ? "caretRight" : "caretLeft"}
+              size={20}
               color="#FFFFFF"
               style={themed($arrowIcon)}
             />
@@ -212,13 +212,11 @@ export const QuickActions: FC<QuickActionsProps> = ({
                 style={[
                   themed($firstGroupButton),
                   {
-                    transform: [
-                      { scale: Animated.multiply(pulseAnim, scaleAnim) }
-                    ]
-                  }
+                    transform: [{ scale: Animated.multiply(pulseAnim, scaleAnim) }],
+                  },
                 ]}
               >
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={handleCreateGroup}
                   onPressIn={handleButtonPressIn}
                   onPressOut={handleButtonPressOut}
@@ -235,26 +233,32 @@ export const QuickActions: FC<QuickActionsProps> = ({
           ) : (
             // Show regular action grid when user has groups
             <View style={themed($actionsGrid)}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  themed($actionButton), 
-                  subscription.groupsUsed >= subscription.groupsLimit && themed($disabledButton)
-                ]} 
+                  themed($actionButton),
+                  subscription.groupsUsed >= subscription.groupsLimit && themed($disabledButton),
+                ]}
                 onPress={handleCreateGroup}
                 disabled={subscription.groupsUsed >= subscription.groupsLimit}
                 activeOpacity={0.8}
               >
                 <View style={themed($actionIconContainer)}>
-                  <Icon 
-                    icon="check" 
-                    size={24} 
-                    color={subscription.groupsUsed >= subscription.groupsLimit ? themed($disabledIconColor).color : themed($actionIconColor).color} 
+                  <Icon
+                    icon="check"
+                    size={24}
+                    color={
+                      subscription.groupsUsed >= subscription.groupsLimit
+                        ? themed($disabledIconColor).color
+                        : themed($actionIconColor).color
+                    }
                   />
                 </View>
-                <Text style={[
-                  themed($actionText),
-                  subscription.groupsUsed >= subscription.groupsLimit && themed($disabledText)
-                ]}>
+                <Text
+                  style={[
+                    themed($actionText),
+                    subscription.groupsUsed >= subscription.groupsLimit && themed($disabledText),
+                  ]}
+                >
                   Create Group
                 </Text>
                 {subscription.groupsUsed >= subscription.groupsLimit && (
@@ -264,26 +268,32 @@ export const QuickActions: FC<QuickActionsProps> = ({
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  themed($actionButton), 
-                  subscription.itemsUsed >= subscription.itemsLimit && themed($disabledButton)
-                ]} 
+                  themed($actionButton),
+                  subscription.itemsUsed >= subscription.itemsLimit && themed($disabledButton),
+                ]}
                 onPress={handleAddItem}
                 disabled={subscription.itemsUsed >= subscription.itemsLimit}
                 activeOpacity={0.8}
               >
                 <View style={themed($actionIconContainer)}>
-                  <Icon 
-                    icon="check" 
-                    size={24} 
-                    color={subscription.itemsUsed >= subscription.itemsLimit ? themed($disabledIconColor).color : themed($actionIconColor).color} 
+                  <Icon
+                    icon="check"
+                    size={24}
+                    color={
+                      subscription.itemsUsed >= subscription.itemsLimit
+                        ? themed($disabledIconColor).color
+                        : themed($actionIconColor).color
+                    }
                   />
                 </View>
-                <Text style={[
-                  themed($actionText),
-                  subscription.itemsUsed >= subscription.itemsLimit && themed($disabledText)
-                ]}>
+                <Text
+                  style={[
+                    themed($actionText),
+                    subscription.itemsUsed >= subscription.itemsLimit && themed($disabledText),
+                  ]}
+                >
                   Add Item
                 </Text>
                 {subscription.itemsUsed >= subscription.itemsLimit && (
@@ -293,26 +303,32 @@ export const QuickActions: FC<QuickActionsProps> = ({
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  themed($actionButton), 
-                  !subscription.canUseAISearchNow && themed($disabledButton)
-                ]} 
+                  themed($actionButton),
+                  !subscription.canUseAISearchNow && themed($disabledButton),
+                ]}
                 onPress={handleSearch}
                 disabled={!subscription.canUseAISearchNow}
                 activeOpacity={0.8}
               >
                 <View style={themed($actionIconContainer)}>
-                  <Icon 
-                    icon="lightning" 
-                    size={24} 
-                    color={!subscription.canUseAISearchNow ? themed($disabledIconColor).color : themed($actionIconColor).color} 
+                  <Icon
+                    icon="lightning"
+                    size={24}
+                    color={
+                      !subscription.canUseAISearchNow
+                        ? themed($disabledIconColor).color
+                        : themed($actionIconColor).color
+                    }
                   />
                 </View>
-                <Text style={[
-                  themed($actionText),
-                  !subscription.canUseAISearchNow && themed($disabledText)
-                ]}>
+                <Text
+                  style={[
+                    themed($actionText),
+                    !subscription.canUseAISearchNow && themed($disabledText),
+                  ]}
+                >
                   AI Search
                 </Text>
                 {!subscription.canUseAISearchNow && (
@@ -322,17 +338,13 @@ export const QuickActions: FC<QuickActionsProps> = ({
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={themed($actionButton)} 
+              <TouchableOpacity
+                style={themed($actionButton)}
                 onPress={onViewGroups}
                 activeOpacity={0.8}
               >
                 <View style={themed($actionIconContainer)}>
-                  <Icon 
-                    icon="view" 
-                    size={24} 
-                    color={themed($actionIconColor).color} 
-                  />
+                  <Icon icon="view" size={24} color={themed($actionIconColor).color} />
                 </View>
                 <Text style={themed($actionText)}>View Groups</Text>
               </TouchableOpacity>
@@ -519,4 +531,4 @@ const $firstGroupButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) =
   fontFamily: typography.primary.bold,
   fontSize: 16,
   color: "#FFFFFF",
-}) 
+})

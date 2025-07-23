@@ -1,14 +1,23 @@
 import React, { useState, useRef, useEffect } from "react"
-import { View, ViewStyle, TouchableOpacity, ScrollView, Modal, Animated, TextStyle, Clipboard } from "react-native"
+import {
+  View,
+  ViewStyle,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  Animated,
+  TextStyle,
+  Clipboard,
+} from "react-native"
 
-import { Text } from "@/components/Text"
 import { CustomAlert } from "@/components/Alert/CustomAlert"
-import { useAppTheme } from "@/theme/context"
-import { AuthService } from "@/services/supabase/authService"
-import { AnalyticsService } from "@/services/analyticsService"
+import { Text } from "@/components/Text"
 import { PRIVACY_POLICY_TEXT } from "@/constants/privacyPolicy"
 import { TERMS_OF_SERVICE_TEXT } from "@/constants/termsOfService"
 import { navigate } from "@/navigators/navigationUtilities"
+import { AnalyticsService } from "@/services/analyticsService"
+import { AuthService } from "@/services/supabase/authService"
+import { useAppTheme } from "@/theme/context"
 
 interface PrivacySecurityModalProps {
   visible: boolean
@@ -17,7 +26,7 @@ interface PrivacySecurityModalProps {
 
 export const PrivacySecurityModal = ({ visible, onClose }: PrivacySecurityModalProps) => {
   const { themed } = useAppTheme()
-  
+
   // Modal states
   const [termsVisible, setTermsVisible] = useState(false)
   const [privacyVisible, setPrivacyVisible] = useState(false)
@@ -80,28 +89,31 @@ export const PrivacySecurityModal = ({ visible, onClose }: PrivacySecurityModalP
     setIsExporting(true)
     try {
       // Call the export function from your Edge Function
-      const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/export-user-data`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await AuthService.getSession()).session?.access_token}`,
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/export-user-data`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${(await AuthService.getSession()).session?.access_token}`,
+          },
         },
-      })
-      
+      )
+
       if (response.ok) {
         const data = await response.json()
         const formattedData = JSON.stringify(data, null, 2)
         setExportData(formattedData)
         setExportVisible(true)
-        
+
         AnalyticsService.trackEvent({
           name: "user_data_exported",
         })
       } else {
-        throw new Error('Export failed')
+        throw new Error("Export failed")
       }
     } catch (error) {
-      console.error('Export error:', error)
+      console.error("Export error:", error)
       // Show error alert
       setExportVisible(true)
       setExportData("Error: Failed to export data. Please try again later.")
@@ -121,35 +133,38 @@ export const PrivacySecurityModal = ({ visible, onClose }: PrivacySecurityModalP
     setIsDeleting(true)
     try {
       // Call the delete function from your Edge Function
-      const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/delete-user-data`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await AuthService.getSession()).session?.access_token}`,
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/delete-user-data`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${(await AuthService.getSession()).session?.access_token}`,
+          },
         },
-      })
-      
+      )
+
       if (response.ok) {
         // Sign out the user
         await AuthService.signOut()
-        
+
         AnalyticsService.trackEvent({
           name: "user_account_deleted",
         })
-        
+
         // Close the delete confirmation modal
         setDeleteVisible(false)
-        
+
         // Close the main privacy & security modal
         onClose()
-        
+
         // Navigate to the Landing screen
         navigate("Landing")
       } else {
-        throw new Error('Delete failed')
+        throw new Error("Delete failed")
       }
     } catch (error) {
-      console.error('Delete error:', error)
+      console.error("Delete error:", error)
       // Show error alert
       setDeleteVisible(true)
     } finally {
@@ -162,7 +177,7 @@ export const PrivacySecurityModal = ({ visible, onClose }: PrivacySecurityModalP
       await Clipboard.setString(exportData)
       // You could show a success message here
     } catch (error) {
-      console.error('Copy error:', error)
+      console.error("Copy error:", error)
     }
   }
 
@@ -207,9 +222,7 @@ export const PrivacySecurityModal = ({ visible, onClose }: PrivacySecurityModalP
                   activeOpacity={0.8}
                   disabled={isExporting}
                 >
-                  <Text 
-                    style={themed($optionButtonText)} 
-                  >
+                  <Text style={themed($optionButtonText)}>
                     {isExporting ? "Exporting..." : "Export User Data"}
                   </Text>
                 </TouchableOpacity>
@@ -223,11 +236,7 @@ export const PrivacySecurityModal = ({ visible, onClose }: PrivacySecurityModalP
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity
-                style={themed($closeButton)}
-                onPress={onClose}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={themed($closeButton)} onPress={onClose} activeOpacity={0.8}>
                 <Text style={themed($closeButtonText)}>Close</Text>
               </TouchableOpacity>
             </View>
@@ -236,7 +245,12 @@ export const PrivacySecurityModal = ({ visible, onClose }: PrivacySecurityModalP
       </Modal>
 
       {/* Terms of Service Modal */}
-      <Modal visible={termsVisible} transparent animationType="none" onRequestClose={() => setTermsVisible(false)}>
+      <Modal
+        visible={termsVisible}
+        transparent
+        animationType="none"
+        onRequestClose={() => setTermsVisible(false)}
+      >
         <Animated.View style={[themed($overlay), { opacity: fadeAnim }]}>
           <Animated.View
             style={[
@@ -249,16 +263,14 @@ export const PrivacySecurityModal = ({ visible, onClose }: PrivacySecurityModalP
           >
             <View style={themed($contentContainer)}>
               <Text style={themed($title)}>Terms of Service</Text>
-              
-              <ScrollView 
-                style={themed($scrollContainer)} 
+
+              <ScrollView
+                style={themed($scrollContainer)}
                 showsVerticalScrollIndicator={true}
                 indicatorStyle="white"
                 contentContainerStyle={themed($scrollContent)}
               >
-                <Text style={themed($policyText)}>
-                  {TERMS_OF_SERVICE_TEXT}
-                </Text>
+                <Text style={themed($policyText)}>{TERMS_OF_SERVICE_TEXT}</Text>
               </ScrollView>
 
               <TouchableOpacity
@@ -274,7 +286,12 @@ export const PrivacySecurityModal = ({ visible, onClose }: PrivacySecurityModalP
       </Modal>
 
       {/* Privacy Policy Modal */}
-      <Modal visible={privacyVisible} transparent animationType="none" onRequestClose={() => setPrivacyVisible(false)}>
+      <Modal
+        visible={privacyVisible}
+        transparent
+        animationType="none"
+        onRequestClose={() => setPrivacyVisible(false)}
+      >
         <Animated.View style={[themed($overlay), { opacity: fadeAnim }]}>
           <Animated.View
             style={[
@@ -287,16 +304,14 @@ export const PrivacySecurityModal = ({ visible, onClose }: PrivacySecurityModalP
           >
             <View style={themed($contentContainer)}>
               <Text style={themed($title)}>Privacy Policy</Text>
-              
-              <ScrollView 
-                style={themed($scrollContainer)} 
+
+              <ScrollView
+                style={themed($scrollContainer)}
                 showsVerticalScrollIndicator={true}
                 indicatorStyle="white"
                 contentContainerStyle={themed($scrollContent)}
               >
-                <Text style={themed($policyText)}>
-                  {PRIVACY_POLICY_TEXT}
-                </Text>
+                <Text style={themed($policyText)}>{PRIVACY_POLICY_TEXT}</Text>
               </ScrollView>
 
               <TouchableOpacity
@@ -479,4 +494,4 @@ const $policySubheading = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.medium,
   fontSize: 14,
   color: colors.text,
-}) 
+})

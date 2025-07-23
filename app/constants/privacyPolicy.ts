@@ -179,4 +179,4 @@ We may update this Privacy Policy occasionally. When we do, we'll update the Eff
 
 15. Contact Information
 For any privacy inquiries or requests, please contact:
-legingerdev@gmail.com` 
+legingerdev@gmail.com`

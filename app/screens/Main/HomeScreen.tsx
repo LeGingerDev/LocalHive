@@ -12,18 +12,23 @@ import {
 import { useFocusEffect } from "@react-navigation/native"
 
 import { Header } from "@/components/Header"
+import {
+  QuickActions,
+  WelcomeMessage,
+  RecentActivitySection,
+  type RecentActivitySectionRef,
+} from "@/components/Home"
 import { Screen } from "@/components/Screen"
 import { SubscriptionStatusBox } from "@/components/Subscription"
 import SubscriptionManagementModal from "@/components/Subscription/SubscriptionManagementModal"
-import { QuickActions, WelcomeMessage, RecentActivitySection, type RecentActivitySectionRef } from "@/components/Home"
+import { useAuth } from "@/context/AuthContext"
+import { useAnalytics } from "@/hooks/useAnalytics"
+import { useSubscription } from "@/hooks/useSubscription"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
+import { navigate } from "@/navigators/navigationUtilities"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
-import { useAnalytics } from "@/hooks/useAnalytics"
-import { useAuth } from "@/context/AuthContext"
-import { useSubscription } from "@/hooks/useSubscription"
-import { navigate } from "@/navigators/navigationUtilities"
 
 // #region Types & Interfaces
 interface HomeScreenProps extends BottomTabScreenProps<"Home"> {}
@@ -53,7 +58,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
   const { trackScreenView } = useAnalytics()
   const { user } = useAuth()
   const subscription = useSubscription(user?.id || null)
-  
+
   // Ref for RecentActivitySection to refresh data
   const recentActivityRef = useRef<RecentActivitySectionRef | null>(null)
   // #endregion
@@ -130,7 +135,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
           recentActivityRef.current.refresh()
         }
       }
-    }, [user?.id]) // Only depend on user?.id, not the subscription object
+    }, [user?.id]), // Only depend on user?.id, not the subscription object
   )
   // #endregion
 
@@ -158,11 +163,11 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
     </Screen>
   )
 
-    const renderContent = (): React.JSX.Element => (
+  const renderContent = (): React.JSX.Element => (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
       <Header title="Home" />
-      
-      <ScrollView 
+
+      <ScrollView
         contentContainerStyle={themed($scrollContent)}
         showsVerticalScrollIndicator={false}
       >
@@ -170,13 +175,10 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
         <WelcomeMessage userEmail={user?.email} />
 
         {/* Subscription Status */}
-        <SubscriptionStatusBox 
-          userId={user?.id || null}
-          onManagePress={handleManagePress}
-        />
+        <SubscriptionStatusBox userId={user?.id || null} onManagePress={handleManagePress} />
 
         {/* Quick Actions */}
-        <QuickActions 
+        <QuickActions
           userId={user?.id || null}
           onCreateGroup={handleCreateGroup}
           onAddItem={handleAddItem}
@@ -185,25 +187,16 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
         />
 
         {/* Recent Activity Section */}
-        <RecentActivitySection 
-          limit={5} 
-          ref={recentActivityRef}
-        />
+        <RecentActivitySection limit={5} ref={recentActivityRef} />
 
         {/* Tips Section */}
         <View style={themed($tipsSection)}>
           <Text style={themed($sectionTitle)}>💡 Tips</Text>
           <View style={themed($tipsContent)}>
-            <Text style={themed($tipText)}>
-              • Create groups to organize your items
-            </Text>
-            <Text style={themed($tipText)}>
-              • Use AI search to quickly find what you need
-            </Text>
+            <Text style={themed($tipText)}>• Create groups to organize your items</Text>
+            <Text style={themed($tipText)}>• Use AI search to quickly find what you need</Text>
             {!subscription.isPro && (
-              <Text style={themed($tipText)}>
-                • Upgrade to Pro for unlimited access
-              </Text>
+              <Text style={themed($tipText)}>• Upgrade to Pro for unlimited access</Text>
             )}
           </View>
         </View>
@@ -242,9 +235,6 @@ const $scrollContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   justifyContent: "flex-start",
   paddingBottom: spacing.xl * 4, // Increased bottom padding for better access
 })
-
-
-
 
 const $sectionTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   fontFamily: typography.primary.bold,

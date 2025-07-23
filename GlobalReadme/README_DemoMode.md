@@ -10,21 +10,19 @@ Demo mode allows reviewers to test the app without requiring Google/Apple sign-i
 
 ### Enable Demo Mode
 ```sql
-UPDATE demo_mode 
-SET is_enabled = true 
-WHERE id = 1;
+UPDATE demo 
+SET is_demo = true;
 ```
 
 ### Disable Demo Mode
 ```sql
-UPDATE demo_mode 
-SET is_enabled = false 
-WHERE id = 1;
+UPDATE demo 
+SET is_demo = false;
 ```
 
 ### Check Demo Mode Status
 ```sql
-SELECT is_enabled FROM demo_mode WHERE id = 1;
+SELECT is_demo FROM demo;
 ```
 
 ## Demo User Credentials

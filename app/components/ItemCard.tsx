@@ -18,7 +18,14 @@ interface ItemCardProps {
   groupName?: string // NEW: Optional group name to display as a tag
 }
 
-export const ItemCard = ({ item, onPress, onItemUpdated, onItemDeleted, deletable = false, groupName }: ItemCardProps) => {
+export const ItemCard = ({
+  item,
+  onPress,
+  onItemUpdated,
+  onItemDeleted,
+  deletable = false,
+  groupName,
+}: ItemCardProps) => {
   const { themed, themeContext } = useAppTheme()
   const imageUrls = item.image_urls ?? []
   const hasImage = imageUrls.length > 0

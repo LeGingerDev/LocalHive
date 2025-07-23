@@ -1,4 +1,4 @@
-import { supabase } from './supabase/supabase'
+import { supabase } from "./supabase/supabase"
 
 export interface DemoConfig {
   is_demo: boolean
@@ -14,19 +14,16 @@ export class DemoService {
    */
   static async isDemoModeEnabled(): Promise<boolean> {
     try {
-      const { data, error } = await supabase
-        .from('demo')
-        .select('is_demo')
-        .single()
+      const { data, error } = await supabase.from("demo").select("is_demo").single()
 
       if (error) {
-        console.error('Error checking demo mode:', error)
+        console.error("Error checking demo mode:", error)
         return false
       }
 
       return data?.is_demo || false
     } catch (error) {
-      console.error('Error checking demo mode:', error)
+      console.error("Error checking demo mode:", error)
       return false
     }
   }
@@ -36,19 +33,16 @@ export class DemoService {
    */
   static async getDemoConfig(): Promise<DemoConfig | null> {
     try {
-      const { data, error } = await supabase
-        .from('demo')
-        .select('*')
-        .single()
+      const { data, error } = await supabase.from("demo").select("*").single()
 
       if (error) {
-        console.error('Error getting demo config:', error)
+        console.error("Error getting demo config:", error)
         return null
       }
 
       return data
     } catch (error) {
-      console.error('Error getting demo config:', error)
+      console.error("Error getting demo config:", error)
       return null
     }
   }
@@ -59,30 +53,30 @@ export class DemoService {
   static async signInWithDemo(): Promise<{ success: boolean; error?: string }> {
     try {
       const demoConfig = await this.getDemoConfig()
-      
+
       if (!demoConfig?.is_demo) {
-        return { success: false, error: 'Demo mode is not enabled' }
+        return { success: false, error: "Demo mode is not enabled" }
       }
 
       // Use hardcoded demo credentials since they're not in the table
-      const demoEmail = 'demo@visu.app'
-      const demoPassword = 'demo123456'
+      const demoEmail = "demo@visu.app"
+      const demoPassword = "demo123456"
 
       // Try to sign in with the demo credentials
       const { data, error } = await supabase.auth.signInWithPassword({
         email: demoEmail,
-        password: demoPassword
+        password: demoPassword,
       })
 
       if (error) {
-        console.error('Demo sign in error:', error)
+        console.error("Demo sign in error:", error)
         return { success: false, error: error.message }
       }
 
       return { success: true }
     } catch (error) {
-      console.error('Demo sign in exception:', error)
-      return { success: false, error: 'Demo sign in failed' }
+      console.error("Demo sign in exception:", error)
+      return { success: false, error: "Demo sign in failed" }
     }
   }
 
@@ -92,12 +86,12 @@ export class DemoService {
   static async enableDemoMode(): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('demo')
+        .from("demo")
         .update({ is_demo: true, updated_at: new Date().toISOString() })
 
       return !error
     } catch (error) {
-      console.error('Error enabling demo mode:', error)
+      console.error("Error enabling demo mode:", error)
       return false
     }
   }
@@ -108,13 +102,13 @@ export class DemoService {
   static async disableDemoMode(): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('demo')
+        .from("demo")
         .update({ is_demo: false, updated_at: new Date().toISOString() })
 
       return !error
     } catch (error) {
-      console.error('Error disabling demo mode:', error)
+      console.error("Error disabling demo mode:", error)
       return false
     }
   }
-} 
+}

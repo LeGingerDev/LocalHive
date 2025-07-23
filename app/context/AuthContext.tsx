@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { User } from "@supabase/supabase-js"
 
+import { AnalyticsService, AnalyticsEvents } from "@/services/analyticsService"
 import { CacheService } from "@/services/cache/cacheService"
 import { AuthService } from "@/services/supabase/authService"
 import googleAuthService from "@/services/supabase/googleAuthService"
@@ -10,7 +11,6 @@ import {
   setupAppStateListener,
   cleanupAppStateListener,
 } from "@/services/supabase/supabase"
-import { AnalyticsService, AnalyticsEvents } from "@/services/analyticsService"
 
 interface UserProfile {
   id: string
@@ -183,7 +183,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             properties: {
               user_id: session.user.id,
               email: session.user.email,
-              provider: 'google',
+              provider: "google",
             },
           })
 

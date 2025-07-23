@@ -89,4 +89,4 @@ These Terms constitute the entire agreement between you and us regarding the App
 
 16. Contact Information
 For questions about these Terms of Service, please contact us at:
-legingerdev@gmail.com` 
+legingerdev@gmail.com`

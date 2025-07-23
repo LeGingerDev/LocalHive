@@ -111,7 +111,12 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
 
   // Check subscription limits when screen loads
   useEffect(() => {
-    if (user && !subscription.loading && subscription.subscriptionInfo && !subscription.canCreateItemNow) {
+    if (
+      user &&
+      !subscription.loading &&
+      subscription.subscriptionInfo &&
+      !subscription.canCreateItemNow
+    ) {
       setAlertTitle("Item Limit Reached")
       setAlertMessage("You've reached your item limit. Upgrade to Pro for unlimited items!")
       setAlertConfirmStyle("destructive")
@@ -450,8 +455,6 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-
-
         {/* Add to group - Only show header and dropdown when groups exist */}
         {!groupsLoading && groups.length === 0 ? (
           <View style={themed($emptyStateContainer)}>
@@ -644,22 +647,32 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
         visible={alertVisible}
         title={alertTitle}
         message={alertMessage}
-        confirmText={alertConfirmStyle === "success" ? "OK" : alertTitle === "Item Limit Reached" ? "OK" : "Save"}
-        cancelText={alertConfirmStyle === "success" || alertTitle === "Item Limit Reached" ? undefined : "Cancel"}
+        confirmText={
+          alertConfirmStyle === "success"
+            ? "OK"
+            : alertTitle === "Item Limit Reached"
+              ? "OK"
+              : "Save"
+        }
+        cancelText={
+          alertConfirmStyle === "success" || alertTitle === "Item Limit Reached"
+            ? undefined
+            : "Cancel"
+        }
         confirmStyle={alertConfirmStyle}
         onConfirm={
-          alertConfirmStyle === "success" 
-            ? () => setAlertVisible(false) 
+          alertConfirmStyle === "success"
+            ? () => setAlertVisible(false)
             : alertTitle === "Item Limit Reached"
-            ? () => {
-                setAlertVisible(false)
-                navigation.goBack()
-              }
-            : _handleConfirmSave
+              ? () => {
+                  setAlertVisible(false)
+                  navigation.goBack()
+                }
+              : _handleConfirmSave
         }
         onCancel={
-          alertConfirmStyle === "success" || alertTitle === "Item Limit Reached" 
-            ? undefined 
+          alertConfirmStyle === "success" || alertTitle === "Item Limit Reached"
+            ? undefined
             : () => setAlertVisible(false)
         }
       />
@@ -901,5 +914,3 @@ const $createFirstGroupButtonText = ({ colors, typography }: any): TextStyle => 
   fontSize: 16,
   textAlign: "center",
 })
-
-

@@ -33,16 +33,17 @@ const supabaseStorage = {
 // Create a single, shared Supabase client instance
 // Use fallback values during build time to prevent crashes
 export const supabase = createClient(
-  supabaseUrl || "https://placeholder.supabase.co", 
-  supabaseKey || "placeholder-key", 
+  supabaseUrl || "https://placeholder.supabase.co",
+  supabaseKey || "placeholder-key",
   {
-  auth: {
-    storage: supabaseStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
+    auth: {
+      storage: supabaseStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
   },
-})
+)
 
 // Handle app state changes to refresh session when app resumes
 let appStateListener: any = null

@@ -1,4 +1,5 @@
 import Config from "@/config"
+
 import { supabase } from "./supabase"
 
 export interface PersonalCodeResponse {
@@ -20,7 +21,7 @@ export class PersonalCodeService {
       console.warn("⚠️  SUPABASE_URL not available during build time")
       return "https://placeholder.functions.supabase.co/generate-personal-code"
     }
-    return `${supabaseUrl.replace('.supabase.co', '.functions.supabase.co')}/generate-personal-code`
+    return `${supabaseUrl.replace(".supabase.co", ".functions.supabase.co")}/generate-personal-code`
   }
 
   /**

@@ -168,8 +168,6 @@ export const ActivityItem: FC<ActivityItemProps> = memo((props) => {
         text={_displayDescription}
         testID={`${testID}_description`}
       />
-
-
     </View>
   )
 
@@ -257,8 +255,6 @@ const $emptyText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   textAlign: "center",
   fontStyle: "italic",
 })
-
-
 
 const $activityIndicator: ThemedStyle<ViewStyle> = () => ({
   // Color is passed directly to ActivityIndicator component

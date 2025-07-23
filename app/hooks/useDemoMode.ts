@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
-import { DemoService } from '../services/demoService'
+import { useState, useEffect } from "react"
+
+import { DemoService } from "../services/demoService"
 
 export const useDemoMode = () => {
   const [isDemoEnabled, setIsDemoEnabled] = useState(false)
@@ -11,7 +12,7 @@ export const useDemoMode = () => {
         const isEnabled = await DemoService.isDemoModeEnabled()
         setIsDemoEnabled(isEnabled)
       } catch (error) {
-        console.error('Error checking demo mode:', error)
+        console.error("Error checking demo mode:", error)
         setIsDemoEnabled(false)
       } finally {
         setIsLoading(false)
@@ -26,13 +27,13 @@ export const useDemoMode = () => {
       const result = await DemoService.signInWithDemo()
       return result
     } catch (error) {
-      return { success: false, error: 'Demo sign in failed' }
+      return { success: false, error: "Demo sign in failed" }
     }
   }
 
   return {
     isDemoEnabled,
     isLoading,
-    signInWithDemo
+    signInWithDemo,
   }
-} 
+}

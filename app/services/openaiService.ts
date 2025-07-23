@@ -1,7 +1,7 @@
 import Config from "@/config"
 
-import { ItemWithProfile } from "./supabase/itemService"
 import { AnalyticsService, AnalyticsEvents } from "./analyticsService"
+import { ItemWithProfile } from "./supabase/itemService"
 
 interface OpenAIResponse {
   choices: Array<{
@@ -22,7 +22,7 @@ export async function askAIAboutItems(
   items: ItemWithProfile[],
 ): Promise<AIQueryResponse> {
   const startTime = Date.now()
-  
+
   try {
     console.log("[OpenAIService] Starting AI query:", question)
     console.log("[OpenAIService] Number of items to analyze:", items.length)
@@ -43,12 +43,12 @@ export async function askAIAboutItems(
       AnalyticsService.trackEvent({
         name: AnalyticsEvents.ERROR_OCCURRED,
         properties: {
-          error_type: 'configuration_error',
-          service: 'openai',
+          error_type: "configuration_error",
+          service: "openai",
           query_length: question.length,
         },
       })
-      
+
       throw new Error("OpenAI API key not configured")
     }
 
@@ -178,20 +178,20 @@ Please answer the question based on the items above.`
       const errorText = await response.text()
       console.error(`[OpenAIService] HTTP ${response.status}: ${response.statusText}`)
       console.error(`[OpenAIService] Error response body:`, errorText)
-      
+
       // Track API error
       AnalyticsService.trackEvent({
         name: AnalyticsEvents.ERROR_OCCURRED,
         properties: {
-          error_type: 'openai_api_error',
-          service: 'openai',
+          error_type: "openai_api_error",
+          service: "openai",
           status_code: response.status,
           query_length: question.length,
           detected_category: detectedCategory,
           detected_person: detectedPerson,
         },
       })
-      
+
       throw new Error(`OpenAI API failed: ${response.status} - ${errorText}`)
     }
 
@@ -231,7 +231,7 @@ Please answer the question based on the items above.`
     AnalyticsService.trackEvent({
       name: AnalyticsEvents.SEARCH_PERFORMED,
       properties: {
-        search_type: 'ai',
+        search_type: "ai",
         query_length: question.length,
         total_items_available: items.length,
         items_sent_to_ai: relevantItems.length,
@@ -253,21 +253,21 @@ Please answer the question based on the items above.`
     }
   } catch (error) {
     console.error("[OpenAIService] Error in AI query:", error)
-    
+
     const duration = Date.now() - startTime
-    
+
     // Track general error
     AnalyticsService.trackEvent({
       name: AnalyticsEvents.ERROR_OCCURRED,
       properties: {
-        error_type: 'general_error',
-        service: 'openai',
+        error_type: "general_error",
+        service: "openai",
         query_length: question.length,
         response_time_ms: duration,
-        error_message: error instanceof Error ? error.message : 'Unknown error',
+        error_message: error instanceof Error ? error.message : "Unknown error",
       },
     })
-    
+
     throw new Error(
       `Failed to get AI response: ${error instanceof Error ? error.message : "Unknown error"}`,
     )

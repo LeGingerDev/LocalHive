@@ -143,6 +143,7 @@ export const SplashScreen = () => {
             ],
             key: undefined,
           })
+          return undefined // Explicit return for authenticated users
         } else {
           // For new users, show splash for minimum branding time (1.5 seconds)
           const timer = setTimeout(() => {

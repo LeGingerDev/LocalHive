@@ -1,2 +1,2 @@
 export { SubscriptionStatusBox } from "./SubscriptionStatusBox"
-export { default as SubscriptionManagementModal } from "./SubscriptionManagementModal" 
+export { default as SubscriptionManagementModal } from "./SubscriptionManagementModal"

@@ -1,8 +1,8 @@
 import Config from "@/config"
 
+import { AnalyticsService, AnalyticsEvents } from "./analyticsService"
 import { ItemWithProfile } from "./supabase/itemService"
 import { supabase } from "./supabase/supabase"
-import { AnalyticsService, AnalyticsEvents } from "./analyticsService"
 
 // Use the actual deployed vector search Edge Function URL
 const getVectorSearchEndpoint = () => {
@@ -16,7 +16,7 @@ const getVectorSearchEndpoint = () => {
 
 export async function searchItemsByVector(query: string): Promise<ItemWithProfile[]> {
   const startTime = Date.now()
-  
+
   try {
     const vectorSearchEndpoint = getVectorSearchEndpoint()
     console.log("[VectorService] Starting vector search for query:", query)
@@ -69,17 +69,17 @@ export async function searchItemsByVector(query: string): Promise<ItemWithProfil
 
     if (sessionError || !session) {
       console.error("[VectorService] No valid session found:", sessionError)
-      
+
       // Track authentication error
       AnalyticsService.trackEvent({
         name: AnalyticsEvents.ERROR_OCCURRED,
         properties: {
-          error_type: 'authentication_error',
-          service: 'vector_search',
+          error_type: "authentication_error",
+          service: "vector_search",
           query_length: query.length,
         },
       })
-      
+
       throw new Error("User not authenticated")
     }
 
@@ -114,19 +114,19 @@ export async function searchItemsByVector(query: string): Promise<ItemWithProfil
       const errorText = await response.text()
       console.error(`[VectorService] HTTP ${response.status}: ${response.statusText}`)
       console.error(`[VectorService] Error response body:`, errorText)
-      
+
       // Track API error
       AnalyticsService.trackEvent({
         name: AnalyticsEvents.ERROR_OCCURRED,
         properties: {
-          error_type: 'api_error',
-          service: 'vector_search',
+          error_type: "api_error",
+          service: "vector_search",
           status_code: response.status,
           query_length: query.length,
           detected_category: targetCategory,
         },
       })
-      
+
       throw new Error(`Vector search failed: ${response.status} - ${errorText}`)
     }
 
@@ -141,7 +141,7 @@ export async function searchItemsByVector(query: string): Promise<ItemWithProfil
     AnalyticsService.trackEvent({
       name: AnalyticsEvents.SEARCH_PERFORMED,
       properties: {
-        search_type: 'vector',
+        search_type: "vector",
         query_length: query.length,
         results_count: results.length,
         response_time_ms: duration,
@@ -153,21 +153,21 @@ export async function searchItemsByVector(query: string): Promise<ItemWithProfil
     return results
   } catch (error) {
     console.error("[VectorService] Error in vector search:", error)
-    
+
     const duration = Date.now() - startTime
-    
+
     // Track general error
     AnalyticsService.trackEvent({
       name: AnalyticsEvents.ERROR_OCCURRED,
       properties: {
-        error_type: 'general_error',
-        service: 'vector_search',
+        error_type: "general_error",
+        service: "vector_search",
         query_length: query.length,
         response_time_ms: duration,
-        error_message: error instanceof Error ? error.message : 'Unknown error',
+        error_message: error instanceof Error ? error.message : "Unknown error",
       },
     })
-    
+
     return []
   }
 }

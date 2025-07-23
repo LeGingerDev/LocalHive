@@ -15,14 +15,6 @@ require("ts-node/register")
 module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
   const existingPlugins = config.plugins ?? []
 
-  // Debug: Log what environment variables are available during build
-  console.log("🔍 Build-time environment variables:", {
-    SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL ? "✅ Found" : "❌ Missing",
-    SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? "✅ Found" : "❌ Missing", 
-    OPENAI_API_KEY: process.env.EXPO_PUBLIC_OPENAI_API_KEY ? "✅ Found" : "❌ Missing",
-    GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ? "✅ Found" : "❌ Missing",
-  })
-
   return {
     ...config,
     // Environment-specific configuration
@@ -55,21 +47,18 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
       infoPlist: {
         ...config.ios?.infoPlist,
         ITSAppUsesNonExemptEncryption: false,
-        NSCameraUsageDescription: "This app uses the camera to scan items and add them to your groups.",
-        NSPhotoLibraryUsageDescription: "This app accesses your photo library to select images for items.",
+        NSCameraUsageDescription:
+          "This app uses the camera to scan items and add them to your groups.",
+        NSPhotoLibraryUsageDescription:
+          "This app accesses your photo library to select images for items.",
         NSMicrophoneUsageDescription: "This app may use the microphone for voice input.",
         CFBundleURLTypes: [
           {
             CFBundleURLName: "com.legingerdev.visu",
-            CFBundleURLSchemes: ["com.legingerdev.visu"]
-          }
+            CFBundleURLSchemes: ["com.legingerdev.visu"],
+          },
         ],
-        LSApplicationQueriesSchemes: [
-          "googlechromes",
-          "firefox",
-          "opera-http",
-          "opera-https"
-        ]
+        LSApplicationQueriesSchemes: ["googlechromes", "firefox", "opera-http", "opera-https"],
       },
       googleServicesFile: "./ios/GoogleService-Info.plist",
     },

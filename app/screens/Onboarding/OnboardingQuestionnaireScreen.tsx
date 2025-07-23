@@ -5,10 +5,10 @@ import ReactNativeHapticFeedback from "react-native-haptic-feedback"
 
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
-import { colors } from "@/theme/colors"
-import { typography } from "@/theme/typography"
-import { spacing } from "@/theme/spacing"
 import { AnalyticsService } from "@/services/analyticsService"
+import { colors } from "@/theme/colors"
+import { spacing } from "@/theme/spacing"
+import { typography } from "@/theme/typography"
 
 interface Question {
   id: number
@@ -20,44 +20,23 @@ const questions: Question[] = [
   {
     id: 1,
     question: "What Best Describes your Group?",
-    options: [
-      "Family",
-      "Roommates",
-      "Friends",
-      "Work Team",
-      "Other"
-    ]
+    options: ["Family", "Roommates", "Friends", "Work Team", "Other"],
   },
   {
     id: 2,
     question: "How many people are in your group?",
-    options: [
-      "2-3 people",
-      "4-6 people", 
-      "7-10 people",
-      "More than 10"
-    ]
+    options: ["2-3 people", "4-6 people", "7-10 people", "More than 10"],
   },
   {
     id: 3,
     question: "What types of items do you want to catalog?",
-    options: [
-      "Kitchen & Food",
-      "Electronics & Tech",
-      "Clothing & Personal",
-      "Everything"
-    ]
+    options: ["Kitchen & Food", "Electronics & Tech", "Clothing & Personal", "Everything"],
   },
   {
     id: 4,
     question: "How often do you plan to use this app?",
-    options: [
-      "Daily",
-      "Weekly",
-      "Monthly",
-      "Occasionally"
-    ]
-  }
+    options: ["Daily", "Weekly", "Monthly", "Occasionally"],
+  },
 ]
 
 export const OnboardingQuestionnaireScreen = () => {
@@ -76,9 +55,21 @@ export const OnboardingQuestionnaireScreen = () => {
   const buttonOpacityAnim = useRef(new Animated.Value(0)).current
 
   // Option animations - create animations for each option
-  const optionAnimations = useRef<{ wiggle: Animated.Value; float: Animated.Value; scale: Animated.Value; scaleIn: Animated.Value }[]>(
+  const optionAnimations = useRef<
+    {
+      wiggle: Animated.Value
+      float: Animated.Value
+      scale: Animated.Value
+      scaleIn: Animated.Value
+    }[]
+  >(
     (() => {
-      const animations = [] as { wiggle: Animated.Value; float: Animated.Value; scale: Animated.Value; scaleIn: Animated.Value }[]
+      const animations = [] as {
+        wiggle: Animated.Value
+        float: Animated.Value
+        scale: Animated.Value
+        scaleIn: Animated.Value
+      }[]
       for (const question of questions) {
         for (const option of question.options) {
           animations.push({
@@ -90,7 +81,7 @@ export const OnboardingQuestionnaireScreen = () => {
         }
       }
       return animations
-    })()
+    })(),
   )
 
   // Track screen view on mount
@@ -108,7 +99,7 @@ export const OnboardingQuestionnaireScreen = () => {
     // Reset animations
     questionFadeAnim.setValue(0)
     questionSlideAnim.setValue(30)
-    
+
     // Reset option animations for current question
     const startIndex = currentQuestionIndex * currentQuestion.options.length
     for (let i = 0; i < currentQuestion.options.length; i++) {
@@ -120,7 +111,7 @@ export const OnboardingQuestionnaireScreen = () => {
         optionAnimations.current[animIndex].scaleIn.setValue(0.8)
       }
     }
-    
+
     // Animate question
     Animated.parallel([
       Animated.timing(questionFadeAnim, {
@@ -160,7 +151,7 @@ export const OnboardingQuestionnaireScreen = () => {
   const animateOptionSelection = (optionIndex: number) => {
     const animIndex = currentQuestionIndex * currentQuestion.options.length + optionIndex
     const animation = optionAnimations.current[animIndex]
-    
+
     if (!animation) return
 
     // Wiggle animation
@@ -211,7 +202,7 @@ export const OnboardingQuestionnaireScreen = () => {
             duration: 2000,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       ).start()
     })
   }
@@ -219,7 +210,7 @@ export const OnboardingQuestionnaireScreen = () => {
   const handleAnswerSelect = (optionIndex: number) => {
     // Haptic feedback for selection
     ReactNativeHapticFeedback.trigger("selection")
-    
+
     // Track answer selection
     AnalyticsService.trackEvent({
       name: "onboarding_question_answered",
@@ -229,13 +220,13 @@ export const OnboardingQuestionnaireScreen = () => {
         answer_index: optionIndex,
         answer_text: currentQuestion.options[optionIndex],
         question_number: currentQuestionIndex + 1,
-        total_questions: questions.length
-      }
+        total_questions: questions.length,
+      },
     })
-    
-    setAnswers(prev => ({
+
+    setAnswers((prev) => ({
       ...prev,
-      [currentQuestion.id]: optionIndex
+      [currentQuestion.id]: optionIndex,
     }))
 
     // Animate the selected option
@@ -258,10 +249,10 @@ export const OnboardingQuestionnaireScreen = () => {
 
   const handleNext = () => {
     if (selectedAnswer === undefined) return // Require an answer
-    
+
     // Haptic feedback for progression
     ReactNativeHapticFeedback.trigger("selection")
-    
+
     // Button press animation
     Animated.sequence([
       Animated.timing(buttonScaleAnim, {
@@ -275,12 +266,12 @@ export const OnboardingQuestionnaireScreen = () => {
         useNativeDriver: true,
       }),
     ]).start()
-    
+
     if (currentQuestionIndex < questions.length - 1) {
       // Reset button animations for next question
       buttonScaleAnim.setValue(0.8)
       buttonOpacityAnim.setValue(0)
-      
+
       // Track question progression
       AnalyticsService.trackEvent({
         name: "onboarding_question_progress",
@@ -288,25 +279,25 @@ export const OnboardingQuestionnaireScreen = () => {
           from_question: currentQuestionIndex + 1,
           to_question: currentQuestionIndex + 2,
           total_questions: questions.length,
-          question_title: currentQuestion.question
-        }
+          question_title: currentQuestion.question,
+        },
       })
-      
+
       setCurrentQuestionIndex(currentQuestionIndex + 1)
     } else {
       // Haptic feedback for completing questionnaire
       ReactNativeHapticFeedback.trigger("notificationSuccess")
-      
+
       // Track questionnaire completion
       AnalyticsService.trackEvent({
         name: "onboarding_questionnaire_completed",
         properties: {
           total_questions: questions.length,
           answers_provided: Object.keys(answers).length,
-          completion_time: Date.now() // You could calculate actual time if needed
-        }
+          completion_time: Date.now(), // You could calculate actual time if needed
+        },
       })
-      
+
       // Navigate to thank you screen
       navigation.navigate("OnboardingThankYou")
     }
@@ -315,12 +306,12 @@ export const OnboardingQuestionnaireScreen = () => {
   const handleBack = () => {
     // Haptic feedback for navigation
     ReactNativeHapticFeedback.trigger("selection")
-    
+
     if (currentQuestionIndex > 0) {
       // Reset button animations for previous question
       buttonScaleAnim.setValue(0.8)
       buttonOpacityAnim.setValue(0)
-      
+
       // Track question navigation back
       AnalyticsService.trackEvent({
         name: "onboarding_question_navigation",
@@ -328,10 +319,10 @@ export const OnboardingQuestionnaireScreen = () => {
           direction: "back",
           from_question: currentQuestionIndex + 1,
           to_question: currentQuestionIndex,
-          question_title: currentQuestion.question
-        }
+          question_title: currentQuestion.question,
+        },
       })
-      
+
       setCurrentQuestionIndex(currentQuestionIndex - 1)
     } else {
       // Track exit from questionnaire
@@ -340,10 +331,10 @@ export const OnboardingQuestionnaireScreen = () => {
         properties: {
           source: "questionnaire",
           action: "back_to_slideshow",
-          questions_answered: Object.keys(answers).length
-        }
+          questions_answered: Object.keys(answers).length,
+        },
       })
-      
+
       navigation.goBack()
     }
   }
@@ -353,11 +344,11 @@ export const OnboardingQuestionnaireScreen = () => {
   return (
     <Screen preset="fixed" contentContainerStyle={styles.container} safeAreaEdges={[]}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
-      
+
       {/* Purple Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Know your needs</Text>
-        
+
         {/* Progress Indicator */}
         <View style={styles.progressContainer}>
           {questions.map((_, index) => (
@@ -367,13 +358,17 @@ export const OnboardingQuestionnaireScreen = () => {
                 styles.progressSegment,
                 index <= currentQuestionIndex && styles.progressSegmentActive,
                 {
-                  transform: [{
-                    scale: index === currentQuestionIndex ? 
-                      progressAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.8, 1.2],
-                      }) : 1
-                  }],
+                  transform: [
+                    {
+                      scale:
+                        index === currentQuestionIndex
+                          ? progressAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.8, 1.2],
+                            })
+                          : 1,
+                    },
+                  ],
                 },
               ]}
             />
@@ -383,13 +378,13 @@ export const OnboardingQuestionnaireScreen = () => {
 
       {/* White Content Area */}
       <View style={styles.contentContainer}>
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {/* Question */}
-          <Animated.Text 
+          <Animated.Text
             style={[
               styles.questionText,
               {
@@ -400,7 +395,7 @@ export const OnboardingQuestionnaireScreen = () => {
           >
             {currentQuestion.question}
           </Animated.Text>
-          
+
           {/* Answer Options */}
           <View style={styles.optionsContainer}>
             {currentQuestion.options.map((option, index) => {
@@ -415,16 +410,18 @@ export const OnboardingQuestionnaireScreen = () => {
                         scale: animation?.scaleIn || 1,
                       },
                       {
-                        translateX: animation?.wiggle.interpolate({
-                          inputRange: [-1, 0, 1],
-                          outputRange: [-5, 0, 5],
-                        }) || 0,
+                        translateX:
+                          animation?.wiggle.interpolate({
+                            inputRange: [-1, 0, 1],
+                            outputRange: [-5, 0, 5],
+                          }) || 0,
                       },
                       {
-                        translateY: animation?.float.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0, -3],
-                        }) || 0,
+                        translateY:
+                          animation?.float.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, -3],
+                          }) || 0,
                       },
                       {
                         scale: animation?.scale || 1,
@@ -440,10 +437,12 @@ export const OnboardingQuestionnaireScreen = () => {
                     onPress={() => handleAnswerSelect(index)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[
-                      styles.optionText,
-                      selectedAnswer === index && styles.optionTextSelected
-                    ]}>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selectedAnswer === index && styles.optionTextSelected,
+                      ]}
+                    >
                       {option}
                     </Text>
                   </TouchableOpacity>
@@ -459,7 +458,7 @@ export const OnboardingQuestionnaireScreen = () => {
             <Text style={styles.backButtonText}>Back</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.nextButton,
               selectedAnswer === undefined && styles.nextButtonDisabled,
@@ -467,14 +466,16 @@ export const OnboardingQuestionnaireScreen = () => {
                 opacity: buttonOpacityAnim,
                 transform: [{ scale: buttonScaleAnim }],
               },
-            ]} 
+            ]}
             onPress={handleNext}
             disabled={selectedAnswer === undefined}
           >
-            <Text style={[
-              styles.nextButtonText,
-              selectedAnswer === undefined && styles.nextButtonTextDisabled
-            ]}>
+            <Text
+              style={[
+                styles.nextButtonText,
+                selectedAnswer === undefined && styles.nextButtonTextDisabled,
+              ]}
+            >
               {currentQuestionIndex === questions.length - 1 ? "Finish" : "Next"}
             </Text>
           </TouchableOpacity>
@@ -485,41 +486,19 @@ export const OnboardingQuestionnaireScreen = () => {
 }
 
 const styles = StyleSheet.create({
+  backButton: {
+    alignItems: "center",
+    minWidth: 60,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  backButtonText: {
+    color: colors.text,
+    fontFamily: typography.primary.medium,
+    fontSize: 16,
+  },
   container: {
     flex: 1,
-  },
-  header: {
-    backgroundColor: colors.palette.primary400,
-    paddingTop: spacing.xl * 2,
-    paddingBottom: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontFamily: typography.primary.bold,
-    color: colors.palette.neutral100,
-    textAlign: "center",
-    marginBottom: spacing.lg,
-  },
-  progressContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  progressSegment: {
-    width: 60,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.5)",
-  },
-  progressSegmentActive: {
-    backgroundColor: colors.palette.primary100,
-    borderColor: colors.palette.primary100,
   },
   contentContainer: {
     flex: 1,
@@ -529,36 +508,62 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     paddingTop: spacing.xl,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
+  header: {
+    backgroundColor: colors.palette.primary400,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl * 2,
   },
-  questionText: {
-    fontSize: 20,
+  headerTitle: {
+    color: colors.palette.neutral100,
     fontFamily: typography.primary.bold,
-    color: colors.palette.primary400,
-    textAlign: "left",
-    marginBottom: spacing.xl,
-    lineHeight: 28,
+    fontSize: 24,
+    marginBottom: spacing.lg,
+    textAlign: "center",
   },
-  optionsContainer: {
-    gap: spacing.md,
+  navigationContainer: {
+    alignItems: "center",
+    borderTopColor: colors.palette.neutral300,
+    borderTopWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  nextButton: {
+    alignItems: "center",
+    backgroundColor: colors.palette.primary400,
+    borderRadius: 8,
+    minWidth: 80,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  nextButtonDisabled: {
+    backgroundColor: colors.palette.neutral300,
+  },
+  nextButtonText: {
+    color: colors.palette.neutral100,
+    fontFamily: typography.primary.medium,
+    fontSize: 16,
+  },
+  nextButtonTextDisabled: {
+    color: colors.palette.neutral500,
   },
   optionCard: {
     backgroundColor: colors.palette.neutral100,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
+    borderColor: colors.palette.neutral300,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.palette.neutral300,
+    elevation: 2,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
     shadowColor: colors.palette.neutral800,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
   },
   optionCardSelected: {
     backgroundColor: colors.palette.primary100,
@@ -567,52 +572,48 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
   },
   optionText: {
-    fontSize: 16,
-    fontFamily: typography.primary.medium,
     color: colors.text,
+    fontFamily: typography.primary.medium,
+    fontSize: 16,
     textAlign: "center",
   },
   optionTextSelected: {
     color: colors.palette.primary400,
   },
-  navigationContainer: {
+  optionsContainer: {
+    gap: spacing.md,
+  },
+  progressContainer: {
+    alignItems: "center",
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    justifyContent: "center",
+  },
+  progressSegment: {
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderColor: "rgba(255, 255, 255, 0.5)",
+    borderRadius: 4,
+    borderWidth: 1,
+    height: 8,
+    width: 60,
+  },
+  progressSegmentActive: {
+    backgroundColor: colors.palette.primary100,
+    borderColor: colors.palette.primary100,
+  },
+  questionText: {
+    color: colors.palette.primary400,
+    fontFamily: typography.primary.bold,
+    fontSize: 20,
+    lineHeight: 28,
+    marginBottom: spacing.xl,
+    textAlign: "left",
+  },
+  scrollContent: {
     paddingBottom: spacing.xl,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.palette.neutral300,
-  },
-  backButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    minWidth: 60,
-    alignItems: "center",
-  },
-  backButtonText: {
-    color: colors.text,
-    fontSize: 16,
-    fontFamily: typography.primary.medium,
-  },
-  nextButton: {
-    backgroundColor: colors.palette.primary400,
-    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
-    borderRadius: 8,
-    minWidth: 80,
-    alignItems: "center",
   },
-  nextButtonDisabled: {
-    backgroundColor: colors.palette.neutral300,
+  scrollView: {
+    flex: 1,
   },
-  nextButtonText: {
-    color: colors.palette.neutral100,
-    fontSize: 16,
-    fontFamily: typography.primary.medium,
-  },
-  nextButtonTextDisabled: {
-    color: colors.palette.neutral500,
-  },
-}) 
+})

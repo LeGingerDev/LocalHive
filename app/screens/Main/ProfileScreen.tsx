@@ -1,26 +1,25 @@
 import { useEffect, useState } from "react"
 import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"
+import Ionicons from "react-native-vector-icons/Ionicons"
 
 import { Header } from "@/components/Header"
+import { Icon } from "@/components/Icon"
 import { PersonalCodeBox } from "@/components/PersonalCodeBox"
+import { PrivacySecurityModal } from "@/components/PrivacySecurityModal"
 import { ProfileBox } from "@/components/profiles/ProfileBox"
 import { SettingsItem } from "@/components/profiles/SettingsItem"
 import { SettingsSection } from "@/components/profiles/SettingsSection"
 import { Screen } from "@/components/Screen"
 import SubContainer from "@/components/Subscription/SubContainer"
+import SubscriptionManagementModal from "@/components/Subscription/SubscriptionManagementModal"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { useAuth } from "@/context/AuthContext"
+import { useSubscription } from "@/hooks/useSubscription"
 import googleAuthService from "@/services/supabase/googleAuthService"
 import { useAppTheme } from "@/theme/context"
 import { setSystemUIBackgroundColor } from "@/theme/context.utils"
 import { spacing } from "@/theme/spacing"
-
-import { useSubscription } from "@/hooks/useSubscription"
-import SubscriptionManagementModal from "@/components/Subscription/SubscriptionManagementModal"
-import { PrivacySecurityModal } from "@/components/PrivacySecurityModal"
-import { Icon } from "@/components/Icon"
-import Ionicons from "react-native-vector-icons/Ionicons"
 
 const ProfileScreen = () => {
   const { themeContext, theme } = useAppTheme()
@@ -49,8 +48,6 @@ const ProfileScreen = () => {
       console.error("Error during sign out:", error)
     }
   }
-
-
 
   const handleManageSubscription = () => {
     setIsManageModalVisible(true)
@@ -86,28 +83,36 @@ const ProfileScreen = () => {
         <SettingsSection style={styles.settingsSection}>
           <ThemeToggle />
           <SettingsItem icon="notifications-outline" label="Notifications" />
-          <SettingsItem icon="lock-closed-outline" label="Privacy & Security" onPress={handlePrivacySecurityPress} />
+          <SettingsItem
+            icon="lock-closed-outline"
+            label="Privacy & Security"
+            onPress={handlePrivacySecurityPress}
+          />
           <SettingsItem icon="help-circle-outline" label="Help & Support" />
           <SettingsItem icon="information-circle-outline" label="About Local Hive" />
           {subscription.isPro && (
-            <TouchableOpacity 
-              onPress={handleManageSubscription} 
-              activeOpacity={0.8} 
+            <TouchableOpacity
+              onPress={handleManageSubscription}
+              activeOpacity={0.8}
               style={[
                 styles.manageSubscriptionItem,
-                { 
+                {
                   backgroundColor: theme.colors.cardColor,
                   shadowColor: theme.colors.text,
-                }
+                },
               ]}
             >
-              <View style={[
-                styles.manageIconContainer,
-                { backgroundColor: theme.colors.palette.neutral100 }
-              ]}>
+              <View
+                style={[
+                  styles.manageIconContainer,
+                  { backgroundColor: theme.colors.palette.neutral100 },
+                ]}
+              >
                 <Icon icon="lightning" size={22} color={theme.colors.gradientOrange[0]} />
               </View>
-              <Text style={[styles.manageLabel, { color: theme.colors.text }]}>Manage Subscription</Text>
+              <Text style={[styles.manageLabel, { color: theme.colors.text }]}>
+                Manage Subscription
+              </Text>
               <Ionicons
                 name="chevron-forward"
                 size={22}
@@ -118,8 +123,6 @@ const ProfileScreen = () => {
           )}
           <SettingsItem icon="log-out-outline" label="Sign Out" signOut onPress={handleSignOut} />
         </SettingsSection>
-
-
       </ScrollView>
 
       {/* Subscription Management Modal */}
@@ -144,6 +147,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingTop: spacing.md,
   },
+  manageIconContainer: {
+    alignItems: "center",
+    borderRadius: 18,
+    height: 36,
+    justifyContent: "center",
+    marginRight: 8,
+    width: 36,
+  },
+  manageLabel: {
+    color: "#333333",
+    fontFamily: "System",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  manageSubscriptionItem: {
+    alignItems: "center",
+    elevation: 2,
+    flexDirection: "row",
+    marginBottom: 0,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+  },
   personalCodeBox: {
     width: "100%",
   },
@@ -164,32 +192,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     width: "100%",
   },
-  manageSubscriptionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    marginBottom: 0,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  manageIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
-  },
-  manageLabel: {
-    fontFamily: "System",
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#333333",
-  },
-
 })
 
 export default ProfileScreen

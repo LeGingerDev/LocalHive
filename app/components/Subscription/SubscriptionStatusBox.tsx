@@ -1,13 +1,14 @@
 import React, { FC, useState, useCallback } from "react"
 import { View, Text, TouchableOpacity, Alert, ViewStyle, TextStyle } from "react-native"
-import { useAppTheme } from "@/theme/context"
-import type { ThemedStyle } from "@/theme/types"
-import { spacing } from "@/theme/spacing"
+
+import { CustomGradient } from "@/components/Gradient/CustomGradient"
+import { Icon } from "@/components/Icon"
+import VisuProModal from "@/components/Subscription/VisuProModal"
 import { useSubscription } from "@/hooks/useSubscription"
 import { SubscriptionService } from "@/services/subscriptionService"
-import { Icon } from "@/components/Icon"
-import { CustomGradient } from "@/components/Gradient/CustomGradient"
-import VisuProModal from "@/components/Subscription/VisuProModal"
+import { useAppTheme } from "@/theme/context"
+import { spacing } from "@/theme/spacing"
+import type { ThemedStyle } from "@/theme/types"
 
 interface SubscriptionStatusBoxProps {
   userId: string | null
@@ -45,7 +46,7 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
       // Set expiration to 30 days from now
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + 30)
-      
+
       const { success, error } = await subscription.upgradeToPro(expiresAt.toISOString())
       if (error) {
         Alert.alert("Error", "Failed to upgrade. Please try again.")
@@ -56,8 +57,6 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
       Alert.alert("Error", "Something went wrong. Please try again.")
     }
   }
-
-
 
   const handleToggleCollapse = useCallback(() => {
     setIsCollapsed(!isCollapsed)
@@ -95,8 +94,8 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
     <>
       <View style={themed($container)}>
         {/* Header with Gradient Background */}
-        <TouchableOpacity 
-          style={themed($headerGradient)} 
+        <TouchableOpacity
+          style={themed($headerGradient)}
           onPress={handleToggleCollapse}
           activeOpacity={0.8}
         >
@@ -105,13 +104,17 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
               <View style={themed($statusBadge)}>
                 <Text style={themed($statusText)}>{getStatusText()}</Text>
                 <Text style={themed($statusSubtext)}>
-                  {subscription.isPro ? " - Unlimited Access" : subscription.isTrial ? " - Trial Active" : " - Basic Plan"}
+                  {subscription.isPro
+                    ? " - Unlimited Access"
+                    : subscription.isTrial
+                      ? " - Trial Active"
+                      : " - Basic Plan"}
                 </Text>
               </View>
-              
-              <Icon 
-                icon={isCollapsed ? "caretRight" : "caretLeft"} 
-                size={20} 
+
+              <Icon
+                icon={isCollapsed ? "caretRight" : "caretLeft"}
+                size={20}
                 color="#FFFFFF"
                 style={themed($arrowIcon)}
               />
@@ -129,7 +132,7 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
             {/* Usage Progress */}
             <View style={themed($usageSection)}>
               <Text style={themed($usageTitle)}>Your Usage</Text>
-              
+
               <View style={themed($usageGrid)}>
                 <View style={themed($usageCard)}>
                   <View style={themed($usageCardHeader)}>
@@ -137,10 +140,9 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
                     <Text style={themed($usageCardLabel)}>Groups</Text>
                   </View>
                   <Text style={themed($usageCardCount)}>
-                    {subscription.isPro || subscription.isTrial 
+                    {subscription.isPro || subscription.isTrial
                       ? subscription.groupsUsed.toString()
-                      : `${subscription.groupsUsed}/${subscription.groupsLimit}`
-                    }
+                      : `${subscription.groupsUsed}/${subscription.groupsLimit}`}
                   </Text>
                   {subscription.groupsUsed >= subscription.groupsLimit && (
                     <View style={themed($limitBadge)}>
@@ -155,10 +157,9 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
                     <Text style={themed($usageCardLabel)}>Items</Text>
                   </View>
                   <Text style={themed($usageCardCount)}>
-                    {subscription.isPro || subscription.isTrial 
+                    {subscription.isPro || subscription.isTrial
                       ? subscription.itemsUsed.toString()
-                      : `${subscription.itemsUsed}/${subscription.itemsLimit}`
-                    }
+                      : `${subscription.itemsUsed}/${subscription.itemsLimit}`}
                   </Text>
                   {subscription.itemsUsed >= subscription.itemsLimit && (
                     <View style={themed($limitBadge)}>
@@ -173,10 +174,14 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
                   <Icon icon="lightning" size={20} color={themed($aiIconColor).color} />
                   <Text style={themed($aiLabel)}>AI Search</Text>
                 </View>
-                <View style={[
-                  themed($aiStatusContainer),
-                  subscription.canUseAISearchNow ? themed($aiStatusAvailable) : themed($aiStatusUnavailable)
-                ]}>
+                <View
+                  style={[
+                    themed($aiStatusContainer),
+                    subscription.canUseAISearchNow
+                      ? themed($aiStatusAvailable)
+                      : themed($aiStatusUnavailable),
+                  ]}
+                >
                   <Text style={themed($aiStatus)}>
                     {subscription.canUseAISearchNow ? "Available" : "Pro Members Only"}
                   </Text>
@@ -187,14 +192,22 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
             {/* Action Buttons */}
             <View style={themed($actionsSection)}>
               {(subscription.isFree || subscription.isTrial) && (
-                <TouchableOpacity style={themed($upgradeButton)} onPress={handleUpgradePress} activeOpacity={0.8}>
+                <TouchableOpacity
+                  style={themed($upgradeButton)}
+                  onPress={handleUpgradePress}
+                  activeOpacity={0.8}
+                >
                   <Icon icon="lightning" size={18} color={themed($upgradeButtonIconColor).color} />
                   <Text style={themed($upgradeButtonText)}>Upgrade to Pro</Text>
                 </TouchableOpacity>
               )}
 
               {subscription.isPro && (
-                <TouchableOpacity style={themed($manageButton)} onPress={onManagePress} activeOpacity={0.8}>
+                <TouchableOpacity
+                  style={themed($manageButton)}
+                  onPress={onManagePress}
+                  activeOpacity={0.8}
+                >
                   <Icon icon="settings" size={18} color={themed($manageButtonIconColor).color} />
                   <Text style={themed($manageButtonText)}>Manage Subscription</Text>
                 </TouchableOpacity>
@@ -218,15 +231,15 @@ const formatTimeRemaining = (endDate: string) => {
   const now = new Date()
   const end = new Date(endDate)
   const diff = end.getTime() - now.getTime()
-  
+
   if (diff <= 0) {
     return "Expired"
   }
-  
+
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-  
+
   if (days > 0) {
     return `${days}d ${hours}h`
   } else if (hours > 0) {
@@ -469,8 +482,6 @@ const $actionsSection: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.background,
 })
 
-
-
 const $upgradeButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.gradientOrange[0],
   paddingVertical: spacing.sm,
@@ -564,4 +575,4 @@ const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontSize: 14,
   color: colors.textDim,
   textAlign: "center",
-}) 
+})

@@ -26,6 +26,12 @@ import { useEffect, useState } from "react"
 import { AppState, AppStateStatus, Platform } from "react-native"
 import { useFonts } from "expo-font"
 import * as Linking from "expo-linking"
+import {
+  getAnalytics,
+  setAnalyticsCollectionEnabled,
+  setSessionTimeoutDuration,
+} from "@react-native-firebase/analytics"
+import { getApp } from "@react-native-firebase/app"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { KeyboardProvider } from "react-native-keyboard-controller"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
@@ -36,15 +42,13 @@ import { AuthProvider } from "./context/AuthContext"
 import { initI18n } from "./i18n"
 import { AppNavigator } from "./navigators/AppNavigator"
 import { useNavigationPersistence } from "./navigators/navigationUtilities"
+import { AnalyticsService, AnalyticsEvents } from "./services/analyticsService"
 import { setupAppStateListener } from "./services/supabase/supabase"
 import { ThemeProvider } from "./theme/context"
 import { customFontsToLoad } from "./theme/typography"
 import { loadDateFnsLocale } from "./utils/formatDate"
 import { hideNavigationBar, setupNavigationBarHidingInterval } from "./utils/navigationBarUtils"
 import * as storage from "./utils/storage"
-import { AnalyticsService, AnalyticsEvents } from "./services/analyticsService"
-import { getApp } from '@react-native-firebase/app'
-import { getAnalytics, setAnalyticsCollectionEnabled, setSessionTimeoutDuration } from '@react-native-firebase/analytics'
 
 export const NAVIGATION_PERSISTENCE_KEY = "NAVIGATION_STATE"
 
@@ -107,7 +111,7 @@ export function App() {
       if (nextAppState === "active") {
         // App has come to the foreground - hide navigation bar again
         hideNavigationBar()
-        
+
         // Track app opened event
         AnalyticsService.trackEvent({
           name: AnalyticsEvents.APP_OPENED,
@@ -135,58 +139,58 @@ export function App() {
     const initAnalytics = async () => {
       try {
         // Check if Firebase is available
-        if (typeof getApp === 'undefined') {
-          console.warn('[App] Firebase not available, skipping analytics initialization')
+        if (typeof getApp === "undefined") {
+          console.warn("[App] Firebase not available, skipping analytics initialization")
           return
         }
 
         const app = getApp()
         const analytics = getAnalytics(app)
-        
+
         // Force enable analytics in development
         if (__DEV__) {
           await setAnalyticsCollectionEnabled(analytics, true)
-          console.log('[App] Analytics enabled for development')
-          
+          console.log("[App] Analytics enabled for development")
+
           // Set debug mode
           await setAnalyticsCollectionEnabled(analytics, true)
-          
+
           // Force immediate event sending
           await setSessionTimeoutDuration(analytics, 1800000)
         }
-        
+
         // Track app initialization
         await AnalyticsService.trackEvent({
           name: AnalyticsEvents.APP_OPENED,
           properties: {
             platform: Platform.OS,
-            version: '1.0.0',
-            build: '1',
-            debug_mode: __DEV__ ? 'true' : 'false',
+            version: "1.0.0",
+            build: "1",
+            debug_mode: __DEV__ ? "true" : "false",
           },
         })
-        
+
         // Get debug info only once on startup
         if (__DEV__) {
           await AnalyticsService.getDebugInfo()
         }
-        
+
         // Single flush after initialization instead of multiple
         if (__DEV__) {
           setTimeout(async () => {
             try {
               await setAnalyticsCollectionEnabled(analytics, true)
-              console.log('[App] Initial analytics flush completed')
+              console.log("[App] Initial analytics flush completed")
             } catch (flushError) {
-              console.error('[App] Failed to flush analytics:', flushError)
+              console.error("[App] Failed to flush analytics:", flushError)
             }
           }, 2000) // Increased delay to reduce frequency
         }
       } catch (error) {
-        console.error('[App] Failed to initialize analytics:', error)
+        console.error("[App] Failed to initialize analytics:", error)
       }
     }
-    
+
     // Delay analytics initialization to ensure Firebase is ready
     const timer = setTimeout(initAnalytics, 1000)
     return () => clearTimeout(timer)
@@ -216,11 +220,11 @@ export function App() {
             <StatusBarManager />
             <AuthProvider>
               <AlertProvider>
-                  <AppNavigator
-                    linking={linking}
-                    initialState={initialNavigationState}
-                    onStateChange={onNavigationStateChange}
-                  />
+                <AppNavigator
+                  linking={linking}
+                  initialState={initialNavigationState}
+                  onStateChange={onNavigationStateChange}
+                />
               </AlertProvider>
             </AuthProvider>
           </ThemeProvider>

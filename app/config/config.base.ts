@@ -40,28 +40,30 @@ const BaseConfig: ConfigBaseProps = {
 // Validate required environment variables
 const validateConfig = (config: ConfigBaseProps) => {
   const requiredVars = [
-    { key: 'SUPABASE_URL', value: config.SUPABASE_URL },
-    { key: 'SUPABASE_KEY', value: config.SUPABASE_KEY },
+    { key: "SUPABASE_URL", value: config.SUPABASE_URL },
+    { key: "SUPABASE_KEY", value: config.SUPABASE_KEY },
   ]
 
-  const missingVars = requiredVars.filter(v => !v.value)
-  
+  const missingVars = requiredVars.filter((v) => !v.value)
+
   if (missingVars.length > 0) {
     // During build time, these will be missing - that's expected
-    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
-      console.log('ℹ️  Environment variables will be injected during EAS build')
+    if (typeof process !== "undefined" && process.env.NODE_ENV === "production") {
+      console.log("ℹ️  Environment variables will be injected during EAS build")
     } else {
-      console.warn('⚠️  Missing required environment variables:')
-      missingVars.forEach(v => console.warn(`   - ${v.key}`))
-      console.warn('These will be available in EAS builds via EAS environment variables.')
-      
+      console.warn("⚠️  Missing required environment variables:")
+      missingVars.forEach((v) => console.warn(`   - ${v.key}`))
+      console.warn("These will be available in EAS builds via EAS environment variables.")
+
       // In development, show more helpful message
       if (__DEV__) {
-        console.warn('For local development, you can create .env.development file or use EAS builds.')
+        console.warn(
+          "For local development, you can create .env.development file or use EAS builds.",
+        )
       }
     }
   } else {
-    console.log('✅ All required environment variables are present')
+    console.log("✅ All required environment variables are present")
   }
 }
 
