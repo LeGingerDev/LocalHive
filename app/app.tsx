@@ -43,6 +43,7 @@ import { initI18n } from "./i18n"
 import { AppNavigator } from "./navigators/AppNavigator"
 import { useNavigationPersistence } from "./navigators/navigationUtilities"
 import { AnalyticsService, AnalyticsEvents } from "./services/analyticsService"
+import { revenueCatService } from "./services/revenueCatService"
 import { setupAppStateListener } from "./services/supabase/supabase"
 import { ThemeProvider } from "./theme/context"
 import { customFontsToLoad } from "./theme/typography"
@@ -132,6 +133,20 @@ export function App() {
   // Set up Supabase app state listener for session refresh
   useEffect(() => {
     setupAppStateListener()
+  }, [])
+
+  // Initialize RevenueCat
+  useEffect(() => {
+    const initRevenueCat = async () => {
+      try {
+        await revenueCatService.initialize()
+        console.log("[App] RevenueCat initialized successfully")
+      } catch (error) {
+        console.error("[App] Failed to initialize RevenueCat:", error)
+      }
+    }
+
+    initRevenueCat()
   }, [])
 
   // Initialize Firebase Analytics

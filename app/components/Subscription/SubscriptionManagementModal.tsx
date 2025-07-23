@@ -14,6 +14,7 @@ import {
 
 import { Icon } from "@/components/Icon"
 import { useSubscription } from "@/hooks/useSubscription"
+import { useRevenueCat } from "@/hooks/useRevenueCat"
 import { SubscriptionService } from "@/services/subscriptionService"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
@@ -33,6 +34,12 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
 }) => {
   const { themed, theme } = useAppTheme()
   const subscription = useSubscription(userId)
+  const { subscriptionTiers } = useRevenueCat()
+
+  // Get the monthly subscription package for pricing
+  const monthlyPackage = subscriptionTiers.find(tier => 
+    tier.id.includes("monthly") || tier.id.includes("$rc_monthly")
+  )
 
   const handleCancelSubscription = async () => {
     Alert.alert(
@@ -141,7 +148,9 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
                 </View>
                 <View style={themed($planRow)}>
                   <Text style={themed($planLabel)}>Price:</Text>
-                  <Text style={themed($planValue)}>$5.99/month</Text>
+                  <Text style={themed($planValue)}>
+                    {monthlyPackage ? monthlyPackage.price : "$5.99"}/month
+                  </Text>
                 </View>
                 {subscription.subscriptionInfo?.subscription_expires_at && (
                   <View style={themed($planRow)}>

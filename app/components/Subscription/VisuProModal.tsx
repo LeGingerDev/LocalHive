@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import {
   View,
   Text,
@@ -9,11 +9,14 @@ import {
   StyleProp,
   ViewStyle,
   TextStyle,
+  Alert,
 } from "react-native"
 import { LinearGradient } from "expo-linear-gradient"
 
 import { Icon } from "@/components/Icon"
 import { useAppTheme } from "@/theme/context"
+import { useAuth } from "@/context/AuthContext"
+import { useRevenueCat } from "@/hooks/useRevenueCat"
 import type { ThemedStyle } from "@/theme/types"
 
 export interface VisuProModalProps {
@@ -30,6 +33,88 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
   style,
 }) => {
   const { themed, theme } = useAppTheme()
+  const { userProfile } = useAuth()
+  const { 
+    isInitialized, 
+    subscriptionTiers, 
+    isLoading, 
+    error, 
+    purchaseAndSync,
+    setUserID 
+  } = useRevenueCat()
+  const [isPurchasing, setIsPurchasing] = useState(false)
+
+  // Set user ID when modal opens
+  useEffect(() => {
+    if (visible && userProfile?.id && isInitialized) {
+      setUserID(userProfile.id)
+    }
+  }, [visible, userProfile?.id, isInitialized, setUserID])
+
+  // Get the monthly subscription package for pricing
+  const monthlyPackage = subscriptionTiers.find(tier => 
+    tier.id.includes("monthly") || tier.id.includes("$rc_monthly")
+  )
+
+  const handlePurchase = async () => {
+    if (!userProfile?.id) {
+      Alert.alert("Error", "Please sign in to purchase a subscription")
+      return
+    }
+
+    if (!isInitialized) {
+      Alert.alert("Error", "Payment system is not ready. Please try again.")
+      return
+    }
+
+    if (!monthlyPackage) {
+      Alert.alert("Error", "Subscription package not found. Please try again later.")
+      return
+    }
+
+    setIsPurchasing(true)
+
+    try {
+      // Get the actual package from RevenueCat offerings
+      const { revenueCatService } = await import("@/services/revenueCatService")
+      const offerings = await revenueCatService.getOfferings()
+      
+      if (!offerings) {
+        throw new Error("No subscription offerings available")
+      }
+
+      // Find the monthly package
+      const packageToPurchase = offerings.availablePackages.find(pkg => 
+        pkg.identifier.includes("monthly") || pkg.identifier.includes("$rc_monthly")
+      )
+
+      if (!packageToPurchase) {
+        throw new Error("Monthly subscription package not found")
+      }
+
+      // Make the actual purchase
+      await purchaseAndSync(userProfile.id, packageToPurchase)
+      
+      // Show success message
+      Alert.alert(
+        "Success!",
+        "Your subscription has been activated. Welcome to Visu Pro!",
+        [{ text: "OK", onPress: onClose }]
+      )
+      
+      // Call the onStartTrial callback to update the app state
+      onStartTrial()
+      
+    } catch (err) {
+      console.error("Purchase error:", err)
+      Alert.alert(
+        "Purchase Failed", 
+        err instanceof Error ? err.message : "Something went wrong. Please try again."
+      )
+    } finally {
+      setIsPurchasing(false)
+    }
+  }
 
   const features = [
     {
@@ -63,9 +148,11 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
             contentContainerStyle={themed($contentContainer)}
             showsVerticalScrollIndicator={false}
           >
-            {/* Header with pricing */}
+            {/* Header with dynamic pricing */}
             <View style={themed($headerContainer)}>
-              <Text style={themed($price)}>$5.99</Text>
+              <Text style={themed($price)}>
+                {monthlyPackage ? monthlyPackage.price : "$5.99"}
+              </Text>
               <Text style={themed($pricePeriod)}>/month</Text>
             </View>
             <Text style={themed($cancelText)}>Cancel anytime</Text>
@@ -88,16 +175,28 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
 
           {/* CTA Button */}
           <View style={themed($buttonContainer)}>
-            <TouchableOpacity style={themed($gradientButton)} onPress={onStartTrial}>
+            <TouchableOpacity 
+              style={themed($gradientButton)} 
+              onPress={handlePurchase}
+              disabled={isPurchasing || isLoading}
+            >
               <LinearGradient
                 colors={theme.colors.gradientPrimary}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={themed($gradientStyle)}
               >
-                <Text style={themed($buttonText)}>Start 3-Day Free Trial</Text>
+                <Text style={themed($buttonText)}>
+                  {isPurchasing || isLoading ? "Processing..." : "Start 3-Day Free Trial"}
+                </Text>
               </LinearGradient>
             </TouchableOpacity>
+            
+            {error && (
+              <Text style={themed($errorText)}>
+                {error}
+              </Text>
+            )}
           </View>
         </View>
       </View>
@@ -230,6 +329,14 @@ const $buttonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontSize: 18,
   color: "white",
   textAlign: "center",
+})
+
+const $errorText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.error,
+  textAlign: "center",
+  marginTop: spacing.sm,
 })
 
 export default VisuProModal

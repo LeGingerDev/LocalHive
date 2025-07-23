@@ -1,14 +1,5 @@
-import React, { FC, useState, useEffect, useCallback, useRef } from "react"
-import {
-  ViewStyle,
-  TextStyle,
-  ActivityIndicator,
-  ScrollView,
-  View,
-  Text,
-  Alert,
-  TouchableOpacity,
-} from "react-native"
+import { FC, useState, useEffect, useCallback, useRef } from "react"
+import { ViewStyle, TextStyle, ActivityIndicator, ScrollView, View } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 
 import { Header } from "@/components/Header"
@@ -21,22 +12,18 @@ import {
 import { Screen } from "@/components/Screen"
 import { SubscriptionStatusBox } from "@/components/Subscription"
 import SubscriptionManagementModal from "@/components/Subscription/SubscriptionManagementModal"
+import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
 import { useAnalytics } from "@/hooks/useAnalytics"
+import { useGroups } from "@/hooks/useGroups"
 import { useSubscription } from "@/hooks/useSubscription"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { navigate } from "@/navigators/navigationUtilities"
 import { useAppTheme } from "@/theme/context"
-import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
 
 // #region Types & Interfaces
 interface HomeScreenProps extends BottomTabScreenProps<"Home"> {}
-
-interface HomeData {
-  id?: string
-  name?: string
-}
 
 interface HomeError {
   message: string
@@ -48,16 +35,18 @@ interface HomeError {
 export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
   // #region Private State Variables
   const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [data, setData] = useState<HomeData | null>(null)
   const [error, setError] = useState<HomeError | null>(null)
   const [isManageModalVisible, setIsManageModalVisible] = useState<boolean>(false)
+  const lastRefreshTimeRef = useRef<number>(0)
+  const isRefreshingRef = useRef<boolean>(false)
   // #endregion
 
   // #region Hooks & Context
   const { themed } = useAppTheme()
   const { trackScreenView } = useAnalytics()
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const subscription = useSubscription(user?.id || null)
+  const { refresh: refreshGroups } = useGroups()
 
   // Ref for RecentActivitySection to refresh data
   const recentActivityRef = useRef<RecentActivitySectionRef | null>(null)
@@ -68,8 +57,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
     try {
       setError(null)
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      const mockData: HomeData = { id: "1", name: "home data" }
-      setData(mockData)
+      // Mock data removed since it's not used
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
       setError({ message: errorMessage })
@@ -124,18 +112,52 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
     trackScreenView({ screenName: "Home" })
   }, [trackScreenView])
 
-  // Refresh subscription data when screen comes into focus
+  // Memoized refresh function to prevent unnecessary re-renders
+  const refreshAllData = useCallback(async () => {
+    if (!user?.id || isRefreshingRef.current) {
+      console.log("[HomeScreen] Refresh skipped - no user or already refreshing")
+      return
+    }
+
+    const now = Date.now()
+    const timeSinceLastRefresh = now - lastRefreshTimeRef.current
+    
+    // Prevent refreshing more than once every 2 seconds
+    if (timeSinceLastRefresh < 2000) {
+      console.log(`[HomeScreen] Refresh throttled - last refresh was ${timeSinceLastRefresh}ms ago`)
+      return
+    }
+
+    isRefreshingRef.current = true
+    lastRefreshTimeRef.current = now
+
+    try {
+      console.log("[HomeScreen] Screen focused - refreshing all data")
+
+      // Refresh subscription data (clears cache and reloads)
+      subscription.refresh()
+
+      // Refresh groups data
+      refreshGroups()
+
+      // Refresh recent activity data
+      if (recentActivityRef.current) {
+        recentActivityRef.current.refresh()
+      }
+
+      console.log("[HomeScreen] All data refresh completed")
+    } catch (error) {
+      console.error("[HomeScreen] Error during refresh:", error)
+    } finally {
+      isRefreshingRef.current = false
+    }
+  }, [user?.id, subscription.refresh, refreshGroups])
+
+  // Enhanced refresh functionality when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      if (user?.id) {
-        console.log("[HomeScreen] Screen focused - refreshing subscription data")
-        subscription.refresh()
-        // Refresh recent activity data
-        if (recentActivityRef.current) {
-          recentActivityRef.current.refresh()
-        }
-      }
-    }, [user?.id]), // Only depend on user?.id, not the subscription object
+      refreshAllData()
+    }, [refreshAllData])
   )
   // #endregion
 
@@ -172,7 +194,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         {/* Welcome Section */}
-        <WelcomeMessage userEmail={user?.email} />
+        <WelcomeMessage userProfile={userProfile} />
 
         {/* Subscription Status */}
         <SubscriptionStatusBox userId={user?.id || null} onManagePress={handleManagePress} />
@@ -225,7 +247,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
 // #endregion
 
 // #region Styles
-const $root: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+const $root: ThemedStyle<ViewStyle> = ({ colors }) => ({
   flex: 1,
   backgroundColor: colors.background,
 })

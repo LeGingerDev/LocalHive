@@ -26,6 +26,7 @@ import { useGroups } from "@/hooks/useGroups"
 import { useItemCategories } from "@/hooks/useItemCategories"
 import { useSubscription } from "@/hooks/useSubscription"
 import type { BottomTabScreenProps, BottomTabParamList } from "@/navigators/BottomTabNavigator"
+import { navigate } from "@/navigators/navigationUtilities"
 import { cameraService } from "@/services/cameraService"
 import { ItemService } from "@/services/supabase/itemService"
 import { supabase } from "@/services/supabase/supabase"
@@ -662,7 +663,13 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
         confirmStyle={alertConfirmStyle}
         onConfirm={
           alertConfirmStyle === "success"
-            ? () => setAlertVisible(false)
+            ? () => {
+                setAlertVisible(false)
+                // Navigate back to the group if we came from a group
+                if (groupIdFromParams) {
+                  navigate("GroupDetail", { groupId: groupIdFromParams })
+                }
+              }
             : alertTitle === "Item Limit Reached"
               ? () => {
                   setAlertVisible(false)

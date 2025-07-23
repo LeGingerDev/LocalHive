@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useMemo } from "react"
+import { useCallback, useEffect, useState, useMemo, useRef } from "react"
 
 import {
   SubscriptionService,
@@ -26,13 +26,15 @@ export const useSubscription = (userId: string | null) => {
   const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const lastRefreshTimeRef = useRef<number>(0)
+  const isRefreshingRef = useRef<boolean>(false)
 
   /**
    * Load subscription information with caching and deduplication
    */
   const loadSubscriptionInfo = useCallback(async () => {
     if (!userId) {
-      console.log(`❌ [useSubscription] No userId provided`)
+      // console.log(`❌ [useSubscription] No userId provided`)
       setSubscriptionInfo(null)
       setError(null)
       return
@@ -43,7 +45,7 @@ export const useSubscription = (userId: string | null) => {
     const now = Date.now()
 
     if (cached && now - cached.timestamp < CACHE_DURATION) {
-      console.log(`📋 [useSubscription] Using cached data for user: ${userId}`)
+      // console.log(`📋 [useSubscription] Using cached data for user: ${userId}`)
       setSubscriptionInfo(cached.data)
       setError(cached.error)
       setLoading(false)
@@ -52,7 +54,7 @@ export const useSubscription = (userId: string | null) => {
 
     // Check if there's already a request in progress
     if (cached?.promise) {
-      console.log(`⏳ [useSubscription] Request already in progress for user: ${userId}`)
+      // console.log(`⏳ [useSubscription] Request already in progress for user: ${userId}`)
       setLoading(true)
       try {
         const { info, error } = await cached.promise
@@ -67,7 +69,7 @@ export const useSubscription = (userId: string | null) => {
       return
     }
 
-    console.log(`🔄 [useSubscription] Loading subscription info for user: ${userId}`)
+    // console.log(`🔄 [useSubscription] Loading subscription info for user: ${userId}`)
     setLoading(true)
     setError(null)
 
@@ -96,7 +98,7 @@ export const useSubscription = (userId: string | null) => {
           promise: null,
         })
       } else {
-        console.log(`✅ [useSubscription] Subscription info loaded:`, info)
+        // console.log(`✅ [useSubscription] Subscription info loaded:`, info)
         setSubscriptionInfo(info)
 
         // Update cache with success data
@@ -126,14 +128,35 @@ export const useSubscription = (userId: string | null) => {
   }, [userId])
 
   /**
-   * Refresh subscription information (bypasses cache)
+   * Refresh subscription information (bypasses cache) with throttling
    */
   const refresh = useCallback(() => {
+    if (isRefreshingRef.current) {
+      console.log("[useSubscription] Refresh skipped - already refreshing")
+      return
+    }
+
+    const now = Date.now()
+    const timeSinceLastRefresh = now - lastRefreshTimeRef.current
+    
+    // Prevent refreshing more than once every 1 second
+    if (timeSinceLastRefresh < 1000) {
+      console.log(`[useSubscription] Refresh throttled - last refresh was ${timeSinceLastRefresh}ms ago`)
+      return
+    }
+
+    isRefreshingRef.current = true
+    lastRefreshTimeRef.current = now
+
+    console.log("[useSubscription] Refreshing subscription data")
     if (userId) {
       // Clear cache for this user to force fresh data
       subscriptionCache.delete(userId)
     }
-    loadSubscriptionInfo()
+    loadSubscriptionInfo().finally(() => {
+      console.log("[useSubscription] Subscription data refresh completed")
+      isRefreshingRef.current = false
+    })
   }, [userId, loadSubscriptionInfo])
 
   /**
@@ -307,7 +330,8 @@ export const useSubscription = (userId: string | null) => {
   }, [subscriptionInfo])
 
   // Only log computed values in development and when they actually change
-  if (__DEV__) {
+  // Reduced logging to prevent spam
+  if (__DEV__ && false) { // Set to false to disable debug logging
     console.log(`📊 [useSubscription] Computed values:`, {
       subscriptionStatus: subscriptionInfo?.subscription_status,
       ...computedValues,

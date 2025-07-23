@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
-import { revenueCatService, SubscriptionTier } from '../services/revenueCatService'
-import { CustomerInfo, PurchasesPackage } from 'react-native-purchases'
+import { useState, useEffect, useCallback } from "react"
+import { CustomerInfo, PurchasesPackage } from "react-native-purchases"
+
+import { revenueCatService, SubscriptionTier } from "../services/revenueCatService"
 
 export interface UseRevenueCatReturn {
   isInitialized: boolean
@@ -11,6 +12,7 @@ export interface UseRevenueCatReturn {
   error: string | null
   initialize: () => Promise<void>
   purchasePackage: (packageToPurchase: PurchasesPackage) => Promise<void>
+  purchaseAndSync: (userID: string, packageToPurchase: PurchasesPackage) => Promise<void>
   restorePurchases: () => Promise<void>
   setUserID: (userID: string) => Promise<void>
   refreshCustomerInfo: () => Promise<void>
@@ -30,12 +32,12 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
       setError(null)
       await revenueCatService.initialize()
       setIsInitialized(true)
-      
+
       // Load initial data
       await refreshCustomerInfo()
       await loadSubscriptionTiers()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to initialize RevenueCat')
+      setError(err instanceof Error ? err.message : "Failed to initialize RevenueCat")
     } finally {
       setIsLoading(false)
     }
@@ -45,13 +47,13 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
     try {
       const info = await revenueCatService.getCustomerInfo()
       setCustomerInfo(info)
-      
+
       if (info) {
         const hasActive = Object.keys(info.entitlements.active).length > 0
         setHasActiveSubscription(hasActive)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to get customer info')
+      setError(err instanceof Error ? err.message : "Failed to get customer info")
     }
   }, [])
 
@@ -60,23 +62,43 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
       const tiers = await revenueCatService.getSubscriptionTiers()
       setSubscriptionTiers(tiers)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load subscription tiers')
+      setError(err instanceof Error ? err.message : "Failed to load subscription tiers")
     }
   }, [])
 
-  const purchasePackage = useCallback(async (packageToPurchase: PurchasesPackage) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      await revenueCatService.purchasePackage(packageToPurchase)
-      await refreshCustomerInfo()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to purchase package')
-      throw err
-    } finally {
-      setIsLoading(false)
-    }
-  }, [refreshCustomerInfo])
+  const purchasePackage = useCallback(
+    async (packageToPurchase: PurchasesPackage) => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        await revenueCatService.purchasePackage(packageToPurchase)
+        await refreshCustomerInfo()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to purchase package")
+        throw err
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [refreshCustomerInfo],
+  )
+
+  const purchaseAndSync = useCallback(
+    async (userID: string, packageToPurchase: PurchasesPackage) => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        await revenueCatService.purchaseAndSync(userID, packageToPurchase)
+        await refreshCustomerInfo()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to purchase and sync package")
+        throw err
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [refreshCustomerInfo],
+  )
 
   const restorePurchases = useCallback(async () => {
     try {
@@ -85,23 +107,26 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
       await revenueCatService.restorePurchases()
       await refreshCustomerInfo()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to restore purchases')
+      setError(err instanceof Error ? err.message : "Failed to restore purchases")
       throw err
     } finally {
       setIsLoading(false)
     }
   }, [refreshCustomerInfo])
 
-  const setUserID = useCallback(async (userID: string) => {
-    try {
-      setError(null)
-      await revenueCatService.setUserID(userID)
-      await refreshCustomerInfo()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to set user ID')
-      throw err
-    }
-  }, [refreshCustomerInfo])
+  const setUserID = useCallback(
+    async (userID: string) => {
+      try {
+        setError(null)
+        await revenueCatService.setUserID(userID)
+        await refreshCustomerInfo()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to set user ID")
+        throw err
+      }
+    },
+    [refreshCustomerInfo],
+  )
 
   // Initialize on mount
   useEffect(() => {
@@ -117,8 +142,9 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
     error,
     initialize,
     purchasePackage,
+    purchaseAndSync,
     restorePurchases,
     setUserID,
     refreshCustomerInfo,
   }
-} 
+}

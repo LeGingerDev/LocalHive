@@ -12,6 +12,8 @@ export const useGroups = () => {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const lastUserIdRef = useRef<string | null>(null)
+  const lastRefreshTimeRef = useRef<number>(0)
+  const isRefreshingRef = useRef<boolean>(false)
 
   // Simple function to load all data
   const loadData = useCallback(async () => {
@@ -60,13 +62,33 @@ export const useGroups = () => {
     }
   }, [user?.id]) // Only depend on user.id, not the entire user object
 
-  // Simple refresh function
+  // Simple refresh function with throttling
   const refresh = useCallback(async () => {
+    if (isRefreshingRef.current) {
+      console.log("[useGroups] Refresh skipped - already refreshing")
+      return
+    }
+
+    const now = Date.now()
+    const timeSinceLastRefresh = now - lastRefreshTimeRef.current
+    
+    // Prevent refreshing more than once every 1 second
+    if (timeSinceLastRefresh < 1000) {
+      console.log(`[useGroups] Refresh throttled - last refresh was ${timeSinceLastRefresh}ms ago`)
+      return
+    }
+
+    isRefreshingRef.current = true
+    lastRefreshTimeRef.current = now
     setRefreshing(true)
+    
     try {
+      console.log("[useGroups] Refreshing groups data")
       await loadData()
+      console.log("[useGroups] Groups data refresh completed")
     } finally {
       setRefreshing(false)
+      isRefreshingRef.current = false
     }
   }, [loadData])
 

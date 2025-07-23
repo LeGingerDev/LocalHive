@@ -166,7 +166,7 @@ export class SubscriptionService {
     error: PostgrestError | null
   }> {
     try {
-      if (__DEV__) {
+      if (__DEV__ && false) { // Disable debug logging
         console.log(`🔍 [SubscriptionService] Getting subscription info for user: ${userId}`)
       }
 
@@ -179,7 +179,7 @@ export class SubscriptionService {
         return { info: null, error }
       }
 
-      if (__DEV__) {
+      if (__DEV__ && false) { // Disable debug logging
         console.log(`📊 [SubscriptionService] Raw data from get_user_subscription_info:`, data)
       }
 
@@ -198,7 +198,7 @@ export class SubscriptionService {
         subscription_expires_at: data?.[0]?.subscription_expires_at || null,
       }
 
-      if (__DEV__) {
+      if (__DEV__ && false) { // Disable debug logging
         console.log(`✅ [SubscriptionService] Processed subscription info:`, {
           subscription_status: info.subscription_status,
           groups_count: info.groups_count,

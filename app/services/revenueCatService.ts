@@ -1,10 +1,23 @@
-import Purchases, { PurchasesOffering, CustomerInfo, PurchasesPackage } from 'react-native-purchases'
-import { Platform } from 'react-native'
+import { Platform } from "react-native"
+import Purchases, {
+  PurchasesOffering,
+  CustomerInfo,
+  PurchasesPackage,
+} from "react-native-purchases"
 
-// RevenueCat API Keys - Replace with your actual keys
+import { SubscriptionService } from "./subscriptionService"
+import { AnalyticsService, AnalyticsEvents } from "./analyticsService"
+
+// RevenueCat API Keys - These should be your actual API keys from RevenueCat dashboard
+// You need to get these from your RevenueCat dashboard under Project Settings > API Keys
 const REVENUECAT_API_KEYS = {
-  android: 'your_android_api_key_here',
-  ios: 'your_ios_api_key_here',
+  android: "goog_WjmZktMAqLNwwTJSCdkSmNeBWML", // Your actual Android API key
+  ios: "appl_ofrng2f3e1feb53", // Replace with your actual iOS API key when you have it
+}
+
+// Product IDs
+const PRODUCT_IDS = {
+  PRO_MONTHLY: "$rc_monthly", // Your Visu Pro Product ID
 }
 
 export interface SubscriptionTier {
@@ -31,17 +44,27 @@ class RevenueCatService {
         default: REVENUECAT_API_KEYS.android,
       })
 
-      if (!apiKey || apiKey === 'your_android_api_key_here') {
-        console.warn('RevenueCat API key not configured. Please set your API keys in revenueCatService.ts')
+      if (!apiKey || apiKey === "appl_ofrng2f3e1feb53") {
+        console.warn(
+          "RevenueCat API key not properly configured. Please check your API keys in RevenueCat dashboard.",
+        )
+        // Don't throw error, just return to prevent app crash
         return
       }
 
-      await Purchases.configure({ apiKey })
+      // Configure RevenueCat with proper options
+      await Purchases.configure({
+        apiKey,
+        observerMode: false, // Set to true if you want to test without making actual purchases
+        useAmazon: false,
+      })
+      
       this._isInitialized = true
-      console.log('RevenueCat initialized successfully')
+      console.log("✅ RevenueCat initialized successfully")
     } catch (error) {
-      console.error('Failed to initialize RevenueCat:', error)
-      throw error
+      console.error("❌ Failed to initialize RevenueCat:", error)
+      // Don't throw error to prevent app crash, just log it
+      this._isInitialized = false
     }
   }
 
@@ -54,7 +77,7 @@ class RevenueCatService {
       const offerings = await Purchases.getOfferings()
       return offerings.current
     } catch (error) {
-      console.error('Failed to get offerings:', error)
+      console.error("Failed to get offerings:", error)
       return null
     }
   }
@@ -68,7 +91,7 @@ class RevenueCatService {
       const { customerInfo } = await Purchases.purchasePackage(packageToPurchase)
       return customerInfo
     } catch (error) {
-      console.error('Failed to purchase package:', error)
+      console.error("Failed to purchase package:", error)
       throw error
     }
   }
@@ -82,7 +105,7 @@ class RevenueCatService {
       const customerInfo = await Purchases.restorePurchases()
       return customerInfo
     } catch (error) {
-      console.error('Failed to restore purchases:', error)
+      console.error("Failed to restore purchases:", error)
       throw error
     }
   }
@@ -96,7 +119,7 @@ class RevenueCatService {
       const customerInfo = await Purchases.getCustomerInfo()
       return customerInfo
     } catch (error) {
-      console.error('Failed to get customer info:', error)
+      console.error("Failed to get customer info:", error)
       return null
     }
   }
@@ -112,7 +135,7 @@ class RevenueCatService {
       // Check if user has any active entitlements
       return Object.keys(customerInfo.entitlements.active).length > 0
     } catch (error) {
-      console.error('Failed to check subscription status:', error)
+      console.error("Failed to check subscription status:", error)
       return false
     }
   }
@@ -129,24 +152,122 @@ class RevenueCatService {
         id: pkg.identifier,
         name: pkg.product.title,
         price: pkg.product.priceString,
-        period: pkg.product.subscriptionPeriod || 'One-time',
+        period: pkg.product.subscriptionPeriod || "One-time",
         features: [], // You can add features based on your subscription tiers
       }))
     } catch (error) {
-      console.error('Failed to get subscription tiers:', error)
+      console.error("Failed to get subscription tiers:", error)
       return []
     }
   }
 
   /**
-   * Set user ID for RevenueCat
+   * Set user ID for RevenueCat and sync with Supabase
    */
   async setUserID(userID: string): Promise<void> {
     try {
       await this.ensureInitialized()
       await Purchases.logIn(userID)
+      
+      // Sync subscription status with Supabase
+      await this.syncSubscriptionWithSupabase(userID)
     } catch (error) {
-      console.error('Failed to set user ID:', error)
+      console.error("Failed to set user ID:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Sync RevenueCat subscription status with Supabase
+   */
+  async syncSubscriptionWithSupabase(userID: string): Promise<void> {
+    try {
+      const customerInfo = await this.getCustomerInfo()
+      if (!customerInfo) return
+
+      // Check if user has active subscription
+      const hasActiveSubscription = Object.keys(customerInfo.entitlements.active).length > 0
+
+             if (hasActiveSubscription) {
+         // Get the active entitlement (assuming you have one called "pro")
+         const proEntitlement = customerInfo.entitlements.active.pro
+         if (proEntitlement && proEntitlement.expirationDate) {
+           const expiresAt = proEntitlement.expirationDate
+           
+           // Update Supabase with pro subscription
+           await SubscriptionService.upgradeToPro(userID, expiresAt)
+          
+          // Track subscription sync
+          await AnalyticsService.trackEvent({
+            name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
+            properties: {
+              userId: userID,
+              newStatus: "pro",
+              source: "revenuecat_sync",
+              expiresAt,
+            },
+          })
+        }
+             } else {
+         // Check if subscription expired - look in all entitlements
+         const allEntitlements = Object.values(customerInfo.entitlements.all)
+         const expiredProEntitlement = allEntitlements.find(
+           (entitlement) => entitlement.identifier === "pro" && entitlement.expirationDate
+         )
+         
+         if (expiredProEntitlement && expiredProEntitlement.expirationDate) {
+           const now = new Date()
+           const expirationDate = new Date(expiredProEntitlement.expirationDate)
+           
+           if (now > expirationDate) {
+             // Subscription has expired
+             await SubscriptionService.updateSubscriptionStatus(userID, "expired")
+            
+                         // Track subscription expiration
+             await AnalyticsService.trackEvent({
+               name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
+               properties: {
+                 userId: userID,
+                 newStatus: "expired",
+                 source: "revenuecat_sync",
+                 expiredAt: expiredProEntitlement.expirationDate,
+               },
+             })
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to sync subscription with Supabase:", error)
+    }
+  }
+
+  /**
+   * Purchase a subscription and sync with Supabase
+   */
+  async purchaseAndSync(userID: string, packageToPurchase: PurchasesPackage): Promise<CustomerInfo | null> {
+    try {
+      const customerInfo = await this.purchasePackage(packageToPurchase)
+      
+      if (customerInfo) {
+        // Sync the new subscription with Supabase
+        await this.syncSubscriptionWithSupabase(userID)
+        
+        // Track successful purchase
+        await AnalyticsService.trackEvent({
+          name: AnalyticsEvents.PRO_UPGRADE,
+          properties: {
+            userId: userID,
+            productId: packageToPurchase.product.identifier,
+            price: packageToPurchase.product.price,
+            currency: packageToPurchase.product.currencyCode,
+            source: "revenuecat_purchase",
+          },
+        })
+      }
+      
+      return customerInfo
+    } catch (error) {
+      console.error("Failed to purchase and sync:", error)
       throw error
     }
   }
@@ -163,4 +284,4 @@ class RevenueCatService {
 
 // Export singleton instance
 export const revenueCatService = new RevenueCatService()
-export default revenueCatService 
+export default revenueCatService

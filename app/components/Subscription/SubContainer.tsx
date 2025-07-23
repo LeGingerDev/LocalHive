@@ -2,6 +2,7 @@ import React, { useState } from "react"
 import { View, Text, StyleProp, ViewStyle, TextStyle, TouchableOpacity } from "react-native"
 
 import { Icon } from "@/components/Icon"
+import { useAuth } from "@/context/AuthContext"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
@@ -15,6 +16,7 @@ export interface SubContainerProps {
 
 export const SubContainer: React.FC<SubContainerProps> = ({ style, onUpgrade }) => {
   const { themed, theme } = useAppTheme()
+  const { userProfile } = useAuth()
   const [isModalVisible, setIsModalVisible] = useState(false)
 
   const handleUpgradePress = () => {

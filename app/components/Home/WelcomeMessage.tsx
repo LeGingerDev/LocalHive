@@ -6,10 +6,13 @@ import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
 
 interface WelcomeMessageProps {
-  userEmail?: string | null
+  userProfile?: {
+    full_name?: string
+    email?: string
+  } | null
 }
 
-export const WelcomeMessage: FC<WelcomeMessageProps> = ({ userEmail }) => {
+export const WelcomeMessage: FC<WelcomeMessageProps> = ({ userProfile }) => {
   const { themed } = useAppTheme()
 
   const getGreeting = () => {
@@ -20,8 +23,15 @@ export const WelcomeMessage: FC<WelcomeMessageProps> = ({ userEmail }) => {
   }
 
   const getUserName = () => {
-    if (!userEmail) return ""
-    return userEmail.split("@")[0]
+    if (!userProfile) return ""
+    // Use full name if available, otherwise fall back to email username
+    if (userProfile.full_name) {
+      return userProfile.full_name
+    }
+    if (userProfile.email) {
+      return userProfile.email.split("@")[0]
+    }
+    return ""
   }
 
   return (
