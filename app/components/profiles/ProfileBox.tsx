@@ -1,12 +1,15 @@
-import React, { FC, memo, useCallback, useMemo, useEffect } from "react"
-import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator } from "react-native"
+import React, { FC, memo, useCallback, useMemo, useEffect, useState } from "react"
+import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator, TouchableOpacity } from "react-native"
+import Ionicons from "react-native-vector-icons/Ionicons"
 
 import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
 import { useUserStats } from "@/hooks/useUserStats"
 import { useAppTheme } from "@/theme/context"
+import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
 
+import { EditableProfileName } from "./EditableProfileName"
 import ProfileStat from "./ProfileStat"
 
 // #region Types & Interfaces
@@ -113,6 +116,7 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
   const { themed } = useAppTheme()
   const { user, googleUser, userProfile, isLoading: authLoading } = useAuth()
   const userStats = useUserStats()
+  const [isEditingName, setIsEditingName] = useState(false)
   // #endregion
 
   // Removed debug logging to improve performance
@@ -250,13 +254,34 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
   const _renderContent = (): React.ReactElement => {
     return (
       <View style={_containerStyles} testID={testID} {..._getPressableProps()}>
+        {/* Edit Button - positioned absolutely in top-right corner */}
+        {!isEditingName && (
+          <TouchableOpacity
+            style={themed($editButton)}
+            onPress={() => setIsEditingName(true)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons
+              name="pencil"
+              size={14}
+              color={themed($editButtonIcon).color}
+            />
+          </TouchableOpacity>
+        )}
+        
         <View style={themed($contentContainer)}>
           {/* Avatar */}
           <View style={themed($avatar)}>
             <Text style={themed($avatarInitial)} text={_avatarInitial} />
           </View>
           {/* User Name */}
-          <Text style={themed($name)} text={_displayName} testID={`${testID}_name`} />
+          <EditableProfileName 
+            initialName={_displayName} 
+            style={themed($name)}
+            showEditButton={false}
+            isEditing={isEditingName}
+            onEditingChange={setIsEditingName}
+          />
           {/* User Email */}
           <Text style={themed($email)} text={_displayEmail} testID={`${testID}_email`} />
           {/* User Bio - only show if there is bio content */}
@@ -357,12 +382,14 @@ const $avatarInitial: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontSize: 28,
 })
 
+
+
 const $name: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   fontFamily: typography.primary.bold,
   fontSize: 20,
   color: colors.text,
-  marginBottom: spacing.xs,
   textAlign: "center",
+  marginBottom: spacing.xs,
 })
 
 const $email: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
@@ -430,6 +457,21 @@ const $separator: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.sectionBorderColor,
   opacity: 0.3,
   marginVertical: spacing.md,
+})
+
+const $editButton: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  position: "absolute",
+  top: spacing.sm,
+  right: spacing.sm,
+  backgroundColor: colors.palette.neutral100,
+  borderRadius: 12,
+  padding: spacing.xs,
+  zIndex: 1,
+  opacity: 0.8,
+})
+
+const $editButtonIcon: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.textDim,
 })
 
 // #endregion

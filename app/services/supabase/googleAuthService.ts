@@ -254,11 +254,15 @@ class GoogleAuthService {
         const avatarUrl = userInfo.user?.photo || data.user.user_metadata?.avatar_url
 
         // Save profile data to the profiles table
-        await AuthService.createOrUpdateProfile(userId, {
-          email,
-          full_name: fullName,
-          avatar_url: avatarUrl,
-        })
+        await AuthService.createOrUpdateProfile(
+          userId,
+          {
+            email,
+            full_name: fullName,
+            avatar_url: avatarUrl,
+          },
+          true, // Preserve existing name if profile already exists
+        )
       } catch (profileError) {
         console.error("Error creating user profile:", profileError)
         // We don't want to fail the sign-in if profile creation fails

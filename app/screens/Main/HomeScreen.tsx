@@ -121,7 +121,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
 
     const now = Date.now()
     const timeSinceLastRefresh = now - lastRefreshTimeRef.current
-    
+
     // Prevent refreshing more than once every 2 seconds
     if (timeSinceLastRefresh < 2000) {
       console.log(`[HomeScreen] Refresh throttled - last refresh was ${timeSinceLastRefresh}ms ago`)
@@ -157,7 +157,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       refreshAllData()
-    }, [refreshAllData])
+    }, [refreshAllData]),
   )
   // #endregion
 

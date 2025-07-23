@@ -279,7 +279,7 @@ export const OnboardingThankYouScreen = () => {
   }
 
   return (
-    <Screen preset="fixed" contentContainerStyle={styles.container} safeAreaEdges={[]}>
+    <Screen preset="scroll" contentContainerStyle={styles.container} safeAreaEdges={[]}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
       {/* Gradient Background */}
@@ -412,21 +412,21 @@ export const OnboardingThankYouScreen = () => {
             <Text style={styles.featureText}>Share catalogs with your group</Text>
           </View>
         </Animated.View>
-      </Animated.View>
 
-      {/* Get Started Button */}
-      <Animated.View
-        style={[
-          styles.buttonContainer,
-          {
-            opacity: buttonOpacityAnim,
-            transform: [{ scale: buttonScaleAnim }],
-          },
-        ]}
-      >
-        <TouchableOpacity style={styles.getStartedButton} onPress={handleGetStarted}>
-          <Text style={styles.getStartedButtonText}>Get Started</Text>
-        </TouchableOpacity>
+        {/* Get Started Button */}
+        <Animated.View
+          style={[
+            styles.buttonContainer,
+            {
+              opacity: buttonOpacityAnim,
+              transform: [{ scale: buttonScaleAnim }],
+            },
+          ]}
+        >
+          <TouchableOpacity style={styles.getStartedButton} onPress={handleGetStarted}>
+            <Text style={styles.getStartedButtonText}>Get Started</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </Animated.View>
     </Screen>
   )
@@ -434,6 +434,7 @@ export const OnboardingThankYouScreen = () => {
 
 const styles = StyleSheet.create({
   buttonContainer: {
+    marginTop: spacing.xl,
     paddingBottom: spacing.xl,
     paddingHorizontal: spacing.lg,
   },
@@ -456,12 +457,12 @@ const styles = StyleSheet.create({
     width: 10,
   },
   container: {
-    flex: 1,
+    minHeight: screenHeight,
   },
   content: {
     alignItems: "center",
-    flex: 1,
     justifyContent: "flex-start",
+    paddingBottom: spacing.xl,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
   },

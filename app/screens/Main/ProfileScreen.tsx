@@ -80,8 +80,6 @@ const ProfileScreen = () => {
           {!subscription.isPro && <SubContainer style={styles.subContainer} />}
         </View>
 
-
-
         <SettingsSection style={styles.settingsSection}>
           <ThemeToggle />
           <SettingsItem icon="notifications-outline" label="Notifications" />

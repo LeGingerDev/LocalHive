@@ -1,3 +1,5 @@
 export { ProfileBox } from "./ProfileBox"
-export { SettingsSection } from "./SettingsSection"
+export { EditableProfileName } from "./EditableProfileName"
+export { default as ProfileStat } from "./ProfileStat"
 export { SettingsItem } from "./SettingsItem"
+export { SettingsSection } from "./SettingsSection"

@@ -14,9 +14,10 @@ import {
 import { LinearGradient } from "expo-linear-gradient"
 
 import { Icon } from "@/components/Icon"
-import { useAppTheme } from "@/theme/context"
 import { useAuth } from "@/context/AuthContext"
 import { useRevenueCat } from "@/hooks/useRevenueCat"
+import { useAppTheme } from "@/theme/context"
+import { restartApp } from "@/utils/appRestart"
 import type { ThemedStyle } from "@/theme/types"
 
 export interface VisuProModalProps {
@@ -34,14 +35,8 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
 }) => {
   const { themed, theme } = useAppTheme()
   const { userProfile } = useAuth()
-  const { 
-    isInitialized, 
-    subscriptionTiers, 
-    isLoading, 
-    error, 
-    purchaseAndSync,
-    setUserID 
-  } = useRevenueCat()
+  const { isInitialized, subscriptionTiers, isLoading, error, purchaseAndSync, setUserID, refreshCustomerInfo } =
+    useRevenueCat()
   const [isPurchasing, setIsPurchasing] = useState(false)
 
   // Set user ID when modal opens
@@ -52,8 +47,8 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
   }, [visible, userProfile?.id, isInitialized, setUserID])
 
   // Get the monthly subscription package for pricing
-  const monthlyPackage = subscriptionTiers.find(tier => 
-    tier.id.includes("monthly") || tier.id.includes("$rc_monthly")
+  const monthlyPackage = subscriptionTiers.find(
+    (tier) => tier.id.includes("monthly") || tier.id.includes("$rc_monthly"),
   )
 
   const handlePurchase = async () => {
@@ -72,45 +67,98 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
       return
     }
 
+    console.log(`🛒 [VisuProModal] Starting purchase for user: ${userProfile.id}`)
     setIsPurchasing(true)
 
     try {
       // Get the actual package from RevenueCat offerings
       const { revenueCatService } = await import("@/services/revenueCatService")
+      console.log(`🔍 [VisuProModal] Getting RevenueCat offerings...`)
       const offerings = await revenueCatService.getOfferings()
-      
+
       if (!offerings) {
         throw new Error("No subscription offerings available")
       }
 
+      console.log(`📦 [VisuProModal] Available packages:`, offerings.availablePackages.map(pkg => ({
+        identifier: pkg.identifier,
+        productId: pkg.product.identifier,
+        price: pkg.product.price,
+      })))
+
       // Find the monthly package
-      const packageToPurchase = offerings.availablePackages.find(pkg => 
-        pkg.identifier.includes("monthly") || pkg.identifier.includes("$rc_monthly")
+      const packageToPurchase = offerings.availablePackages.find(
+        (pkg) => pkg.identifier.includes("monthly") || pkg.identifier.includes("$rc_monthly"),
       )
 
       if (!packageToPurchase) {
+        console.error(`❌ [VisuProModal] Monthly package not found in offerings`)
         throw new Error("Monthly subscription package not found")
       }
 
-      // Make the actual purchase
-      await purchaseAndSync(userProfile.id, packageToPurchase)
+      console.log(`🎯 [VisuProModal] Found package to purchase:`, {
+        identifier: packageToPurchase.identifier,
+        productId: packageToPurchase.product.identifier,
+        price: packageToPurchase.product.price,
+      })
+
+      // Make the actual purchase using the service directly
+      console.log(`💳 [VisuProModal] Making purchase...`)
+      const customerInfo = await revenueCatService.purchaseAndSync(userProfile.id, packageToPurchase)
       
+      if (!customerInfo) {
+        throw new Error("Purchase completed but no customer info returned")
+      }
+
+      console.log(`✅ [VisuProModal] Purchase successful! Customer info:`, {
+        userId: customerInfo.originalAppUserId,
+        activeEntitlements: Object.keys(customerInfo.entitlements.active),
+        allEntitlements: Object.keys(customerInfo.entitlements.all),
+      })
+
+      // Force a manual sync to ensure Supabase is updated
+      console.log(`🔄 [VisuProModal] Forcing manual sync...`)
+      await revenueCatService.syncSubscriptionWithSupabase(userProfile.id)
+
+      // Refresh the subscription data in the hook
+      console.log(`🔄 [VisuProModal] Refreshing subscription data...`)
+      await refreshCustomerInfo()
+      
+      // Also refresh the subscription status in the parent component
+      // This will be handled by the onStartTrial callback which should trigger a refresh
+
       // Show success message
-      Alert.alert(
-        "Success!",
-        "Your subscription has been activated. Welcome to Visu Pro!",
-        [{ text: "OK", onPress: onClose }]
-      )
-      
-      // Call the onStartTrial callback to update the app state
-      onStartTrial()
-      
+      Alert.alert("Success!", "Your subscription has been activated. Welcome to Visu Pro! The app will restart to apply your new subscription.", [
+        { 
+          text: "OK", 
+          onPress: () => {
+            console.log(`🎉 [VisuProModal] Purchase completed, restarting app...`)
+            onClose()
+            // Restart the app after a short delay to ensure the alert is dismissed
+            restartApp(500)
+          }
+        },
+      ])
+
+      // Don't call onStartTrial since we're restarting the app
+      // onStartTrial()
     } catch (err) {
-      console.error("Purchase error:", err)
-      Alert.alert(
-        "Purchase Failed", 
-        err instanceof Error ? err.message : "Something went wrong. Please try again."
-      )
+      console.error("❌ [VisuProModal] Purchase error:", err)
+      
+      let errorMessage = "Something went wrong. Please try again."
+      if (err instanceof Error) {
+        errorMessage = err.message
+        // Handle specific RevenueCat errors
+        if (err.message.includes("cancelled") || err.message.includes("canceled")) {
+          errorMessage = "Purchase was cancelled"
+        } else if (err.message.includes("network")) {
+          errorMessage = "Network error. Please check your connection and try again."
+        } else if (err.message.includes("already purchased")) {
+          errorMessage = "You already have an active subscription."
+        }
+      }
+      
+      Alert.alert("Purchase Failed", errorMessage)
     } finally {
       setIsPurchasing(false)
     }
@@ -150,9 +198,7 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
           >
             {/* Header with dynamic pricing */}
             <View style={themed($headerContainer)}>
-              <Text style={themed($price)}>
-                {monthlyPackage ? monthlyPackage.price : "$5.99"}
-              </Text>
+              <Text style={themed($price)}>{monthlyPackage ? monthlyPackage.price : "$5.99"}</Text>
               <Text style={themed($pricePeriod)}>/month</Text>
             </View>
             <Text style={themed($cancelText)}>Cancel anytime</Text>
@@ -175,8 +221,8 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
 
           {/* CTA Button */}
           <View style={themed($buttonContainer)}>
-            <TouchableOpacity 
-              style={themed($gradientButton)} 
+            <TouchableOpacity
+              style={themed($gradientButton)}
               onPress={handlePurchase}
               disabled={isPurchasing || isLoading}
             >
@@ -191,12 +237,8 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
-            
-            {error && (
-              <Text style={themed($errorText)}>
-                {error}
-              </Text>
-            )}
+
+            {error && <Text style={themed($errorText)}>{error}</Text>}
           </View>
         </View>
       </View>

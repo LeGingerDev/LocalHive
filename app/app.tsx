@@ -23,7 +23,7 @@ if (__DEV__) {
 import "./utils/gestureHandler"
 
 import { useEffect, useState } from "react"
-import { AppState, AppStateStatus, Platform } from "react-native"
+import { Platform } from "react-native"
 import { useFonts } from "expo-font"
 import * as Linking from "expo-linking"
 import {
@@ -37,6 +37,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
 
 import { AlertProvider } from "./components/Alert"
+import { AppStateHandler } from "./components/AppStateHandler"
 import { StatusBarManager } from "./components/StatusBarManager"
 import { AuthProvider } from "./context/AuthContext"
 import { initI18n } from "./i18n"
@@ -48,7 +49,7 @@ import { setupAppStateListener } from "./services/supabase/supabase"
 import { ThemeProvider } from "./theme/context"
 import { customFontsToLoad } from "./theme/typography"
 import { loadDateFnsLocale } from "./utils/formatDate"
-import { hideNavigationBar, setupNavigationBarHidingInterval } from "./utils/navigationBarUtils"
+import { setupNavigationBarHidingInterval } from "./utils/navigationBarUtils"
 import * as storage from "./utils/storage"
 
 export const NAVIGATION_PERSISTENCE_KEY = "NAVIGATION_STATE"
@@ -106,29 +107,7 @@ export function App() {
     return cleanupInterval
   }, [])
 
-  // Re-hide navigation bar when app regains focus and track app opens
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
-      if (nextAppState === "active") {
-        // App has come to the foreground - hide navigation bar again
-        hideNavigationBar()
-
-        // Track app opened event
-        AnalyticsService.trackEvent({
-          name: AnalyticsEvents.APP_OPENED,
-        })
-      } else if (nextAppState === "background") {
-        // Track app backgrounded event
-        AnalyticsService.trackEvent({
-          name: AnalyticsEvents.APP_BACKGROUNDED,
-        })
-      }
-    })
-
-    return () => {
-      subscription.remove()
-    }
-  }, [])
+  // AppStateHandler component will handle app state changes
 
   // Set up Supabase app state listener for session refresh
   useEffect(() => {
@@ -234,6 +213,7 @@ export function App() {
           <ThemeProvider>
             <StatusBarManager />
             <AuthProvider>
+              <AppStateHandler />
               <AlertProvider>
                 <AppNavigator
                   linking={linking}

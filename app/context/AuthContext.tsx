@@ -80,13 +80,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUserProfile(profileData as UserProfile)
         } else {
           // If profile doesn't exist but we have user data, create it
+          // Only set Google auth name for new profiles, not existing ones
           try {
             const { data: newProfile, error: createError } =
-              await AuthService.createOrUpdateProfile(supabaseUser.id, {
-                email: supabaseUser.email,
-                full_name: supabaseUser.user_metadata?.full_name,
-                avatar_url: supabaseUser.user_metadata?.avatar_url,
-              })
+              await AuthService.createOrUpdateProfile(
+                supabaseUser.id,
+                {
+                  email: supabaseUser.email,
+                  full_name: supabaseUser.user_metadata?.full_name,
+                  avatar_url: supabaseUser.user_metadata?.avatar_url,
+                },
+                true, // Preserve existing name if profile already exists
+              )
 
             if (newProfile) {
               // Generate personal code for new profile
@@ -98,6 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   {
                     personal_code: personalCode,
                   },
+                  true, // Preserve existing name when updating personal code
                 )
                 if (updatedProfile) {
                   setUserProfile(updatedProfile as UserProfile)
@@ -199,15 +205,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const { data: profileData, error } = await AuthService.getProfileByUserId(session.user.id)
 
           if (profileData) {
+            // Profile exists, don't overwrite the user's custom name
             setUserProfile(profileData as UserProfile)
           } else {
+            // Only create new profile with Google auth data if profile doesn't exist
             try {
               const { data: newProfile, error: createError } =
-                await AuthService.createOrUpdateProfile(session.user.id, {
-                  email: session.user.email,
-                  full_name: session.user.user_metadata?.full_name,
-                  avatar_url: session.user.user_metadata?.avatar_url,
-                })
+                await AuthService.createOrUpdateProfile(
+                  session.user.id,
+                  {
+                    email: session.user.email,
+                    full_name: session.user.user_metadata?.full_name,
+                    avatar_url: session.user.user_metadata?.avatar_url,
+                  },
+                  true, // Preserve existing name if profile already exists
+                )
 
               if (newProfile) {
                 // Generate personal code for new profile
@@ -219,6 +231,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     {
                       personal_code: personalCode,
                     },
+                    true, // Preserve existing name when updating personal code
                   )
                   if (updatedProfile) {
                     setUserProfile(updatedProfile as UserProfile)

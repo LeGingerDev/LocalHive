@@ -57,16 +57,18 @@ export const useRecentItemsFromAllGroups = (limit: number = 5) => {
 
     const now = Date.now()
     const timeSinceLastRefresh = now - lastRefreshTimeRef.current
-    
+
     // Prevent refreshing more than once every 1 second
     if (timeSinceLastRefresh < 1000) {
-      console.log(`[useRecentItems] Refresh throttled - last refresh was ${timeSinceLastRefresh}ms ago`)
+      console.log(
+        `[useRecentItems] Refresh throttled - last refresh was ${timeSinceLastRefresh}ms ago`,
+      )
       return
     }
 
     isRefreshingRef.current = true
     lastRefreshTimeRef.current = now
-    
+
     try {
       console.log("[useRecentItems] Refreshing recent items data")
       await fetchRecentItems()

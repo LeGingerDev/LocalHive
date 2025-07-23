@@ -71,7 +71,7 @@ export const useGroups = () => {
 
     const now = Date.now()
     const timeSinceLastRefresh = now - lastRefreshTimeRef.current
-    
+
     // Prevent refreshing more than once every 1 second
     if (timeSinceLastRefresh < 1000) {
       console.log(`[useGroups] Refresh throttled - last refresh was ${timeSinceLastRefresh}ms ago`)
@@ -81,7 +81,7 @@ export const useGroups = () => {
     isRefreshingRef.current = true
     lastRefreshTimeRef.current = now
     setRefreshing(true)
-    
+
     try {
       console.log("[useGroups] Refreshing groups data")
       await loadData()

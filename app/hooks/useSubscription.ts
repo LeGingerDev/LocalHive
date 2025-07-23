@@ -138,10 +138,12 @@ export const useSubscription = (userId: string | null) => {
 
     const now = Date.now()
     const timeSinceLastRefresh = now - lastRefreshTimeRef.current
-    
+
     // Prevent refreshing more than once every 1 second
     if (timeSinceLastRefresh < 1000) {
-      console.log(`[useSubscription] Refresh throttled - last refresh was ${timeSinceLastRefresh}ms ago`)
+      console.log(
+        `[useSubscription] Refresh throttled - last refresh was ${timeSinceLastRefresh}ms ago`,
+      )
       return
     }
 
@@ -331,7 +333,8 @@ export const useSubscription = (userId: string | null) => {
 
   // Only log computed values in development and when they actually change
   // Reduced logging to prevent spam
-  if (__DEV__ && false) { // Set to false to disable debug logging
+  if (__DEV__ && false) {
+    // Set to false to disable debug logging
     console.log(`📊 [useSubscription] Computed values:`, {
       subscriptionStatus: subscriptionInfo?.subscription_status,
       ...computedValues,

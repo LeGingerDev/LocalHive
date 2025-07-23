@@ -7,6 +7,8 @@ import VisuProModal from "@/components/Subscription/VisuProModal"
 import { useSubscription } from "@/hooks/useSubscription"
 import { SubscriptionService } from "@/services/subscriptionService"
 import { useAppTheme } from "@/theme/context"
+import { revenueCatService } from "@/services/revenueCatService"
+import { restartApp } from "@/utils/appRestart"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
 
@@ -34,9 +36,45 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
   }
 
   const handleStartTrial = () => {
-    // TODO: Implement subscription logic
-    console.log("Starting 3-day free trial")
+    console.log("🔄 [SubscriptionStatusBox] Refreshing subscription data after purchase")
+    // Refresh the subscription data to reflect the new purchase
+    subscription.refresh()
     setIsUpgradeModalVisible(false)
+  }
+
+  const handleManualSync = async () => {
+    if (!userId) return
+    
+    console.log("🔄 [SubscriptionStatusBox] Manual sync triggered")
+    try {
+      // Force a sync with RevenueCat
+      await revenueCatService.syncSubscriptionWithSupabase(userId)
+      
+      // Refresh the subscription data
+      subscription.refresh()
+      
+      // Show success message
+      Alert.alert("Sync Complete", "Subscription data has been refreshed.")
+    } catch (error) {
+      console.error("❌ [SubscriptionStatusBox] Manual sync failed:", error)
+      Alert.alert("Sync Failed", "Failed to sync subscription data. Please try again.")
+    }
+  }
+
+  const handleForceRestart = () => {
+    console.log("🔄 [SubscriptionStatusBox] Force restart triggered")
+    Alert.alert(
+      "Restart App", 
+      "This will restart the app to refresh all subscription data. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Restart", 
+          style: "destructive",
+          onPress: () => restartApp(500)
+        }
+      ]
+    )
   }
 
   const handleUpgrade = async () => {
@@ -211,6 +249,29 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
                   <Icon icon="settings" size={18} color={themed($manageButtonIconColor).color} />
                   <Text style={themed($manageButtonText)}>Manage Subscription</Text>
                 </TouchableOpacity>
+              )}
+
+              {/* Debug buttons for development */}
+              {__DEV__ && (
+                <View style={themed($debugSection)}>
+                  <TouchableOpacity
+                    style={themed($debugButton)}
+                    onPress={handleManualSync}
+                    activeOpacity={0.8}
+                  >
+                    <Icon icon="check" size={16} color={themed($debugButtonIconColor).color} />
+                    <Text style={themed($debugButtonText)}>Manual Sync</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={themed($debugButton)}
+                    onPress={handleForceRestart}
+                    activeOpacity={0.8}
+                  >
+                    <Icon icon="settings" size={16} color={themed($debugButtonIconColor).color} />
+                    <Text style={themed($debugButtonText)}>Force Restart</Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
           </>
@@ -575,4 +636,34 @@ const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontSize: 14,
   color: colors.textDim,
   textAlign: "center",
+})
+
+// Debug button styles
+const $debugSection: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  justifyContent: "space-around",
+  marginTop: spacing.sm,
+  gap: spacing.sm,
+})
+
+const $debugButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  flex: 1,
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: colors.palette.neutral200,
+  borderRadius: 8,
+  paddingVertical: spacing.xs,
+  paddingHorizontal: spacing.sm,
+  gap: spacing.xs,
+})
+
+const $debugButtonIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.text,
+})
+
+const $debugButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.text,
+  fontSize: 12,
+  fontWeight: "500",
 })

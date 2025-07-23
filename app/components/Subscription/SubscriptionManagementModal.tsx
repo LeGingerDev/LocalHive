@@ -13,8 +13,8 @@ import {
 } from "react-native"
 
 import { Icon } from "@/components/Icon"
-import { useSubscription } from "@/hooks/useSubscription"
 import { useRevenueCat } from "@/hooks/useRevenueCat"
+import { useSubscription } from "@/hooks/useSubscription"
 import { SubscriptionService } from "@/services/subscriptionService"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
@@ -37,8 +37,8 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
   const { subscriptionTiers } = useRevenueCat()
 
   // Get the monthly subscription package for pricing
-  const monthlyPackage = subscriptionTiers.find(tier => 
-    tier.id.includes("monthly") || tier.id.includes("$rc_monthly")
+  const monthlyPackage = subscriptionTiers.find(
+    (tier) => tier.id.includes("monthly") || tier.id.includes("$rc_monthly"),
   )
 
   const handleCancelSubscription = async () => {

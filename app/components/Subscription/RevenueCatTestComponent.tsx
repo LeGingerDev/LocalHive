@@ -9,15 +9,15 @@ import type { ThemedStyle } from "@/theme/types"
 export const RevenueCatTestComponent: React.FC = () => {
   const { themed, theme } = useAppTheme()
   const { userProfile } = useAuth()
-  const { 
-    isInitialized, 
-    hasActiveSubscription, 
-    customerInfo, 
-    subscriptionTiers, 
-    isLoading, 
+  const {
+    isInitialized,
+    hasActiveSubscription,
+    customerInfo,
+    subscriptionTiers,
+    isLoading,
     error,
     setUserID,
-    refreshCustomerInfo 
+    refreshCustomerInfo,
   } = useRevenueCat()
 
   const handleSetUserID = async () => {
@@ -43,25 +43,17 @@ export const RevenueCatTestComponent: React.FC = () => {
   return (
     <View style={themed($container)}>
       <Text style={themed($title)}>RevenueCat Test</Text>
-      
+
       <View style={themed($statusContainer)}>
-        <Text style={themed($statusText)}>
-          Initialized: {isInitialized ? "✅" : "❌"}
-        </Text>
-        <Text style={themed($statusText)}>
-          Loading: {isLoading ? "🔄" : "✅"}
-        </Text>
+        <Text style={themed($statusText)}>Initialized: {isInitialized ? "✅" : "❌"}</Text>
+        <Text style={themed($statusText)}>Loading: {isLoading ? "🔄" : "✅"}</Text>
         <Text style={themed($statusText)}>
           Has Subscription: {hasActiveSubscription ? "✅" : "❌"}
         </Text>
-        <Text style={themed($statusText)}>
-          User ID: {userProfile?.id ? "✅" : "❌"}
-        </Text>
+        <Text style={themed($statusText)}>User ID: {userProfile?.id ? "✅" : "❌"}</Text>
       </View>
 
-      {error && (
-        <Text style={themed($errorText)}>Error: {error}</Text>
-      )}
+      {error && <Text style={themed($errorText)}>Error: {error}</Text>}
 
       {customerInfo && (
         <View style={themed($infoContainer)}>
@@ -90,7 +82,7 @@ export const RevenueCatTestComponent: React.FC = () => {
         <TouchableOpacity style={themed($button)} onPress={handleSetUserID}>
           <Text style={themed($buttonText)}>Set User ID</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={themed($button)} onPress={handleRefresh}>
           <Text style={themed($buttonText)}>Refresh Info</Text>
         </TouchableOpacity>
@@ -173,4 +165,4 @@ const $buttonText: ThemedStyle<any> = ({ colors, typography }) => ({
   textAlign: "center",
 })
 
-export default RevenueCatTestComponent 
+export default RevenueCatTestComponent

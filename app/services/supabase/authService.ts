@@ -103,6 +103,7 @@ export class AuthService {
    * Create or update a user profile in the 'profiles' table
    * @param userId The user's ID from auth.users
    * @param profileData The profile data to save
+   * @param preserveExistingName Whether to preserve the existing full_name if it exists
    */
   static async createOrUpdateProfile(
     userId: string,
@@ -116,6 +117,7 @@ export class AuthService {
       personal_code?: string
       updated_at?: string
     },
+    preserveExistingName: boolean = false,
   ) {
     try {
       // Check if profile already exists
@@ -123,15 +125,20 @@ export class AuthService {
 
       if (existingProfile) {
         // Update existing profile
-        return DatabaseService.update(
+        let updateData = { ...profileData, updated_at: new Date().toISOString() }
+        
+        // If preserveExistingName is true and the profile already has a full_name, don't overwrite it
+        if (preserveExistingName && existingProfile.full_name && profileData.full_name) {
+          delete updateData.full_name
+        }
+        
+        const result = await DatabaseService.update(
           "profiles",
           userId,
-          {
-            ...profileData,
-            updated_at: new Date().toISOString(),
-          },
+          updateData,
           { idColumn: "id" },
         )
+        return result
       } else {
         // Create new profile
         return DatabaseService.create("profiles", {
