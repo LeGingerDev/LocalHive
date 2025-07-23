@@ -8,6 +8,7 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  TouchableOpacity,
 } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 import { useNavigation } from "@react-navigation/native"
@@ -90,6 +91,11 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
   const [notes, setNotes] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [photoUri, setPhotoUri] = useState<string | null>(null)
+
+  // Suggestion sections state
+  const [showPhotoSection, setShowPhotoSection] = useState<boolean>(false)
+  const [showLocationSection, setShowLocationSection] = useState<boolean>(false)
+  const [showNotesSection, setShowNotesSection] = useState<boolean>(false)
 
   // CustomAlert state
   const [alertVisible, setAlertVisible] = useState(false)
@@ -338,6 +344,31 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
     }
   }, [user?.id, selectedGroupId, title, selectedCategory, location, notes, photoUri])
 
+  // Suggestion button handlers
+  const handleAddPhoto = useCallback(() => {
+    setShowPhotoSection(true)
+  }, [])
+
+  const handleAddLocation = useCallback(() => {
+    setShowLocationSection(true)
+  }, [])
+
+  const handleAddNotes = useCallback(() => {
+    setShowNotesSection(true)
+  }, [])
+
+  // Clear form function
+  const handleClearForm = useCallback(() => {
+    setTitle("")
+    setSelectedCategory(null)
+    setLocation("")
+    setNotes("")
+    setPhotoUri(null)
+    setShowPhotoSection(false)
+    setShowLocationSection(false)
+    setShowNotesSection(false)
+  }, [])
+
   // Helper function to check if form is valid
   const isFormValid = useCallback((): boolean => {
     return !!(selectedGroupId && title.trim() && selectedCategory)
@@ -446,7 +477,13 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
 
   const _renderContent = (): React.JSX.Element => (
     <Screen preset="fixed" safeAreaEdges={["top", "bottom"]} style={themed($root)}>
-      <Header title="Add Item" />
+      <Header 
+        title="Add Item" 
+        rightAction={{
+          text: "Clear",
+          onPress: handleClearForm,
+        }}
+      />
       <ScrollView
         contentContainerStyle={{
           ...themed($formContentWithTopMargin),
@@ -538,82 +575,134 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
               style={themed($categoryHint)}
               text="AI will suggest the best category based on your title"
             />
-            {/* Location */}
-            <Text style={themed($label)} text="Location" />
-            <TextField
-              placeholder="e.g. Kaufland Hauptstraße, ..."
-              style={themed($input)}
-              containerStyle={themed($inputContainerFlat)}
-              value={location}
-              onChangeText={setLocation}
-              editable={!isSubmitting}
-            />
-            <Text style={themed($locationLink)} text="Use current location" onPress={() => {}} />
-            {/* Photo Picker */}
-            <Text style={themed($label)} text="Photo" />
-            <View style={[themed($photoBox), { width: "100%", alignSelf: "stretch" }]}>
-              {photoUri ? (
-                <View
-                  style={{
-                    width: "100%",
-                    aspectRatio: 1,
-                    borderRadius: 8,
-                    overflow: "hidden",
-                    borderWidth: 3,
-                    borderColor: "#fff",
-                    marginBottom: 12,
-                  }}
-                >
-                  <Image
-                    source={{ uri: photoUri }}
-                    style={{ width: "100%", height: "100%" }}
-                    resizeMode="cover"
-                  />
+
+            {/* Photo Section - Injected when Add Photo is clicked */}
+            {showPhotoSection && (
+              <>
+                <Text style={themed($label)} text="Photo" />
+                <View style={[themed($photoBox), { width: "100%", alignSelf: "stretch" }]}>
+                  {photoUri ? (
+                    <View
+                      style={{
+                        width: "100%",
+                        aspectRatio: 1,
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        borderWidth: 3,
+                        borderColor: "#fff",
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Image
+                        source={{ uri: photoUri }}
+                        style={{ width: "100%", height: "100%" }}
+                        resizeMode="cover"
+                      />
+                    </View>
+                  ) : (
+                    <>
+                      <Icon icon="menu" size={32} style={themed($photoIcon)} />
+                      <Text
+                        style={themed($photoText)}
+                        text="Add a photo to help others find this item"
+                      />
+                    </>
+                  )}
+                  <View
+                    style={[
+                      themed($photoButtonRow),
+                      { width: "100%", alignSelf: "stretch", flexDirection: "row", gap: spacing.xs },
+                    ]}
+                  >
+                    <Button
+                      text="Take Photo"
+                      style={[themed($photoButton), { flex: 1 }]}
+                      onPress={handleTakePhoto}
+                      disabled={isSubmitting}
+                    />
+                    <Button
+                      text="Gallery"
+                      style={[themed($photoButton), { flex: 1 }]}
+                      onPress={handlePickFromGallery}
+                      disabled={isSubmitting}
+                    />
+                  </View>
                 </View>
-              ) : (
-                <>
-                  <Icon icon="menu" size={32} style={themed($photoIcon)} />
-                  <Text
-                    style={themed($photoText)}
-                    text="Add a photo to help others find this item"
-                  />
-                </>
-              )}
-              <View
-                style={[
-                  themed($photoButtonRow),
-                  { width: "100%", alignSelf: "stretch", flexDirection: "row", gap: spacing.xs },
-                ]}
-              >
-                <Button
-                  text="Take Photo"
-                  style={[themed($photoButton), { flex: 1 }]}
-                  onPress={handleTakePhoto}
-                  disabled={isSubmitting}
+              </>
+            )}
+
+            {/* Location Section - Injected when Add Location is clicked */}
+            {showLocationSection && (
+              <>
+                <Text style={themed($label)} text="Location" />
+                <TextField
+                  placeholder="e.g. Main Street Market, Downtown Mall, ..."
+                  style={themed($input)}
+                  containerStyle={themed($inputContainerFlat)}
+                  value={location}
+                  onChangeText={setLocation}
+                  editable={!isSubmitting}
                 />
-                <Button
-                  text="Gallery"
-                  style={[themed($photoButton), { flex: 1 }]}
-                  onPress={handlePickFromGallery}
-                  disabled={isSubmitting}
+              </>
+            )}
+
+            {/* Notes Section - Injected when Add Notes is clicked */}
+            {showNotesSection && (
+              <>
+                <Text style={themed($label)} text="Notes" />
+                <TextField
+                  placeholder="Any helpful details... opening hours, specific location within store, tips, etc."
+                  style={themed($input)}
+                  containerStyle={themed($inputContainerFlat)}
+                  multiline
+                  value={notes}
+                  onChangeText={setNotes}
+                  editable={!isSubmitting}
                 />
+                <Text
+                  style={themed($notesHint)}
+                  text="The more details you add, the more helpful it is for your group and AI recognition"
+                />
+              </>
+            )}
+
+            {/* Suggestions Section */}
+            <Text style={themed($label)} text="Add More Details" />
+            <View style={themed($suggestionsContainer)}>
+              <View style={themed($suggestionsRow)}>
+                {!showPhotoSection && (
+                  <TouchableOpacity
+                    style={themed($suggestionButton)}
+                    onPress={handleAddPhoto}
+                    disabled={isSubmitting}
+                  >
+                    <Text style={themed($suggestionButtonText)} text="Add Photo" />
+                  </TouchableOpacity>
+                )}
+                {!showLocationSection && (
+                  <TouchableOpacity
+                    style={themed($suggestionButton)}
+                    onPress={handleAddLocation}
+                    disabled={isSubmitting}
+                  >
+                    <Text style={themed($suggestionButtonText)} text="Add Location" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <View style={themed($suggestionsRow)}>
+                {!showNotesSection && (
+                  <TouchableOpacity
+                    style={themed($suggestionButton)}
+                    onPress={handleAddNotes}
+                    disabled={isSubmitting}
+                  >
+                    <Text style={themed($suggestionButtonText)} text="Add Notes" />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
-            {/* Notes */}
-            <Text style={themed($label)} text="Notes" />
-            <TextField
-              placeholder="Any helpful details... opening hours, specific location within store, tips, etc."
-              style={themed($input)}
-              containerStyle={themed($inputContainerFlat)}
-              multiline
-              value={notes}
-              onChangeText={setNotes}
-              editable={!isSubmitting}
-            />
-            <Text
-              style={themed($notesHint)}
-              text="The more details you add, the more helpful it is for your group and AI recognition"
-            />
+
+
           </>
         )}
 
@@ -741,7 +830,7 @@ const $formContentWithTopMargin = ({ spacing }: any): ViewStyle => ({
   paddingBottom: spacing.xl * 2,
 })
 const $buttonRow = ({ spacing }: any): ViewStyle => ({
-  marginTop: spacing.md,
+  marginTop: spacing.xs,
   marginBottom: spacing.xl,
 })
 const $gradientButton = (): ViewStyle => ({ borderRadius: 16, overflow: "hidden", marginBottom: 8 })
@@ -799,6 +888,38 @@ const $notesHint: ThemedStyle<TextStyle> = ({ colors, spacing }) => ({
   fontSize: 12,
   marginBottom: spacing.sm,
 })
+
+// Suggestion section styles
+const $suggestionsContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  marginBottom: spacing.xs,
+})
+
+const $suggestionsRow: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  gap: spacing.xs,
+  marginBottom: spacing.xs,
+})
+
+const $suggestionButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  flex: 1,
+  backgroundColor: colors.cardColor,
+  borderWidth: 1,
+  borderColor: colors.border,
+  borderRadius: 12,
+  paddingVertical: spacing.sm,
+  paddingHorizontal: spacing.md,
+  minHeight: 48,
+  justifyContent: "center",
+  alignItems: "center",
+})
+
+const $suggestionButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.text,
+  fontFamily: typography.primary.medium,
+  fontSize: 14,
+  textAlign: "center",
+})
+
 // #endregion
 
 // Add these styles at the bottom
