@@ -14,6 +14,7 @@ import { ItemCard } from "@/components/ItemCard"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
+import { UserStatsModal } from "@/components/UserStatsModal"
 import { useAuth } from "@/context/AuthContext"
 import { useGroups } from "@/hooks/useGroups"
 import { Group, GroupMember, GroupPost } from "@/services/api/types"
@@ -56,6 +57,10 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [items, setItems] = useState<ItemWithProfile[]>([])
   const [recentItems, setRecentItems] = useState<ItemWithProfile[]>([])
   const [itemsLoading, setItemsLoading] = useState(false)
+
+  // User stats modal state
+  const [showUserStatsModal, setShowUserStatsModal] = useState(false)
+  const [selectedMember, setSelectedMember] = useState<GroupMember | null>(null)
 
   // Collapsible sections state
   const [membersCollapsed, setMembersCollapsed] = useState(false)
@@ -308,6 +313,17 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     setRecentItems((prev) => prev.filter((item) => item.id !== itemId))
   }
 
+  // Handler for member press to show stats
+  const handleMemberPress = (member: GroupMember) => {
+    setSelectedMember(member)
+    setShowUserStatsModal(true)
+  }
+
+  const handleCloseUserStatsModal = () => {
+    setShowUserStatsModal(false)
+    setSelectedMember(null)
+  }
+
   // Collapsible section handlers
   const handleMembersToggle = useCallback(() => {
     setMembersCollapsed(!membersCollapsed)
@@ -428,6 +444,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             <MembersSection
               members={members}
               onRetry={loadGroupDetails}
+              onMemberPress={handleMemberPress}
               canManageMembers={canManageGroup}
               creatorId={group?.creator_id}
               onRemoveMember={handleRemoveMember}
@@ -580,6 +597,15 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           onCancel={handleInviteCancel}
         />
       </Modal>
+
+      {/* User Stats Modal */}
+      <UserStatsModal
+        visible={showUserStatsModal}
+        userId={selectedMember?.user_id || null}
+        userName={selectedMember?.user?.full_name || "Unknown User"}
+        userAvatar={selectedMember?.user?.avatar_url}
+        onClose={handleCloseUserStatsModal}
+      />
 
       {/* Custom Alerts */}
       <CustomAlert

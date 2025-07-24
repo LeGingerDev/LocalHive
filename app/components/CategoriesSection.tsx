@@ -192,8 +192,6 @@ const $sectionHeaderRight = (): ViewStyle => ({
   gap: 8,
 })
 
-
-
 const $sectionHeaderTitle = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.medium,
   fontSize: 16,
