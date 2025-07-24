@@ -8,14 +8,14 @@
  */
 export const restartApp = async (delayMs: number = 500): Promise<void> => {
   console.log(`🔄 [AppRestart] Scheduling app restart in ${delayMs}ms...`)
-  
+
   setTimeout(async () => {
     try {
       console.log(`🔄 [AppRestart] Restarting app...`)
-      
+
       // Use React Native's built-in reload mechanism
-      const { DevSettings } = await import('react-native')
-      
+      const { DevSettings } = await import("react-native")
+
       if (__DEV__) {
         // In development, reload the app
         DevSettings.reload()
@@ -24,14 +24,14 @@ export const restartApp = async (delayMs: number = 500): Promise<void> => {
         DevSettings.reload()
       }
     } catch (error) {
-      console.error('❌ [AppRestart] Failed to restart app:', error)
-      
+      console.error("❌ [AppRestart] Failed to restart app:", error)
+
       // Fallback: try to reload using a different method
       try {
-        const { DevSettings } = await import('react-native')
+        const { DevSettings } = await import("react-native")
         DevSettings.reload()
       } catch (fallbackError) {
-        console.error('❌ [AppRestart] Fallback restart also failed:', fallbackError)
+        console.error("❌ [AppRestart] Fallback restart also failed:", fallbackError)
         // As a last resort, we could show a message asking the user to manually restart
       }
     }
@@ -52,12 +52,12 @@ export const restartAppImmediately = async (): Promise<void> => {
  * @param delayMs - Delay in milliseconds before restart (default: 1000ms)
  */
 export const restartAppWithMessage = (message: string, delayMs: number = 1000): void => {
-  const { Alert } = require('react-native')
-  
+  const { Alert } = require("react-native")
+
   Alert.alert("Success", message, [
     {
       text: "OK",
-      onPress: () => restartApp(delayMs)
-    }
+      onPress: () => restartApp(delayMs),
+    },
   ])
-} 
+}

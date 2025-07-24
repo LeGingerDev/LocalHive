@@ -1,5 +1,12 @@
 import React, { FC, memo, useCallback, useMemo, useEffect, useState } from "react"
-import { StyleProp, ViewStyle, TextStyle, View, ActivityIndicator, TouchableOpacity } from "react-native"
+import {
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+  View,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native"
 import Ionicons from "react-native-vector-icons/Ionicons"
 
 import { Text } from "@/components/Text"
@@ -261,22 +268,18 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
             onPress={() => setIsEditingName(true)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons
-              name="pencil"
-              size={14}
-              color={themed($editButtonIcon).color}
-            />
+            <Ionicons name="pencil" size={14} color={themed($editButtonIcon).color} />
           </TouchableOpacity>
         )}
-        
+
         <View style={themed($contentContainer)}>
           {/* Avatar */}
           <View style={themed($avatar)}>
             <Text style={themed($avatarInitial)} text={_avatarInitial} />
           </View>
           {/* User Name */}
-          <EditableProfileName 
-            initialName={_displayName} 
+          <EditableProfileName
+            initialName={_displayName}
             style={themed($name)}
             showEditButton={false}
             isEditing={isEditingName}
@@ -381,8 +384,6 @@ const $avatarInitial: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.bold,
   fontSize: 28,
 })
-
-
 
 const $name: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   fontFamily: typography.primary.bold,

@@ -192,6 +192,11 @@ export const EditableProfileName: React.FC<EditableProfileNameProps> = ({
 }
 
 const styles = StyleSheet.create({
+  cancelButton: {
+    borderRadius: 16,
+    marginLeft: spacing.xs,
+    padding: spacing.xs,
+  },
   displayContainer: {
     alignItems: "center",
     justifyContent: "center",
@@ -201,10 +206,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   editButton: {
-    position: "absolute",
-    top: -spacing.xs,
-    right: -spacing.xs,
     padding: spacing.xs,
+    position: "absolute",
+    right: -spacing.xs,
+    top: -spacing.xs,
     zIndex: 1,
   },
   editingContainer: {
@@ -216,11 +221,6 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   saveButton: {
-    borderRadius: 16,
-    marginLeft: spacing.xs,
-    padding: spacing.xs,
-  },
-  cancelButton: {
     borderRadius: 16,
     marginLeft: spacing.xs,
     padding: spacing.xs,

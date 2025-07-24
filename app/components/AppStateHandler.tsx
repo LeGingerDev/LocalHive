@@ -35,4 +35,4 @@ export const AppStateHandler = () => {
   }, [refreshUser])
 
   return null
-} 
+}

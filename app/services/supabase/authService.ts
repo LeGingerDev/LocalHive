@@ -125,19 +125,16 @@ export class AuthService {
 
       if (existingProfile) {
         // Update existing profile
-        let updateData = { ...profileData, updated_at: new Date().toISOString() }
-        
+        const updateData = { ...profileData, updated_at: new Date().toISOString() }
+
         // If preserveExistingName is true and the profile already has a full_name, don't overwrite it
         if (preserveExistingName && existingProfile.full_name && profileData.full_name) {
           delete updateData.full_name
         }
-        
-        const result = await DatabaseService.update(
-          "profiles",
-          userId,
-          updateData,
-          { idColumn: "id" },
-        )
+
+        const result = await DatabaseService.update("profiles", userId, updateData, {
+          idColumn: "id",
+        })
         return result
       } else {
         // Create new profile

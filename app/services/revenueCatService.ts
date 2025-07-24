@@ -184,7 +184,7 @@ class RevenueCatService {
   async syncSubscriptionWithSupabase(userID: string): Promise<void> {
     try {
       console.log(`🔄 [RevenueCat] Starting sync for user: ${userID}`)
-      
+
       const customerInfo = await this.getCustomerInfo()
       if (!customerInfo) {
         console.log(`❌ [RevenueCat] No customer info found for user: ${userID}`)
@@ -210,13 +210,13 @@ class RevenueCatService {
         console.log(`✅ [RevenueCat] Active entitlements:`, activeEntitlements)
 
         // Look for any pro-related entitlement (pro, premium, etc.)
-        const proEntitlement = activeEntitlements.pro || 
-                              activeEntitlements.premium || 
-                              activeEntitlements.visu_pro ||
-                              Object.values(activeEntitlements).find(ent => 
-                                ent.identifier.includes('pro') || 
-                                ent.identifier.includes('premium')
-                              )
+        const proEntitlement =
+          activeEntitlements.pro ||
+          activeEntitlements.premium ||
+          activeEntitlements.visu_pro ||
+          Object.values(activeEntitlements).find(
+            (ent) => ent.identifier.includes("pro") || ent.identifier.includes("premium"),
+          )
 
         if (proEntitlement && proEntitlement.expirationDate) {
           const expiresAt = proEntitlement.expirationDate
@@ -229,7 +229,7 @@ class RevenueCatService {
           // Update Supabase with pro subscription
           console.log(`🔄 [RevenueCat] Updating Supabase with pro subscription...`)
           const result = await SubscriptionService.upgradeToPro(userID, expiresAt)
-          
+
           if (result.success) {
             console.log(`✅ [RevenueCat] Successfully updated Supabase subscription`)
             // Schedule app restart to reflect the new subscription status
@@ -252,40 +252,51 @@ class RevenueCatService {
           })
         } else {
           console.log(`⚠️ [RevenueCat] No pro entitlement found in active entitlements`)
-          
+
           // Try to find any active entitlement and treat it as pro
           const firstActiveEntitlement = Object.values(activeEntitlements)[0]
           if (firstActiveEntitlement && firstActiveEntitlement.expirationDate) {
-            console.log(`🔄 [RevenueCat] Using first active entitlement as pro:`, firstActiveEntitlement.identifier)
-            
-            const result = await SubscriptionService.upgradeToPro(userID, firstActiveEntitlement.expirationDate)
-            
-                      if (result.success) {
-            console.log(`✅ [RevenueCat] Successfully updated Supabase with first active entitlement`)
-            // Schedule app restart to reflect the new subscription status
-            console.log(`🔄 [RevenueCat] Scheduling app restart for subscription change...`)
-            restartApp(1000)
-          } else {
-            console.error(`❌ [RevenueCat] Failed to update Supabase:`, result.error)
-          }
+            console.log(
+              `🔄 [RevenueCat] Using first active entitlement as pro:`,
+              firstActiveEntitlement.identifier,
+            )
+
+            const result = await SubscriptionService.upgradeToPro(
+              userID,
+              firstActiveEntitlement.expirationDate,
+            )
+
+            if (result.success) {
+              console.log(
+                `✅ [RevenueCat] Successfully updated Supabase with first active entitlement`,
+              )
+              // Schedule app restart to reflect the new subscription status
+              console.log(`🔄 [RevenueCat] Scheduling app restart for subscription change...`)
+              restartApp(1000)
+            } else {
+              console.error(`❌ [RevenueCat] Failed to update Supabase:`, result.error)
+            }
           }
         }
       } else {
         console.log(`📉 [RevenueCat] No active subscriptions found`)
-        
+
         // Check if subscription expired - look in all entitlements
         const allEntitlements = Object.values(customerInfo.entitlements.all)
-        console.log(`🔍 [RevenueCat] All entitlements:`, allEntitlements.map(e => ({
-          identifier: e.identifier,
-          expirationDate: e.expirationDate,
-          isActive: e.isActive,
-        })))
+        console.log(
+          `🔍 [RevenueCat] All entitlements:`,
+          allEntitlements.map((e) => ({
+            identifier: e.identifier,
+            expirationDate: e.expirationDate,
+            isActive: e.isActive,
+          })),
+        )
 
         const expiredProEntitlement = allEntitlements.find(
-          (entitlement) => 
-            (entitlement.identifier === "pro" || 
-             entitlement.identifier.includes("pro") ||
-             entitlement.identifier.includes("premium")) && 
+          (entitlement) =>
+            (entitlement.identifier === "pro" ||
+              entitlement.identifier.includes("pro") ||
+              entitlement.identifier.includes("premium")) &&
             entitlement.expirationDate,
         )
 
@@ -294,19 +305,22 @@ class RevenueCatService {
           const expirationDate = new Date(expiredProEntitlement.expirationDate)
 
           if (now > expirationDate) {
-            console.log(`⏰ [RevenueCat] Subscription has expired:`, expiredProEntitlement.expirationDate)
-            
+            console.log(
+              `⏰ [RevenueCat] Subscription has expired:`,
+              expiredProEntitlement.expirationDate,
+            )
+
             // Subscription has expired
             const result = await SubscriptionService.updateSubscriptionStatus(userID, "expired")
-            
-                      if (result.success) {
-            console.log(`✅ [RevenueCat] Successfully marked subscription as expired`)
-            // Schedule app restart to reflect the expired subscription status
-            console.log(`🔄 [RevenueCat] Scheduling app restart for subscription expiration...`)
-            restartApp(1000)
-          } else {
-            console.error(`❌ [RevenueCat] Failed to mark subscription as expired:`, result.error)
-          }
+
+            if (result.success) {
+              console.log(`✅ [RevenueCat] Successfully marked subscription as expired`)
+              // Schedule app restart to reflect the expired subscription status
+              console.log(`🔄 [RevenueCat] Scheduling app restart for subscription expiration...`)
+              restartApp(1000)
+            } else {
+              console.error(`❌ [RevenueCat] Failed to mark subscription as expired:`, result.error)
+            }
 
             // Track subscription expiration
             await AnalyticsService.trackEvent({
@@ -323,7 +337,7 @@ class RevenueCatService {
           console.log(`ℹ️ [RevenueCat] No expired pro entitlements found`)
         }
       }
-      
+
       console.log(`✅ [RevenueCat] Sync completed for user: ${userID}`)
     } catch (error) {
       console.error("❌ [RevenueCat] Failed to sync subscription with Supabase:", error)

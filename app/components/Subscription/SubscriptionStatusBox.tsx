@@ -5,12 +5,12 @@ import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { Icon } from "@/components/Icon"
 import VisuProModal from "@/components/Subscription/VisuProModal"
 import { useSubscription } from "@/hooks/useSubscription"
+import { revenueCatService } from "@/services/revenueCatService"
 import { SubscriptionService } from "@/services/subscriptionService"
 import { useAppTheme } from "@/theme/context"
-import { revenueCatService } from "@/services/revenueCatService"
-import { restartApp } from "@/utils/appRestart"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
+import { restartApp } from "@/utils/appRestart"
 
 interface SubscriptionStatusBoxProps {
   userId: string | null
@@ -44,15 +44,15 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
 
   const handleManualSync = async () => {
     if (!userId) return
-    
+
     console.log("🔄 [SubscriptionStatusBox] Manual sync triggered")
     try {
       // Force a sync with RevenueCat
       await revenueCatService.syncSubscriptionWithSupabase(userId)
-      
+
       // Refresh the subscription data
       subscription.refresh()
-      
+
       // Show success message
       Alert.alert("Sync Complete", "Subscription data has been refreshed.")
     } catch (error) {
@@ -64,16 +64,16 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
   const handleForceRestart = () => {
     console.log("🔄 [SubscriptionStatusBox] Force restart triggered")
     Alert.alert(
-      "Restart App", 
+      "Restart App",
       "This will restart the app to refresh all subscription data. Continue?",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Restart", 
+        {
+          text: "Restart",
           style: "destructive",
-          onPress: () => restartApp(500)
-        }
-      ]
+          onPress: () => restartApp(500),
+        },
+      ],
     )
   }
 

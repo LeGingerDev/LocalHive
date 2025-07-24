@@ -3,6 +3,7 @@ import { useMemo } from "react"
 import { View, ScrollView, ViewStyle, TextStyle, TouchableOpacity, Modal } from "react-native"
 
 import { CustomAlert } from "@/components/Alert"
+import { CategoriesSection } from "@/components/CategoriesSection"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { MembersSection } from "@/components/Groups/MembersSection"
 import { RecentActivitySection } from "@/components/Groups/RecentActivitySection"
@@ -469,82 +470,26 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           />
         )}
 
-        {/* Collapsible Items Section */}
-        <View style={themed($sectionHeader)}>
-          <View style={themed($sectionHeaderContent)}>
-            <TouchableOpacity
-              style={themed($sectionHeaderLeft)}
-              onPress={handleItemsToggle}
-              activeOpacity={0.7}
-            >
-              <Text style={themed($sectionHeaderTitle)} text={`Items (${items.length})`} />
-            </TouchableOpacity>
-            <View style={themed($sectionHeaderRight)}>
-              {itemsCollapsed && (
-                <Text
-                  style={themed($collapsedSectionSummary)}
-                  text={`${items.length} item${items.length !== 1 ? "s" : ""} hidden`}
-                />
-              )}
-              {!itemsCollapsed && (
-                <TouchableOpacity
-                  style={themed($addItemButtonSmall)}
-                  onPress={() =>
-                    navigation.navigate("Main", { screen: "Add", params: { groupId } })
-                  }
-                  activeOpacity={0.8}
-                >
-                  <Text style={themed($addItemButtonSmallText)} text="Add" />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={themed($caretButton)}
-                onPress={handleItemsToggle}
-                activeOpacity={0.7}
-              >
-                <Icon
-                  icon={itemsCollapsed ? "caretRight" : "caretLeft"}
-                  size={20}
-                  color={theme.colors.text}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {!itemsCollapsed && (
-          <View style={themed($itemsSection)}>
-            {itemsLoading ? (
-              <LoadingSpinner text="Loading items..." />
-            ) : items.length > 0 ? (
-              <View style={themed($itemsList)}>
-                {items.map((item) => (
-                  <ItemCard
-                    key={item.id}
-                    item={item}
-                    onItemUpdated={(updatedItem) => {
-                      // Update the item in the local state
-                      setItems((prevItems) =>
-                        prevItems.map((prevItem) =>
-                          prevItem.id === updatedItem.id ? updatedItem : prevItem,
-                        ),
-                      )
-                    }}
-                    onItemDeleted={handleItemDeleted}
-                    deletable={true}
-                  />
-                ))}
-              </View>
-            ) : (
-              <View style={themed($emptyItemsContainer)}>
-                <Text style={themed($emptyItemsText)} text="No items yet" />
-                <Text
-                  style={themed($emptyItemsSubtext)}
-                  text="Click 'Add' above to add your first item."
-                />
-              </View>
-            )}
-          </View>
+        {/* Categories Section */}
+        {itemsLoading ? (
+          <LoadingSpinner text="Loading items..." />
+        ) : (
+          <CategoriesSection
+            items={items}
+            collapsed={itemsCollapsed}
+            onToggleCollapsed={handleItemsToggle}
+            onItemUpdated={(updatedItem) => {
+              // Update the item in the local state
+              setItems((prevItems) =>
+                prevItems.map((prevItem) =>
+                  prevItem.id === updatedItem.id ? updatedItem : prevItem,
+                ),
+              )
+            }}
+            onItemDeleted={handleItemDeleted}
+            onAddItem={() => navigation.navigate("Main", { screen: "Add", params: { groupId } })}
+            groupId={groupId}
+          />
         )}
       </ScrollView>
 

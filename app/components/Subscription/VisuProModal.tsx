@@ -17,8 +17,8 @@ import { Icon } from "@/components/Icon"
 import { useAuth } from "@/context/AuthContext"
 import { useRevenueCat } from "@/hooks/useRevenueCat"
 import { useAppTheme } from "@/theme/context"
-import { restartApp } from "@/utils/appRestart"
 import type { ThemedStyle } from "@/theme/types"
+import { restartApp } from "@/utils/appRestart"
 
 export interface VisuProModalProps {
   visible: boolean
@@ -35,8 +35,15 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
 }) => {
   const { themed, theme } = useAppTheme()
   const { userProfile } = useAuth()
-  const { isInitialized, subscriptionTiers, isLoading, error, purchaseAndSync, setUserID, refreshCustomerInfo } =
-    useRevenueCat()
+  const {
+    isInitialized,
+    subscriptionTiers,
+    isLoading,
+    error,
+    purchaseAndSync,
+    setUserID,
+    refreshCustomerInfo,
+  } = useRevenueCat()
   const [isPurchasing, setIsPurchasing] = useState(false)
 
   // Set user ID when modal opens
@@ -80,11 +87,14 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
         throw new Error("No subscription offerings available")
       }
 
-      console.log(`📦 [VisuProModal] Available packages:`, offerings.availablePackages.map(pkg => ({
-        identifier: pkg.identifier,
-        productId: pkg.product.identifier,
-        price: pkg.product.price,
-      })))
+      console.log(
+        `📦 [VisuProModal] Available packages:`,
+        offerings.availablePackages.map((pkg) => ({
+          identifier: pkg.identifier,
+          productId: pkg.product.identifier,
+          price: pkg.product.price,
+        })),
+      )
 
       // Find the monthly package
       const packageToPurchase = offerings.availablePackages.find(
@@ -104,8 +114,11 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
 
       // Make the actual purchase using the service directly
       console.log(`💳 [VisuProModal] Making purchase...`)
-      const customerInfo = await revenueCatService.purchaseAndSync(userProfile.id, packageToPurchase)
-      
+      const customerInfo = await revenueCatService.purchaseAndSync(
+        userProfile.id,
+        packageToPurchase,
+      )
+
       if (!customerInfo) {
         throw new Error("Purchase completed but no customer info returned")
       }
@@ -123,28 +136,32 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
       // Refresh the subscription data in the hook
       console.log(`🔄 [VisuProModal] Refreshing subscription data...`)
       await refreshCustomerInfo()
-      
+
       // Also refresh the subscription status in the parent component
       // This will be handled by the onStartTrial callback which should trigger a refresh
 
       // Show success message
-      Alert.alert("Success!", "Your subscription has been activated. Welcome to Visu Pro! The app will restart to apply your new subscription.", [
-        { 
-          text: "OK", 
-          onPress: () => {
-            console.log(`🎉 [VisuProModal] Purchase completed, restarting app...`)
-            onClose()
-            // Restart the app after a short delay to ensure the alert is dismissed
-            restartApp(500)
-          }
-        },
-      ])
+      Alert.alert(
+        "Success!",
+        "Your subscription has been activated. Welcome to Visu Pro! The app will restart to apply your new subscription.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              console.log(`🎉 [VisuProModal] Purchase completed, restarting app...`)
+              onClose()
+              // Restart the app after a short delay to ensure the alert is dismissed
+              restartApp(500)
+            },
+          },
+        ],
+      )
 
       // Don't call onStartTrial since we're restarting the app
       // onStartTrial()
     } catch (err) {
       console.error("❌ [VisuProModal] Purchase error:", err)
-      
+
       let errorMessage = "Something went wrong. Please try again."
       if (err instanceof Error) {
         errorMessage = err.message
@@ -157,7 +174,7 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
           errorMessage = "You already have an active subscription."
         }
       }
-      
+
       Alert.alert("Purchase Failed", errorMessage)
     } finally {
       setIsPurchasing(false)

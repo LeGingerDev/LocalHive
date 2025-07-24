@@ -477,8 +477,8 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
 
   const _renderContent = (): React.JSX.Element => (
     <Screen preset="fixed" safeAreaEdges={["top", "bottom"]} style={themed($root)}>
-      <Header 
-        title="Add Item" 
+      <Header
+        title="Add Item"
         rightAction={{
           text: "Clear",
           onPress: handleClearForm,
@@ -611,7 +611,12 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
                   <View
                     style={[
                       themed($photoButtonRow),
-                      { width: "100%", alignSelf: "stretch", flexDirection: "row", gap: spacing.xs },
+                      {
+                        width: "100%",
+                        alignSelf: "stretch",
+                        flexDirection: "row",
+                        gap: spacing.xs,
+                      },
                     ]}
                   >
                     <Button
@@ -701,8 +706,6 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
                 )}
               </View>
             </View>
-
-
           </>
         )}
 
