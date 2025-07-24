@@ -715,9 +715,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
 // Styles
 const $root = (): ViewStyle => ({ flex: 1 })
 const $content = ({ spacing }: any): ViewStyle => ({
-  paddingHorizontal: spacing.md,
-  paddingTop: spacing.sm,
-  paddingBottom: spacing.xl * 2,
+  paddingHorizontal: spacing.sm,
+  paddingTop: spacing.xs,
+  paddingBottom: spacing.lg,
 })
 const $headerRow = (): ViewStyle => ({
   flexDirection: "row",
@@ -768,12 +768,12 @@ const $headerActionText = ({ typography, colors }: any): TextStyle => ({
   fontSize: 16,
   color: colors.tint,
 })
-const $groupInfo = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.md })
+const $groupInfo = ({ spacing }: any): ViewStyle => ({ marginBottom: spacing.sm })
 const $groupDescription = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.normal,
   fontSize: 16,
   color: colors.text,
-  marginBottom: spacing.sm,
+  marginBottom: spacing.xs,
 })
 const $groupStats = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.normal,
@@ -783,7 +783,7 @@ const $groupStats = ({ typography, colors }: any): TextStyle => ({
 const $actionButtons = (): ViewStyle => ({
   flexDirection: "row",
   justifyContent: "space-between",
-  marginBottom: spacing.lg,
+  marginBottom: spacing.md,
 })
 const $actionButton = ({ colors, typography }: any): ViewStyle => ({
   backgroundColor: colors.primary100,
@@ -806,8 +806,8 @@ const $actionButtonTextDisabled = ({ colors }: any): TextStyle => ({
   color: colors.error,
 })
 const $addItemContainer = ({ spacing }: any): ViewStyle => ({
-  padding: spacing.md,
-  paddingBottom: spacing.lg,
+  padding: spacing.sm,
+  paddingBottom: spacing.md,
 })
 const $addItemButton = ({ colors, typography }: any): ViewStyle => ({
   borderRadius: 16,
@@ -828,8 +828,8 @@ const $addItemButtonText = ({ colors, typography }: any): TextStyle => ({
   textAlign: "center",
 })
 const $closeGroupContainer = ({ spacing }: any): ViewStyle => ({
-  padding: spacing.md,
-  paddingBottom: spacing.lg,
+  padding: spacing.sm,
+  paddingBottom: spacing.md,
 })
 const $closeGroupButton = ({ colors }: any): ViewStyle => ({
   backgroundColor: colors.error,
@@ -865,7 +865,7 @@ const $errorContainer = ({ spacing }: any): ViewStyle => ({
   flex: 1,
   justifyContent: "center",
   alignItems: "center",
-  padding: spacing.lg,
+  padding: spacing.md,
 })
 const $errorText = ({ typography, colors, spacing }: any): TextStyle => ({
   fontFamily: typography.primary.normal,
@@ -889,8 +889,8 @@ const $retryButtonText = ({ colors, typography }: any): TextStyle => ({
 })
 
 const $infoContainer = ({ spacing }: any): ViewStyle => ({
-  padding: spacing.md,
-  paddingBottom: spacing.lg,
+  padding: spacing.sm,
+  paddingBottom: spacing.md,
   alignItems: "center",
 })
 
@@ -904,14 +904,14 @@ const $infoText = ({ typography, colors }: any): TextStyle => ({
 // Items Section Styles
 const $itemsSection = ({ spacing }: any): ViewStyle => ({
   marginTop: spacing.xs,
-  marginBottom: spacing.md,
+  marginBottom: spacing.sm,
 })
 
 const $itemsSectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({
   fontFamily: typography.primary.bold,
   fontSize: 18,
   color: colors.text,
-  marginBottom: spacing.md,
+  marginBottom: spacing.sm,
 })
 
 const $itemsList = (): ViewStyle => ({
@@ -920,7 +920,7 @@ const $itemsList = (): ViewStyle => ({
 
 const $emptyItemsContainer = ({ spacing }: any): ViewStyle => ({
   alignItems: "center",
-  paddingVertical: spacing.xl,
+  paddingVertical: spacing.lg,
 })
 
 const $emptyItemsText = ({ typography, colors }: any): TextStyle => ({
