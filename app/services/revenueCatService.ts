@@ -1,8 +1,9 @@
-import { Platform } from "react-native"
+import { Platform, Linking } from "react-native"
 import Purchases, {
   PurchasesOffering,
   CustomerInfo,
   PurchasesPackage,
+  PurchasesError,
 } from "react-native-purchases"
 
 import { AnalyticsService, AnalyticsEvents } from "./analyticsService"
@@ -31,6 +32,7 @@ export interface SubscriptionTier {
 
 class RevenueCatService {
   private _isInitialized = false
+  private _customerInfoUpdateListener: (() => void) | null = null
 
   /**
    * Initialize RevenueCat with your API keys
@@ -60,12 +62,216 @@ class RevenueCatService {
         useAmazon: false,
       })
 
+      // Set up customer info update listener
+      this.setupCustomerInfoUpdateListener()
+
       this._isInitialized = true
       console.log("✅ RevenueCat initialized successfully")
     } catch (error) {
       console.error("❌ Failed to initialize RevenueCat:", error)
       // Don't throw error to prevent app crash, just log it
       this._isInitialized = false
+    }
+  }
+
+  /**
+   * Set up listener for customer info updates (subscription changes)
+   */
+  private setupCustomerInfoUpdateListener(): void {
+    try {
+      Purchases.addCustomerInfoUpdateListener((customerInfo) => {
+        console.log("🔄 [RevenueCat] Customer info updated:", {
+          activeEntitlements: Object.keys(customerInfo.entitlements.active),
+          allEntitlements: Object.keys(customerInfo.entitlements.all),
+        })
+
+        // Handle subscription status changes
+        this.handleSubscriptionStatusChange(customerInfo)
+      })
+    } catch (error) {
+      console.error("❌ Failed to set up customer info update listener:", error)
+    }
+  }
+
+  /**
+   * Handle subscription status changes from RevenueCat
+   */
+  private async handleSubscriptionStatusChange(customerInfo: CustomerInfo): Promise<void> {
+    try {
+      const hasActiveSubscription = Object.keys(customerInfo.entitlements.active).length > 0
+      
+      if (hasActiveSubscription) {
+        // User has active subscription - sync with Supabase
+        const activeEntitlements = customerInfo.entitlements.active
+        const proEntitlement = this.findProEntitlement(activeEntitlements)
+        
+        if (proEntitlement && proEntitlement.expirationDate) {
+          // Update to pro status
+          await this.updateSubscriptionInSupabase("pro", proEntitlement.expirationDate)
+        }
+      } else {
+        // No active subscription - check if it was cancelled or expired
+        const allEntitlements = Object.values(customerInfo.entitlements.all)
+        const recentlyExpired = this.findRecentlyExpiredEntitlement(allEntitlements)
+        
+        if (recentlyExpired) {
+          // Subscription was cancelled or expired
+          await this.updateSubscriptionInSupabase("expired", recentlyExpired.expirationDate)
+        } else {
+          // No subscription found - set to free
+          await this.updateSubscriptionInSupabase("free")
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error handling subscription status change:", error)
+    }
+  }
+
+  /**
+   * Find pro-related entitlement in active entitlements
+   */
+  private findProEntitlement(activeEntitlements: any): any {
+    return (
+      activeEntitlements.pro ||
+      activeEntitlements.premium ||
+      activeEntitlements.visu_pro ||
+      Object.values(activeEntitlements).find(
+        (ent: any) => ent.identifier.includes("pro") || ent.identifier.includes("premium"),
+      )
+    )
+  }
+
+  /**
+   * Find recently expired entitlement
+   */
+  private findRecentlyExpiredEntitlement(allEntitlements: any[]): any {
+    const now = new Date()
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+
+    return allEntitlements.find((entitlement) => {
+      if (!entitlement.expirationDate) return false
+      
+      const expirationDate = new Date(entitlement.expirationDate)
+      return (
+        expirationDate >= thirtyDaysAgo &&
+        expirationDate <= now &&
+        (entitlement.identifier.includes("pro") || entitlement.identifier.includes("premium"))
+      )
+    })
+  }
+
+  /**
+   * Update subscription status in Supabase
+   */
+  private async updateSubscriptionInSupabase(
+    status: "free" | "pro" | "expired",
+    expirationDate?: string,
+  ): Promise<void> {
+    try {
+      const customerInfo = await this.getCustomerInfo()
+      if (!customerInfo?.originalAppUserId) {
+        console.warn("❌ No user ID found for subscription update")
+        return
+      }
+
+      const result = await SubscriptionService.updateSubscriptionStatus(
+        customerInfo.originalAppUserId,
+        status,
+        expirationDate ? { subscription_expires_at: expirationDate } : undefined,
+      )
+
+      if (result.success) {
+        console.log(`✅ [RevenueCat] Successfully updated Supabase subscription to: ${status}`)
+        
+        // Track the subscription change
+        await AnalyticsService.trackEvent({
+          name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
+          properties: {
+            userId: customerInfo.originalAppUserId,
+            newStatus: status,
+            source: "revenuecat_webhook",
+            expirationDate,
+          },
+        })
+
+        // Schedule app restart to reflect changes
+        restartApp(1000)
+      } else {
+        console.error(`❌ [RevenueCat] Failed to update Supabase:`, result.error)
+      }
+    } catch (error) {
+      console.error("❌ Error updating subscription in Supabase:", error)
+    }
+  }
+
+  /**
+   * Open platform subscription management
+   */
+  async openSubscriptionManagement(): Promise<void> {
+    try {
+      await this.ensureInitialized()
+      
+      if (Platform.OS === "ios") {
+        // Open iOS subscription management
+        await Linking.openURL("https://apps.apple.com/account/subscriptions")
+      } else if (Platform.OS === "android") {
+        // Open Google Play subscription management
+        await Linking.openURL("https://play.google.com/store/account/subscriptions")
+      }
+    } catch (error) {
+      console.error("Failed to open subscription management:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Get subscription management URL for the current platform
+   */
+  getSubscriptionManagementURL(): string {
+    if (Platform.OS === "ios") {
+      return "https://apps.apple.com/account/subscriptions"
+    } else if (Platform.OS === "android") {
+      return "https://play.google.com/store/account/subscriptions"
+    }
+    return ""
+  }
+
+  /**
+   * Check if user can manage subscription (has active subscription)
+   */
+  async canManageSubscription(): Promise<boolean> {
+    try {
+      const customerInfo = await this.getCustomerInfo()
+      if (!customerInfo) return false
+
+      // Check if user has any active entitlements
+      return Object.keys(customerInfo.entitlements.active).length > 0
+    } catch (error) {
+      console.error("Failed to check if user can manage subscription:", error)
+      return false
+    }
+  }
+
+  /**
+   * Refresh subscription status from RevenueCat
+   * Call this when app comes back from background to detect changes
+   */
+  async refreshSubscriptionStatus(): Promise<void> {
+    try {
+      await this.ensureInitialized()
+      
+      console.log("🔄 [RevenueCat] Refreshing subscription status...")
+      const customerInfo = await this.getCustomerInfo()
+      
+      if (customerInfo) {
+        // This will trigger the customer info update listener
+        // which will handle syncing with Supabase
+        console.log("✅ [RevenueCat] Subscription status refreshed")
+      } else {
+        console.log("❌ [RevenueCat] No customer info found during refresh")
+      }
+    } catch (error) {
+      console.error("❌ [RevenueCat] Failed to refresh subscription status:", error)
     }
   }
 

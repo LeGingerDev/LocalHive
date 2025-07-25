@@ -1,150 +1,79 @@
-import { useState, useEffect, useCallback } from "react"
-import { CustomerInfo, PurchasesPackage } from "react-native-purchases"
+import { useState, useEffect } from "react"
+import { Platform } from "react-native"
 
-import { revenueCatService, SubscriptionTier } from "../services/revenueCatService"
+import { revenueCatService } from "@/services/revenueCatService"
 
-export interface UseRevenueCatReturn {
-  isInitialized: boolean
-  hasActiveSubscription: boolean
-  customerInfo: CustomerInfo | null
-  subscriptionTiers: SubscriptionTier[]
-  isLoading: boolean
-  error: string | null
-  initialize: () => Promise<void>
-  purchasePackage: (packageToPurchase: PurchasesPackage) => Promise<void>
-  purchaseAndSync: (userID: string, packageToPurchase: PurchasesPackage) => Promise<void>
-  restorePurchases: () => Promise<void>
-  setUserID: (userID: string) => Promise<void>
-  refreshCustomerInfo: () => Promise<void>
+export interface SubscriptionTier {
+  id: string
+  name: string
+  price: string
+  period: string
+  features: string[]
 }
 
-export const useRevenueCat = (): UseRevenueCatReturn => {
-  const [isInitialized, setIsInitialized] = useState(false)
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null)
+export const useRevenueCat = () => {
   const [subscriptionTiers, setSubscriptionTiers] = useState<SubscriptionTier[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [canManageSubscription, setCanManageSubscription] = useState(false)
 
-  const initialize = useCallback(async () => {
+  useEffect(() => {
+    initializeRevenueCat()
+  }, [])
+
+  const initializeRevenueCat = async () => {
     try {
-      setIsLoading(true)
+      setLoading(true)
       setError(null)
+
+      // Initialize RevenueCat
       await revenueCatService.initialize()
-      setIsInitialized(true)
 
-      // Load initial data
-      await refreshCustomerInfo()
-      await loadSubscriptionTiers()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to initialize RevenueCat")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  const refreshCustomerInfo = useCallback(async () => {
-    try {
-      const info = await revenueCatService.getCustomerInfo()
-      setCustomerInfo(info)
-
-      if (info) {
-        const hasActive = Object.keys(info.entitlements.active).length > 0
-        setHasActiveSubscription(hasActive)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to get customer info")
-    }
-  }, [])
-
-  const loadSubscriptionTiers = useCallback(async () => {
-    try {
+      // Get subscription tiers
       const tiers = await revenueCatService.getSubscriptionTiers()
       setSubscriptionTiers(tiers)
+
+      // Check if user can manage subscription
+      const canManage = await revenueCatService.canManageSubscription()
+      setCanManageSubscription(canManage)
+
+      setLoading(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load subscription tiers")
+      console.error("Failed to initialize RevenueCat:", err)
+      setError(err instanceof Error ? err.message : "Failed to initialize RevenueCat")
+      setLoading(false)
     }
-  }, [])
+  }
 
-  const purchasePackage = useCallback(
-    async (packageToPurchase: PurchasesPackage) => {
-      try {
-        setIsLoading(true)
-        setError(null)
-        await revenueCatService.purchasePackage(packageToPurchase)
-        await refreshCustomerInfo()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to purchase package")
-        throw err
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [refreshCustomerInfo],
-  )
-
-  const purchaseAndSync = useCallback(
-    async (userID: string, packageToPurchase: PurchasesPackage) => {
-      try {
-        setIsLoading(true)
-        setError(null)
-        await revenueCatService.purchaseAndSync(userID, packageToPurchase)
-        await refreshCustomerInfo()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to purchase and sync package")
-        throw err
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [refreshCustomerInfo],
-  )
-
-  const restorePurchases = useCallback(async () => {
+  const openSubscriptionManagement = async () => {
     try {
-      setIsLoading(true)
-      setError(null)
-      await revenueCatService.restorePurchases()
-      await refreshCustomerInfo()
+      await revenueCatService.openSubscriptionManagement()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to restore purchases")
+      console.error("Failed to open subscription management:", err)
       throw err
-    } finally {
-      setIsLoading(false)
     }
-  }, [refreshCustomerInfo])
+  }
 
-  const setUserID = useCallback(
-    async (userID: string) => {
-      try {
-        setError(null)
-        await revenueCatService.setUserID(userID)
-        await refreshCustomerInfo()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to set user ID")
-        throw err
-      }
-    },
-    [refreshCustomerInfo],
-  )
+  const getSubscriptionManagementURL = () => {
+    return revenueCatService.getSubscriptionManagementURL()
+  }
 
-  // Initialize on mount
-  useEffect(() => {
-    initialize()
-  }, [initialize])
+  const refreshSubscriptionStatus = async () => {
+    try {
+      const canManage = await revenueCatService.canManageSubscription()
+      setCanManageSubscription(canManage)
+    } catch (err) {
+      console.error("Failed to refresh subscription status:", err)
+    }
+  }
 
   return {
-    isInitialized,
-    hasActiveSubscription,
-    customerInfo,
     subscriptionTiers,
-    isLoading,
+    loading,
     error,
-    initialize,
-    purchasePackage,
-    purchaseAndSync,
-    restorePurchases,
-    setUserID,
-    refreshCustomerInfo,
+    canManageSubscription,
+    openSubscriptionManagement,
+    getSubscriptionManagementURL,
+    refreshSubscriptionStatus,
   }
 }

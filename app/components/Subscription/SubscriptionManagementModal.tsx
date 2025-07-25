@@ -10,12 +10,13 @@ import {
   ViewStyle,
   TextStyle,
   Alert,
+  Linking,
 } from "react-native"
 
 import { Icon } from "@/components/Icon"
 import { useRevenueCat } from "@/hooks/useRevenueCat"
 import { useSubscription } from "@/hooks/useSubscription"
-import { SubscriptionService } from "@/services/subscriptionService"
+import { revenueCatService } from "@/services/revenueCatService"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
@@ -34,44 +35,57 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
 }) => {
   const { themed, theme } = useAppTheme()
   const subscription = useSubscription(userId)
-  const { subscriptionTiers } = useRevenueCat()
+  const { subscriptionTiers, canManageSubscription, openSubscriptionManagement, getSubscriptionManagementURL } = useRevenueCat()
 
   // Get the monthly subscription package for pricing
   const monthlyPackage = subscriptionTiers.find(
     (tier) => tier.id.includes("monthly") || tier.id.includes("$rc_monthly"),
   )
 
+  const handleManageSubscription = async () => {
+    try {
+      // Check if user has an active subscription to manage
+      if (!canManageSubscription) {
+        Alert.alert(
+          "No Active Subscription",
+          "You don't have an active subscription to manage. If you recently cancelled, changes may take a few minutes to reflect.",
+          [{ text: "OK" }]
+        )
+        return
+      }
+
+      // Open platform subscription management
+      await openSubscriptionManagement()
+    } catch (error) {
+      console.error("Failed to open subscription management:", error)
+      Alert.alert(
+        "Error",
+        "Unable to open subscription management. Please visit your device's subscription settings manually.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Open Settings",
+            onPress: () => {
+              const url = getSubscriptionManagementURL()
+              if (url) {
+                Linking.openURL(url)
+              }
+            },
+          },
+        ]
+      )
+    }
+  }
+
   const handleCancelSubscription = async () => {
     Alert.alert(
-      "Cancel Subscription",
-      "Are you sure you want to cancel your Pro subscription? You'll lose access to unlimited features at the end of your current billing period.",
+      "Manage Subscription",
+      "To cancel your subscription, you'll need to manage it through your device's subscription settings. This ensures proper cancellation and billing adjustments.",
       [
-        { text: "Keep Subscription", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         {
-          text: "Cancel Subscription",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // For now, just set to free - in a real app you'd integrate with payment provider
-              if (userId) {
-                const { success, error } = await SubscriptionService.updateSubscriptionStatus(
-                  userId,
-                  "free",
-                )
-                if (error) {
-                  Alert.alert("Error", "Failed to cancel subscription. Please try again.")
-                } else {
-                  Alert.alert(
-                    "Success",
-                    "Your subscription has been cancelled. You'll keep Pro access until the end of your billing period.",
-                  )
-                  onClose()
-                }
-              }
-            } catch (err) {
-              Alert.alert("Error", "Something went wrong. Please try again.")
-            }
-          },
+          text: "Manage Subscription",
+          onPress: handleManageSubscription,
         },
       ],
     )
@@ -104,6 +118,38 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
     }
   }
 
+  const getSubscriptionStatusText = () => {
+    if (!subscription.subscriptionInfo) return "Loading..."
+    
+    switch (subscription.subscriptionInfo.subscription_status) {
+      case "pro":
+        return "Pro Subscription"
+      case "trial":
+        return "Trial Period"
+      case "expired":
+        return "Subscription Expired"
+      case "free":
+      default:
+        return "Free Plan"
+    }
+  }
+
+  const getSubscriptionStatusColor = () => {
+    if (!subscription.subscriptionInfo) return theme.colors.textDim
+    
+    switch (subscription.subscriptionInfo.subscription_status) {
+      case "pro":
+        return theme.colors.success
+      case "trial":
+        return theme.colors.cta
+      case "expired":
+        return theme.colors.error
+      case "free":
+      default:
+        return theme.colors.textDim
+    }
+  }
+
   if (subscription.loading) {
     return (
       <Modal visible={visible} transparent animationType="fade">
@@ -132,8 +178,10 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
             {/* Header */}
             <View style={themed($headerContainer)}>
               <View style={themed($statusBadge)}>
-                <Icon icon="lightning" size={24} color={theme.colors.success} />
-                <Text style={themed($statusText)}>Pro Subscription</Text>
+                <Icon icon="lightning" size={24} color={getSubscriptionStatusColor()} />
+                <Text style={[themed($statusText), { color: getSubscriptionStatusColor() }]}>
+                  {getSubscriptionStatusText()}
+                </Text>
               </View>
               <Text style={themed($subtitle)}>Manage your subscription and billing</Text>
             </View>
@@ -144,14 +192,18 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
               <View style={themed($planDetails)}>
                 <View style={themed($planRow)}>
                   <Text style={themed($planLabel)}>Plan:</Text>
-                  <Text style={themed($planValue)}>Visu Pro</Text>
-                </View>
-                <View style={themed($planRow)}>
-                  <Text style={themed($planLabel)}>Price:</Text>
                   <Text style={themed($planValue)}>
-                    {monthlyPackage ? monthlyPackage.price : "$5.99"}/month
+                    {subscription.subscriptionInfo?.subscription_status === "pro" ? "Visu Pro" : "Free Plan"}
                   </Text>
                 </View>
+                {subscription.subscriptionInfo?.subscription_status === "pro" && (
+                  <View style={themed($planRow)}>
+                    <Text style={themed($planLabel)}>Price:</Text>
+                    <Text style={themed($planValue)}>
+                      {monthlyPackage ? monthlyPackage.price : "$5.99"}/month
+                    </Text>
+                  </View>
+                )}
                 {subscription.subscriptionInfo?.subscription_expires_at && (
                   <View style={themed($planRow)}>
                     <Text style={themed($planLabel)}>Next Billing:</Text>
@@ -197,29 +249,85 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
               <Text style={themed($sectionTitle)}>Pro Features</Text>
               <View style={themed($featuresContainer)}>
                 <View style={themed($featureItem)}>
-                  <Icon icon="check" size={16} color={theme.colors.success} />
-                  <Text style={themed($featureText)}>Unlimited Groups</Text>
+                  <Icon 
+                    icon="check" 
+                    size={16} 
+                    color={subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.success : theme.colors.textDim} 
+                  />
+                  <Text style={[
+                    themed($featureText), 
+                    { color: subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.text : theme.colors.textDim }
+                  ]}>
+                    Unlimited Groups
+                  </Text>
                 </View>
                 <View style={themed($featureItem)}>
-                  <Icon icon="check" size={16} color={theme.colors.success} />
-                  <Text style={themed($featureText)}>Unlimited Items</Text>
+                  <Icon 
+                    icon="check" 
+                    size={16} 
+                    color={subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.success : theme.colors.textDim} 
+                  />
+                  <Text style={[
+                    themed($featureText), 
+                    { color: subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.text : theme.colors.textDim }
+                  ]}>
+                    Unlimited Items
+                  </Text>
                 </View>
                 <View style={themed($featureItem)}>
-                  <Icon icon="check" size={16} color={theme.colors.success} />
-                  <Text style={themed($featureText)}>AI-Powered Search</Text>
+                  <Icon 
+                    icon="check" 
+                    size={16} 
+                    color={subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.success : theme.colors.textDim} 
+                  />
+                  <Text style={[
+                    themed($featureText), 
+                    { color: subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.text : theme.colors.textDim }
+                  ]}>
+                    AI-Powered Search
+                  </Text>
                 </View>
                 <View style={themed($featureItem)}>
-                  <Icon icon="check" size={16} color={theme.colors.success} />
-                  <Text style={themed($featureText)}>Priority Support</Text>
+                  <Icon 
+                    icon="check" 
+                    size={16} 
+                    color={subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.success : theme.colors.textDim} 
+                  />
+                  <Text style={[
+                    themed($featureText), 
+                    { color: subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.text : theme.colors.textDim }
+                  ]}>
+                    Priority Support
+                  </Text>
                 </View>
+              </View>
+            </View>
+
+            {/* Subscription Management Info */}
+            <View style={themed($sectionContainer)}>
+              <Text style={themed($sectionTitle)}>Subscription Management</Text>
+              <View style={themed($infoContainer)}>
+                <Text style={themed($infoText)}>
+                  To cancel or modify your subscription, you'll need to manage it through your device's subscription settings. This ensures proper billing adjustments and immediate cancellation.
+                </Text>
+                <Text style={themed($infoText)}>
+                  Changes may take a few minutes to reflect in the app.
+                </Text>
               </View>
             </View>
           </ScrollView>
 
           {/* Action Buttons */}
           <View style={themed($buttonContainer)}>
+            {subscription.subscriptionInfo?.subscription_status === "pro" && (
+              <TouchableOpacity style={themed($manageButton)} onPress={handleManageSubscription}>
+                <Text style={themed($manageButtonText)}>Manage Subscription</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={themed($cancelButton)} onPress={handleCancelSubscription}>
-              <Text style={themed($cancelButtonText)}>Cancel Subscription</Text>
+              <Text style={themed($cancelButtonText)}>
+                {subscription.subscriptionInfo?.subscription_status === "pro" ? "Cancel Subscription" : "Subscription Help"}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -375,6 +483,23 @@ const $buttonContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   gap: spacing.md,
 })
 
+const $manageButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  borderWidth: 1,
+  borderColor: colors.tint,
+  borderRadius: 12,
+  paddingVertical: spacing.lg,
+  paddingHorizontal: spacing.xl,
+  alignItems: "center",
+  justifyContent: "center",
+})
+
+const $manageButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
+  color: colors.tint,
+  textAlign: "center",
+})
+
 const $cancelButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   borderWidth: 1,
   borderColor: colors.error,
@@ -398,6 +523,20 @@ const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.textDim,
   textAlign: "center",
   padding: 40,
+})
+
+const $infoContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  backgroundColor: "rgba(0,0,0,0.05)",
+  borderRadius: 12,
+  padding: spacing.md,
+  marginTop: spacing.md,
+})
+
+const $infoText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.textDim,
+  marginBottom: spacing.sm,
 })
 
 export default SubscriptionManagementModal
