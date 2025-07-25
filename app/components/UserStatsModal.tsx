@@ -1,5 +1,6 @@
 import { View, ViewStyle, Modal, TouchableOpacity, TextStyle } from "react-native"
 
+import { Avatar } from "@/components/Avatar"
 import { Icon } from "@/components/Icon"
 import { ProfileStat } from "@/components/profiles/ProfileStat"
 import { Text } from "@/components/Text"
@@ -36,9 +37,13 @@ export const UserStatsModal = ({
           <View style={themed($header)}>
             <View style={themed($headerContent)}>
               <View style={themed($userInfo)}>
-                <View style={themed($avatar)}>
-                  <Text style={themed($avatarInitial)} text={userInitial} />
-                </View>
+                <Avatar
+                  imageUrl={_userAvatar}
+                  initials={userInitial}
+                  size={50}
+                  style={themed($avatarSpacing)}
+                  testID="userStatsModal_avatar"
+                />
                 <View style={themed($userDetails)}>
                   <Text style={themed($userName)} text={userName} />
                   <Text style={themed($userSubtitle)} text="Member Stats" />
@@ -110,6 +115,10 @@ const $headerContent = (): ViewStyle => ({
 const $userInfo = (): ViewStyle => ({
   flexDirection: "row",
   alignItems: "center",
+})
+
+const $avatarSpacing = ({ spacing }: any): ViewStyle => ({
+  marginRight: spacing.md,
 })
 
 const $avatar = ({ colors, spacing }: any): ViewStyle => ({

@@ -25,6 +25,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useGroups } from "@/hooks/useGroups"
 import { useSubscription } from "@/hooks/useSubscription"
 import { Group, GroupInvitation } from "@/services/api/types"
+import { HapticService } from "@/services/hapticService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 
@@ -110,6 +111,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
   }
 
   const handleCreateGroup = () => {
+    HapticService.selection()
     console.log(`🔍 [GroupsScreen] handleCreateGroup called`)
     console.log(`👤 [GroupsScreen] User:`, user?.id)
     console.log(`📊 [GroupsScreen] Subscription info:`, {
@@ -145,14 +147,17 @@ export const GroupsScreen = ({ navigation, route }: any) => {
   }
 
   const handleNavigateToGroupDetail = (groupId: string) => {
+    HapticService.selection()
     navigation.navigate("GroupDetail", { groupId })
   }
 
   const handleGroupsToggle = useCallback(() => {
+    HapticService.light()
     setGroupsCollapsed(!groupsCollapsed)
   }, [groupsCollapsed])
 
   const handleRefresh = useCallback(async () => {
+    HapticService.light()
     if (user) {
       await refresh()
     }

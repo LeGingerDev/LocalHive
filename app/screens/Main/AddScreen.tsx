@@ -22,6 +22,7 @@ import { Icon } from "@/components/Icon"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { TextField } from "@/components/TextField"
+import Config from "@/config"
 import { useAuth } from "@/context/AuthContext"
 import { useGroups } from "@/hooks/useGroups"
 import { useItemCategories } from "@/hooks/useItemCategories"
@@ -31,6 +32,7 @@ import { navigate } from "@/navigators/navigationUtilities"
 import { cameraService } from "@/services/cameraService"
 import { ItemService } from "@/services/supabase/itemService"
 import { supabase } from "@/services/supabase/supabase"
+import { HapticService } from "@/services/hapticService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
@@ -188,6 +190,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
       return
     }
 
+    HapticService.medium()
     // Show confirmation alert
     setAlertTitle("Save Item")
     setAlertMessage(`Are you sure you want to save "${title.trim()}" to your group?`)
@@ -229,13 +232,13 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
         try {
           console.log("[AddScreen] Triggering embedding generation for item:", createdItem.id)
           const response = await fetch(
-            `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/generate-item-embedding`,
+            `${Config.SUPABASE_URL}/functions/v1/generate-item-embedding`,
             {
               method: "POST",
-              headers: {
-                "Authorization": `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-                "Content-Type": "application/json",
-              },
+                              headers: {
+                  "Authorization": `Bearer ${Config.SUPABASE_KEY}`,
+                  "Content-Type": "application/json",
+                },
               body: JSON.stringify({
                 item_id: createdItem.id,
                 title: title.trim(),
@@ -277,11 +280,10 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
 
         try {
           // Use the same direct fetch method as HomeScreen (which works)
-          const supabaseUrl = "https://xnnobyeytyycngybinqj.supabase.co"
+          const supabaseUrl = Config.SUPABASE_URL
           const bucket = "items"
           const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${filePath}`
-          const anonKey =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhubm9ieWV5dHl5Y25neWJpbnFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NjEyMDQsImV4cCI6MjA2NzIzNzIwNH0.bBO9iuzsMU1xUq_EJAi6esjWb0Jm1Arj2mQfXXqIEKw"
+          const anonKey = Config.SUPABASE_KEY
 
           console.log("Uploading to:", uploadUrl)
 
@@ -346,19 +348,23 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
 
   // Suggestion button handlers
   const handleAddPhoto = useCallback(() => {
+    HapticService.light()
     setShowPhotoSection(true)
   }, [])
 
   const handleAddLocation = useCallback(() => {
+    HapticService.light()
     setShowLocationSection(true)
   }, [])
 
   const handleAddNotes = useCallback(() => {
+    HapticService.light()
     setShowNotesSection(true)
   }, [])
 
   // Clear form function
   const handleClearForm = useCallback(() => {
+    HapticService.light()
     setTitle("")
     setSelectedCategory(null)
     setLocation("")
@@ -431,6 +437,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
 
   // Handler for taking a photo
   const handleTakePhoto = async () => {
+    HapticService.light()
     try {
       const result = await cameraService.takePhoto({
         allowsEditing: true,
@@ -454,6 +461,7 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
 
   // Handler for picking from gallery
   const handlePickFromGallery = async () => {
+    HapticService.light()
     try {
       const result = await cameraService.pickFromGallery({
         allowsEditing: true,
@@ -571,10 +579,6 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
                 disabled={isSubmitting}
               />
             )}
-            <Text
-              style={themed($categoryHint)}
-              text="AI will suggest the best category based on your title"
-            />
 
             {/* Photo Section - Injected when Add Photo is clicked */}
             {showPhotoSection && (

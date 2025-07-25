@@ -5,6 +5,7 @@ import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { ItemModal } from "@/components/ItemModal"
 import { Text } from "@/components/Text"
 import { ItemWithProfile } from "@/services/supabase/itemService"
+import { HapticService } from "@/services/hapticService"
 import { ItemService } from "@/services/supabase/itemService"
 import { getCategoryColor } from "@/theme/categoryColors"
 import { useAppTheme } from "@/theme/context"
@@ -42,12 +43,14 @@ export const ItemCard = ({
   const [deleteAlertVisible, setDeleteAlertVisible] = useState(false)
 
   const handlePress = () => {
+    HapticService.light()
     console.log("[ItemCard] Opening modal for item:", item.title)
     setModalVisible(true)
   }
 
   const handleLongPress = () => {
     if (!deletable) return // Only allow delete if deletable
+    HapticService.medium()
     console.log("[ItemCard] Long press detected for item:", item.title)
     setDeleteAlertVisible(true)
   }

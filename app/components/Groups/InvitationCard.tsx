@@ -9,6 +9,7 @@ import Animated, {
 
 import { Icon } from "@/components/Icon"
 import { Text } from "@/components/Text"
+import { HapticService } from "@/services/hapticService"
 import { GroupInvitation } from "@/services/api/types"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
@@ -45,6 +46,7 @@ export const InvitationCard = ({ invite, onRespond, index = 0 }: InvitationCardP
   }, [])
 
   const handleRespond = async (status: "accepted" | "declined") => {
+    HapticService.medium()
     console.log("🔍 [InvitationCard] handleRespond called with status:", status)
     console.log("🔍 [InvitationCard] Invitation ID:", invite.id)
     console.log("🔍 [InvitationCard] Group name:", groupName)

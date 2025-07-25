@@ -13,6 +13,7 @@ import {
   ViewStyle,
 } from "react-native"
 
+import { HapticService } from "@/services/hapticService"
 import { useAppTheme } from "@/theme/context"
 import { $styles } from "@/theme/styles"
 import type { ThemedStyle } from "@/theme/types"
@@ -167,6 +168,7 @@ export function Toggle<T>(props: ToggleProps<T>) {
    */
   function handlePress(e: GestureResponderEvent) {
     if (disabled) return
+    HapticService.light()
     onValueChange?.(!value)
     onPress?.(e)
   }

@@ -19,6 +19,7 @@ import { useGroups } from "@/hooks/useGroups"
 import { useSubscription } from "@/hooks/useSubscription"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { navigate } from "@/navigators/navigationUtilities"
+import { HapticService } from "@/services/hapticService"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
@@ -75,26 +76,32 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
 
   // #region Navigation Handlers
   const handleCreateGroup = useCallback(() => {
+    HapticService.selection()
     navigate("CreateGroup")
   }, [])
 
   const handleAddItem = useCallback(() => {
+    HapticService.selection()
     navigation.navigate("Add")
   }, [navigation])
 
   const handleSearch = useCallback(() => {
+    HapticService.selection()
     navigation.navigate("Search", { enableAI: true })
   }, [navigation])
 
   const handleViewGroups = useCallback(() => {
+    HapticService.selection()
     navigation.navigate("Groups")
   }, [navigation])
 
   const handleManagePress = useCallback(() => {
+    HapticService.light()
     setIsManageModalVisible(true)
   }, [])
 
   const handleCloseManageModal = useCallback(() => {
+    HapticService.light()
     setIsManageModalVisible(false)
   }, [])
 
@@ -197,7 +204,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
         <WelcomeMessage userProfile={userProfile} />
 
         {/* Subscription Status */}
-        <SubscriptionStatusBox userId={user?.id || null} onManagePress={handleManagePress} />
+        <SubscriptionStatusBox userId={user?.id || null} />
 
         {/* Quick Actions */}
         <QuickActions

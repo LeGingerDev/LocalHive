@@ -12,6 +12,7 @@ import Animated, {
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { Icon } from "@/components/Icon"
 import { Text } from "@/components/Text"
+import { HapticService } from "@/services/hapticService"
 import { Group } from "@/services/api/types"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
@@ -51,6 +52,7 @@ export const GroupCard = ({ group, navigation, index = 0, onNavigateToDetail }: 
   }, [])
 
   const handleViewGroup = () => {
+    HapticService.selection()
     if (onNavigateToDetail) {
       onNavigateToDetail(group.id)
     } else {

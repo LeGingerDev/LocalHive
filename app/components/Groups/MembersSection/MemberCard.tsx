@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native"
 
+import { Avatar } from "@/components/Avatar"
 import { Icon } from "@/components/Icon"
 import { Text } from "@/components/Text"
 import { GroupMember } from "@/services/api/types"
@@ -85,17 +86,16 @@ export const MemberCard: FC<MemberCardProps> = memo(function MemberCard(props) {
   const joinedDate = new Date(data.joined_at).toLocaleDateString()
   const initial = memberName[0]?.toUpperCase() || "?"
 
-  // Generate avatar color based on member name
-  const avatarColors = ["primary300", "accent200", "secondary300", "primary200", "accent300"]
-  const colorIndex = memberName.length % avatarColors.length
-  const avatarColor = avatarColors[colorIndex]
-
   return (
     <View style={[themed($container), style]} testID={testID}>
       <TouchableOpacity style={$cardContent} onPress={onPress} activeOpacity={0.7}>
-        <View style={[themed($avatar), themed($avatarColor(avatarColor))]}>
-          <Text style={themed($avatarInitial)} text={initial} />
-        </View>
+        <Avatar
+          imageUrl={data.user?.avatar_url}
+          initials={initial}
+          size={44}
+          style={themed($avatarSpacing)}
+          testID={`${testID}_avatar`}
+        />
         <View style={$infoContainer}>
           <Text style={themed($name)} text={memberName} />
           <Text style={themed($meta)} text={`Joined ${joinedDate}`} />
@@ -163,6 +163,10 @@ const $avatarInitial: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.palette.neutral100,
   fontFamily: typography.primary.medium,
   fontSize: 20,
+})
+
+const $avatarSpacing: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  marginRight: spacing.md,
 })
 
 const $infoContainer: ViewStyle = {

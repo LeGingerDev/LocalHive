@@ -12,6 +12,7 @@ import {
   Easing,
 } from "react-native"
 
+import { HapticService } from "@/services/hapticService"
 import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
 
@@ -65,6 +66,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
 
   const handleSelect = (val: string) => {
     if (disabled) return
+    HapticService.selection()
     onChange(val)
     setModalVisible(false)
   }
@@ -73,7 +75,12 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     <>
       <Pressable
         style={[themed($dropdownContainer), style, disabled && themed($dropdownDisabled)]}
-        onPress={() => !disabled && setModalVisible(true)}
+        onPress={() => {
+          if (!disabled) {
+            HapticService.light()
+            setModalVisible(true)
+          }
+        }}
         accessibilityRole="button"
         testID={testID}
         disabled={disabled}

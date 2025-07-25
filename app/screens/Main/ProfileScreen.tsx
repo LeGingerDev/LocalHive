@@ -17,6 +17,7 @@ import { ThemeToggle } from "@/components/ThemeToggle"
 import { useAuth } from "@/context/AuthContext"
 import { useSubscription } from "@/hooks/useSubscription"
 import googleAuthService from "@/services/supabase/googleAuthService"
+import { HapticService } from "@/services/hapticService"
 import { useAppTheme } from "@/theme/context"
 import { setSystemUIBackgroundColor } from "@/theme/context.utils"
 import { spacing } from "@/theme/spacing"
@@ -38,6 +39,7 @@ const ProfileScreen = () => {
   // every time the ProfileScreen mounts
 
   const handleSignOut = async () => {
+    HapticService.medium()
     try {
       await googleAuthService.signOut()
       navigation.reset({
@@ -50,18 +52,22 @@ const ProfileScreen = () => {
   }
 
   const handleManageSubscription = () => {
+    HapticService.selection()
     setIsManageModalVisible(true)
   }
 
   const handleCloseManageModal = () => {
+    HapticService.light()
     setIsManageModalVisible(false)
   }
 
   const handlePrivacySecurityPress = () => {
+    HapticService.selection()
     setIsPrivacySecurityModalVisible(true)
   }
 
   const handleClosePrivacySecurityModal = () => {
+    HapticService.light()
     setIsPrivacySecurityModalVisible(false)
   }
 

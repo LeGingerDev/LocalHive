@@ -27,6 +27,7 @@ import { askAIAboutItems, AIQueryResponse } from "@/services/openaiService"
 import { ItemWithProfile, ItemService } from "@/services/supabase/itemService"
 import { supabase } from "@/services/supabase/supabase"
 import { searchItemsByVector } from "@/services/vectorSearchService"
+import { HapticService } from "@/services/hapticService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
@@ -130,6 +131,7 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
   const handleAISearch = useCallback(async () => {
     if (!query.trim()) return
 
+    HapticService.medium()
     setError(null)
     setAiResponse(null)
     setIsLoading(true)
@@ -251,6 +253,7 @@ export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
       },
     })
 
+    HapticService.light()
     setIsAIMode(newMode)
     setQuery("") // Clear input
     setResults([]) // Clear results

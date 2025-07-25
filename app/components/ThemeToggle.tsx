@@ -4,6 +4,7 @@ import { View, StyleProp, ViewStyle, FlexAlignType, TextStyle } from "react-nati
 import { Icon } from "@/components/Icon"
 import { Text } from "@/components/Text"
 import { Switch } from "@/components/Toggle/Switch"
+import { HapticService } from "@/services/hapticService"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
@@ -46,6 +47,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ style }) => {
   const { themeContext, setThemeContextOverride, themed, theme } = useAppTheme()
 
   const handleToggle = (value: boolean) => {
+    HapticService.light()
     setThemeContextOverride(value ? "dark" : "light")
   }
 

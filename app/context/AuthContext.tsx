@@ -77,7 +77,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { data: profileData, error } = await AuthService.getProfileByUserId(supabaseUser.id)
 
         if (profileData) {
+          console.log("[AuthContext] Loaded profile from database:", {
+            id: profileData.id,
+            avatar_url: profileData.avatar_url,
+            full_name: profileData.full_name,
+          })
           setUserProfile(profileData as UserProfile)
+          console.log("[AuthContext] userProfile state updated")
         } else {
           // If profile doesn't exist but we have user data, create it
           // Only set Google auth name for new profiles, not existing ones
@@ -88,7 +94,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 {
                   email: supabaseUser.email,
                   full_name: supabaseUser.user_metadata?.full_name,
-                  avatar_url: supabaseUser.user_metadata?.avatar_url,
+                  // Don't set avatar_url from auth metadata - let it be null initially
+                  // The user can upload their avatar later
                 },
                 true, // Preserve existing name if profile already exists
               )

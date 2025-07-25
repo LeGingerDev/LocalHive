@@ -145,35 +145,57 @@ export class CameraService {
     maxWidth: number = 1024,
     maxHeight: number = 1024,
   ): Promise<CompressedImageResult> {
-    const originalSize = await this.getFileSize(imageUri)
+    try {
+      console.log("[CameraService] Starting image compression...")
+      const originalSize = await this.getFileSize(imageUri)
 
-    const result = await ImageManipulator.manipulateAsync(
-      imageUri,
-      [
-        {
-          resize: {
-            width: maxWidth,
-            height: maxHeight,
+      const result = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [
+          {
+            resize: {
+              width: maxWidth,
+              height: maxHeight,
+            },
           },
+        ],
+        {
+          compress: quality,
+          format: ImageManipulator.SaveFormat.JPEG,
         },
-      ],
-      {
-        compress: quality,
-        format: ImageManipulator.SaveFormat.JPEG,
-      },
-    )
+      )
 
-    const compressedSize = await this.getFileSize(result.uri)
+      const compressedSize = await this.getFileSize(result.uri)
 
-    return {
-      uri: result.uri,
-      width: result.width,
-      height: result.height,
-      type: "image/jpeg",
-      compressedUri: result.uri,
-      originalSize,
-      compressedSize,
-      compressionRatio: compressedSize / originalSize,
+      console.log("[CameraService] Image compression completed successfully")
+
+      return {
+        uri: result.uri,
+        width: result.width,
+        height: result.height,
+        type: "image/jpeg",
+        compressedUri: result.uri,
+        originalSize,
+        compressedSize,
+        compressionRatio: compressedSize / originalSize,
+      }
+    } catch (error) {
+      console.error("[CameraService] Image compression failed:", error)
+      
+      // Return the original image if compression fails
+      console.log("[CameraService] Returning original image as fallback")
+      const originalSize = await this.getFileSize(imageUri)
+      
+      return {
+        uri: imageUri,
+        width: 0, // We don't have this info for the original
+        height: 0,
+        type: "image/jpeg",
+        compressedUri: imageUri,
+        originalSize,
+        compressedSize: originalSize,
+        compressionRatio: 1, // No compression
+      }
     }
   }
 
@@ -184,11 +206,19 @@ export class CameraService {
    */
   private async getFileSize(uri: string): Promise<number> {
     try {
+      console.log("[CameraService] Getting file size for:", uri)
       const response = await fetch(uri)
+      
+      if (!response.ok) {
+        console.warn("[CameraService] HTTP error getting file size:", response.status)
+        return 0
+      }
+      
       const blob = await response.blob()
+      console.log("[CameraService] File size determined:", blob.size, "bytes")
       return blob.size
     } catch (error) {
-      console.warn("Could not determine file size:", error)
+      console.warn("[CameraService] Could not determine file size:", error)
       return 0
     }
   }

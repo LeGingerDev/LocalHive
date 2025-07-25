@@ -9,6 +9,8 @@ import {
 } from "react-native"
 import Ionicons from "react-native-vector-icons/Ionicons"
 
+import { Avatar } from "@/components/Avatar"
+import { AvatarUploadModal } from "@/components/AvatarUploadModal"
 import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
 import { useUserStats } from "@/hooks/useUserStats"
@@ -121,12 +123,11 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
 
   // #region Hooks & Context
   const { themed } = useAppTheme()
-  const { user, googleUser, userProfile, isLoading: authLoading } = useAuth()
+  const { user, googleUser, userProfile, isLoading: authLoading, refreshUser } = useAuth()
   const userStats = useUserStats()
   const [isEditingName, setIsEditingName] = useState(false)
+  const [showAvatarUploadModal, setShowAvatarUploadModal] = useState(false)
   // #endregion
-
-  // Removed debug logging to improve performance
 
   // #region Memoized Values
   const _containerStyles = useMemo(() => [themed($container), style], [themed, style])
@@ -137,20 +138,44 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
       return data
     }
 
-    // First priority: use the user profile from the database
+    // First priority: use the user profile from the database (this has uploaded avatars)
     if (userProfile) {
+      console.log("[ProfileBox] Database profile data:", {
+        id: userProfile.id,
+        avatar_url: userProfile.avatar_url,
+        full_name: userProfile.full_name,
+      })
+      
+      // If we have an uploaded avatar in the database, use it
+      // Otherwise, fall back to auth metadata
+      let avatarUrl = userProfile.avatar_url
+      
+      if (!avatarUrl) {
+        // No uploaded avatar, try auth metadata
+        if (user?.user_metadata?.avatar_url) {
+          console.log("[ProfileBox] No database avatar, using auth metadata:", user.user_metadata.avatar_url)
+          avatarUrl = user.user_metadata.avatar_url
+        } else if (googleUser?.picture) {
+          console.log("[ProfileBox] No database avatar, using Google picture:", googleUser.picture)
+          avatarUrl = googleUser.picture
+        }
+      } else {
+        console.log("[ProfileBox] Using uploaded database avatar:", avatarUrl)
+      }
+      
       return {
         id: userProfile.id,
         email: userProfile.email,
         name: userProfile.full_name,
         displayName: userProfile.full_name || userProfile.email?.split("@")[0],
-        avatarUrl: userProfile.avatar_url,
+        avatarUrl: avatarUrl,
         bio: userProfile.bio,
       }
     }
 
-    // Second priority: use Supabase user data
+    // Second priority: use Supabase user data (auth metadata)
     if (user) {
+      console.log("[ProfileBox] No database profile, using Supabase user avatar:", user.user_metadata?.avatar_url)
       return {
         id: user.id,
         email: user.email,
@@ -162,6 +187,7 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
 
     // Third priority: use Google user data
     if (googleUser) {
+      console.log("[ProfileBox] No database profile, using Google user avatar:", googleUser.picture)
       return {
         id: googleUser.id,
         email: googleUser.email,
@@ -211,6 +237,33 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
       onRetry()
     }
   }, [onRetry])
+
+  const _handleAvatarPress = useCallback((): void => {
+    if (_userData?.id) {
+      setShowAvatarUploadModal(true)
+    }
+  }, [_userData?.id])
+
+  const _handleAvatarUploaded = useCallback(async (avatarUrl: string): Promise<void> => {
+    console.log("[ProfileBox] Avatar uploaded successfully:", avatarUrl)
+    console.log("[ProfileBox] Current userProfile before refresh:", userProfile?.avatar_url)
+    
+    try {
+      // Refresh the user data to update the avatar in the UI
+      await refreshUser()
+      console.log("[ProfileBox] User data refreshed successfully")
+      
+      // Add a small delay to ensure UI updates
+      await new Promise(resolve => setTimeout(resolve, 100))
+      console.log("[ProfileBox] Avatar update complete")
+    } catch (error) {
+      console.error("[ProfileBox] Error refreshing user data:", error)
+    }
+  }, [refreshUser, userProfile?.avatar_url])
+
+  const _handleCloseAvatarModal = useCallback((): void => {
+    setShowAvatarUploadModal(false)
+  }, [])
   // #endregion
 
   // #region Render Helpers
@@ -260,49 +313,68 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
 
   const _renderContent = (): React.ReactElement => {
     return (
-      <View style={_containerStyles} testID={testID} {..._getPressableProps()}>
-        {/* Edit Button - positioned absolutely in top-right corner */}
-        {!isEditingName && (
-          <TouchableOpacity
-            style={themed($editButton)}
-            onPress={() => setIsEditingName(true)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="pencil" size={14} color={themed($editButtonIcon).color} />
-          </TouchableOpacity>
-        )}
+      <>
+        <View style={_containerStyles} testID={testID} {..._getPressableProps()}>
+          {/* Edit Button - positioned absolutely in top-right corner */}
+          {!isEditingName && (
+            <TouchableOpacity
+              style={themed($editButton)}
+              onPress={() => setIsEditingName(true)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="pencil" size={14} color={themed($editButtonIcon).color} />
+            </TouchableOpacity>
+          )}
 
-        <View style={themed($contentContainer)}>
-          {/* Avatar */}
-          <View style={themed($avatar)}>
-            <Text style={themed($avatarInitial)} text={_avatarInitial} />
+          <View style={themed($contentContainer)}>
+            {/* User Avatar */}
+            <Avatar
+              imageUrl={_userData?.avatarUrl}
+              initials={_avatarInitial}
+              size={70}
+              clickable={true}
+              onPress={_handleAvatarPress}
+              style={themed($avatarSpacing)}
+              testID={`${testID}_avatar`}
+            />
+            {/* User Name */}
+            <EditableProfileName
+              initialName={_displayName}
+              style={themed($name)}
+              showEditButton={false}
+              isEditing={isEditingName}
+              onEditingChange={setIsEditingName}
+            />
+            {/* User Email */}
+            <Text style={themed($email)} text={_displayEmail} testID={`${testID}_email`} />
+            {/* User Bio - only show if there is bio content */}
+            {_displayBio ? (
+              <Text style={themed($bio)} text={_displayBio} testID={`${testID}_bio`} />
+            ) : null}
           </View>
-          {/* User Name */}
-          <EditableProfileName
-            initialName={_displayName}
-            style={themed($name)}
-            showEditButton={false}
-            isEditing={isEditingName}
-            onEditingChange={setIsEditingName}
+          {/* Separator line */}
+          <View style={themed($separator)} />
+          {/* ProfileStat */}
+          <ProfileStat
+            stats={[
+              { value: userStats.stats.groupsCount, label: "Groups" },
+              { value: userStats.stats.itemsCount, label: "Items Added" },
+              { value: userStats.stats.groupsCreatedCount, label: "Groups Created" },
+            ]}
           />
-          {/* User Email */}
-          <Text style={themed($email)} text={_displayEmail} testID={`${testID}_email`} />
-          {/* User Bio - only show if there is bio content */}
-          {_displayBio ? (
-            <Text style={themed($bio)} text={_displayBio} testID={`${testID}_bio`} />
-          ) : null}
         </View>
-        {/* Separator line */}
-        <View style={themed($separator)} />
-        {/* ProfileStat */}
-        <ProfileStat
-          stats={[
-            { value: userStats.stats.groupsCount, label: "Groups" },
-            { value: userStats.stats.itemsCount, label: "Items Added" },
-            { value: userStats.stats.groupsCreatedCount, label: "Groups Created" },
-          ]}
-        />
-      </View>
+
+        {/* Avatar Upload Modal */}
+        {_userData?.id && (
+          <AvatarUploadModal
+            visible={showAvatarUploadModal}
+            userId={_userData.id}
+            onClose={_handleCloseAvatarModal}
+            onAvatarUploaded={_handleAvatarUploaded}
+            testID={`${testID}_avatarUploadModal`}
+          />
+        )}
+      </>
     )
   }
 
@@ -365,6 +437,10 @@ const $contentContainer: ThemedStyle<ViewStyle> = () => ({
   flex: 1,
   alignItems: "center",
   justifyContent: "center",
+})
+
+const $avatarSpacing: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  marginBottom: spacing.sm,
 })
 
 const $avatar: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
