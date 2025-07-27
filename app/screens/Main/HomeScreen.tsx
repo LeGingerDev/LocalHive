@@ -10,6 +10,7 @@ import {
   type RecentActivitySectionRef,
 } from "@/components/Home"
 import { Screen } from "@/components/Screen"
+import { SearchModal } from "@/components/SearchModal"
 import { SubscriptionStatusBox } from "@/components/Subscription"
 import SubscriptionManagementModal from "@/components/Subscription/SubscriptionManagementModal"
 import { Text } from "@/components/Text"
@@ -38,6 +39,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<HomeError | null>(null)
   const [isManageModalVisible, setIsManageModalVisible] = useState<boolean>(false)
+  const [isSearchModalVisible, setIsSearchModalVisible] = useState<boolean>(false)
   const lastRefreshTimeRef = useRef<number>(0)
   const isRefreshingRef = useRef<boolean>(false)
   // #endregion
@@ -87,8 +89,8 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleSearch = useCallback(() => {
     HapticService.selection()
-    navigation.navigate("Search", { enableAI: true })
-  }, [navigation])
+    setIsSearchModalVisible(true)
+  }, [])
 
   const handleViewGroups = useCallback(() => {
     HapticService.selection()
@@ -236,6 +238,12 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
         visible={isManageModalVisible}
         onClose={handleCloseManageModal}
         userId={user?.id || null}
+      />
+      {/* Search Modal */}
+      <SearchModal
+        visible={isSearchModalVisible}
+        onClose={() => setIsSearchModalVisible(false)}
+        enableAI={true}
       />
     </Screen>
   )
