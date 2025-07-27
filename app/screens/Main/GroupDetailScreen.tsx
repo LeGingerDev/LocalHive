@@ -5,6 +5,7 @@ import { View, ScrollView, ViewStyle, TextStyle, TouchableOpacity, Modal } from 
 import { CustomAlert } from "@/components/Alert"
 import { CategoriesSection } from "@/components/CategoriesSection"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
+import { EditGroupModal } from "@/components/EditGroupModal"
 import { MembersSection } from "@/components/Groups/MembersSection"
 import { RecentActivitySection } from "@/components/Groups/RecentActivitySection"
 import { Header } from "@/components/Header"
@@ -52,6 +53,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [errorAlertMessage, setErrorAlertMessage] = useState("")
   const [successAlertMessage, setSuccessAlertMessage] = useState("")
   const [showMenuModal, setShowMenuModal] = useState(false)
+  const [showEditGroupModal, setShowEditGroupModal] = useState(false)
   const [showLeaveGroupAlert, setShowLeaveGroupAlert] = useState(false)
   const [leavingGroup, setLeavingGroup] = useState(false)
   const [items, setItems] = useState<ItemWithProfile[]>([])
@@ -324,6 +326,17 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     setSelectedMember(null)
   }
 
+  const handleEditGroup = () => {
+    setShowMenuModal(false)
+    setShowEditGroupModal(true)
+  }
+
+  const handleEditGroupSuccess = (updatedGroup: Group) => {
+    setGroup(updatedGroup)
+    setSuccessAlertMessage("Group updated successfully!")
+    setShowSuccessAlert(true)
+  }
+
   // Collapsible section handlers
   const handleMembersToggle = useCallback(() => {
     setMembersCollapsed(!membersCollapsed)
@@ -545,6 +558,18 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             activeOpacity={1}
             onPress={() => {}} // Prevent closing when tapping the modal content
           >
+            {canManageGroup && (
+              <TouchableOpacity
+                style={themed($editGroupButton)}
+                onPress={handleEditGroup}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={themed($editGroupButtonText)}
+                  text="Edit Group"
+                />
+              </TouchableOpacity>
+            )}
             {canManageGroup ? (
               <TouchableOpacity
                 style={themed($closeGroupButton)}
@@ -597,6 +622,14 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
           onCancel={handleInviteCancel}
         />
       </Modal>
+
+      {/* Edit Group Modal */}
+      <EditGroupModal
+        visible={showEditGroupModal}
+        group={group}
+        onClose={() => setShowEditGroupModal(false)}
+        onSuccess={handleEditGroupSuccess}
+      />
 
       {/* User Stats Modal */}
       <UserStatsModal
@@ -801,6 +834,21 @@ const $addItemButtonText = ({ colors, typography }: any): TextStyle => ({
 const $closeGroupContainer = ({ spacing }: any): ViewStyle => ({
   padding: spacing.sm,
   paddingBottom: spacing.md,
+})
+const $editGroupButton = ({ colors }: any): ViewStyle => ({
+  backgroundColor: colors.tint,
+  borderRadius: 12,
+  paddingVertical: spacing.md,
+  paddingHorizontal: spacing.lg,
+  alignItems: "center",
+  justifyContent: "center",
+  marginBottom: spacing.sm,
+})
+const $editGroupButtonText = ({ colors, typography }: any): TextStyle => ({
+  color: colors.background,
+  fontFamily: typography.primary.bold,
+  fontSize: 16,
+  textAlign: "center",
 })
 const $closeGroupButton = ({ colors }: any): ViewStyle => ({
   backgroundColor: colors.error,

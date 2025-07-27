@@ -135,8 +135,12 @@ const $backButtonIcon = ({ colors }: any): ImageStyle => ({
 })
 
 const $actionButton = ({ spacing }: any): ViewStyle => ({
-  padding: spacing.xs,
+  padding: spacing.sm,
   borderRadius: 8,
+  minWidth: 44,
+  minHeight: 44,
+  alignItems: "center",
+  justifyContent: "center",
 })
 
 const $actionIcon = ({ colors }: any): ImageStyle => ({
@@ -145,6 +149,7 @@ const $actionIcon = ({ colors }: any): ImageStyle => ({
 
 const $actionText = ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.medium,
-  fontSize: 16,
+  fontSize: 18,
   color: colors.tint,
+  textAlign: "center",
 })
