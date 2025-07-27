@@ -271,11 +271,11 @@ export const OnboardingThankYouScreen = () => {
       name: "onboarding_final_action",
       properties: {
         action: "get_started",
-        destination: "landing_screen",
+        destination: "paywall_onboarding",
       },
     })
 
-    navigation.navigate("Landing")
+    navigation.navigate("PaywallOnboarding")
   }
 
   return (

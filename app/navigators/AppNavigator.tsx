@@ -21,6 +21,7 @@ import {
   OnboardingSlideshowScreen,
   OnboardingQuestionnaireScreen,
   OnboardingThankYouScreen,
+  PaywallOnboardingScreen,
 } from "@/screens/Onboarding"
 import { useAppTheme } from "@/theme/context"
 
@@ -43,6 +44,7 @@ export type AppStackParamList = {
   OnboardingSlideshow: undefined
   OnboardingQuestionnaire: undefined
   OnboardingThankYou: undefined
+  PaywallOnboarding: undefined
   Main: undefined // Main app with bottom tabs
   CreateGroup: undefined
   GroupDetail: { groupId: string }
@@ -89,6 +91,7 @@ const AppStack = () => {
       <Stack.Screen name="OnboardingSlideshow" component={OnboardingSlideshowScreen} />
       <Stack.Screen name="OnboardingQuestionnaire" component={OnboardingQuestionnaireScreen} />
       <Stack.Screen name="OnboardingThankYou" component={OnboardingThankYouScreen} />
+      <Stack.Screen name="PaywallOnboarding" component={PaywallOnboardingScreen} />
       <Stack.Screen name="Main" component={SwipeableTabNavigator} />
       <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />

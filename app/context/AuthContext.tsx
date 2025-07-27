@@ -6,6 +6,7 @@ import { CacheService } from "@/services/cache/cacheService"
 import { AuthService } from "@/services/supabase/authService"
 import googleAuthService from "@/services/supabase/googleAuthService"
 import { PersonalCodeService } from "@/services/supabase/personalCodeService"
+import { revenueCatService } from "@/services/revenueCatService"
 import {
   supabase,
   setupAppStateListener,
@@ -207,6 +208,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Also check for Google user
           const googleUserData = await googleAuthService.getCurrentUser()
           setGoogleUser(googleUserData)
+
+          // Link anonymous purchase if user made one during onboarding
+          try {
+            console.log(`🔄 [AuthContext] Attempting to link anonymous purchase for user: ${session.user.id}`)
+            await revenueCatService.linkAnonymousPurchase(session.user.id)
+            console.log(`✅ [AuthContext] Successfully linked anonymous purchase for user: ${session.user.id}`)
+          } catch (error) {
+            console.log(`ℹ️ [AuthContext] No anonymous purchase to link or linking failed:`, error)
+            // Don't throw error - this is expected for users who didn't make anonymous purchases
+          }
 
           // Fetch or create user profile
           const { data: profileData, error } = await AuthService.getProfileByUserId(session.user.id)

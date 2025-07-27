@@ -19,7 +19,16 @@ const REVENUECAT_API_KEYS = {
 
 // Product IDs
 const PRODUCT_IDS = {
-  PRO_MONTHLY: "$rc_monthly", // Your Visu Pro Product ID - update this to match your Google Play Console product ID
+  PRO_MONTHLY: Platform.select({
+    android: "$rc_monthly", // Your Android product ID
+    ios: "com.legingerdev.visu.pro.monthly", // Your iOS product ID
+    default: "$rc_monthly",
+  }),
+  PRO_YEARLY: Platform.select({
+    android: "$rc_yearly", // Your Android product ID
+    ios: "com.legingerdev.visu.pro.yearly", // Your iOS product ID
+    default: "$rc_yearly",
+  }),
 }
 
 export interface SubscriptionTier {
@@ -171,6 +180,12 @@ class RevenueCatService {
       const customerInfo = await this.getCustomerInfo()
       if (!customerInfo?.originalAppUserId) {
         console.warn("❌ No user ID found for subscription update")
+        return
+      }
+
+      // Skip Supabase update if this is an anonymous user (they haven't signed up yet)
+      if (customerInfo.originalAppUserId.startsWith('$RCAnonymousID:')) {
+        console.log(`ℹ️ [RevenueCat] Skipping Supabase update for anonymous user: ${customerInfo.originalAppUserId}`)
         return
       }
 
@@ -380,6 +395,62 @@ class RevenueCatService {
       await this.syncSubscriptionWithSupabase(userID)
     } catch (error) {
       console.error("Failed to set user ID:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Link anonymous purchase to user account
+   * This should be called after user signs up to link their anonymous purchase
+   */
+  async linkAnonymousPurchase(userID: string): Promise<void> {
+    try {
+      await this.ensureInitialized()
+      
+      console.log(`🔄 [RevenueCat] Linking anonymous purchase to user: ${userID}`)
+      
+      // Get current customer info (should be anonymous)
+      const customerInfo = await this.getCustomerInfo()
+      
+      if (customerInfo) {
+        console.log(`📊 [RevenueCat] Current customer info:`, {
+          originalAppUserId: customerInfo.originalAppUserId,
+          activeEntitlements: Object.keys(customerInfo.entitlements.active),
+          isAnonymous: customerInfo.originalAppUserId?.startsWith('$RCAnonymousID:'),
+        })
+
+        // If user has active entitlements, link them to the new account
+        const hasActiveEntitlements = Object.keys(customerInfo.entitlements.active).length > 0
+        
+        if (hasActiveEntitlements) {
+          console.log(`✅ [RevenueCat] Found active entitlements, linking to user account`)
+          
+          // Link anonymous purchase to real user ID
+          await Purchases.logIn(userID)
+          
+          // Sync with Supabase
+          await this.syncSubscriptionWithSupabase(userID)
+          
+          console.log(`✅ [RevenueCat] Successfully linked anonymous purchase to user: ${userID}`)
+          
+          // Track the linking
+          await AnalyticsService.trackEvent({
+            name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
+            properties: {
+              userId: userID,
+              newStatus: "pro",
+              source: "anonymous_purchase_linking",
+              originalAppUserId: customerInfo.originalAppUserId,
+            },
+          })
+        } else {
+          console.log(`ℹ️ [RevenueCat] No active entitlements found, skipping linking`)
+        }
+      } else {
+        console.log(`ℹ️ [RevenueCat] No customer info found, skipping linking`)
+      }
+    } catch (error) {
+      console.error(`❌ [RevenueCat] Failed to link anonymous purchase:`, error)
       throw error
     }
   }

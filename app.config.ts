@@ -61,6 +61,8 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
         LSApplicationQueriesSchemes: ["googlechromes", "firefox", "opera-http", "opera-https"],
       },
       googleServicesFile: "./ios/GoogleService-Info.plist",
+      // Add Apple Auth capability
+      usesAppleSignIn: true,
     },
     android: {
       ...config.android,

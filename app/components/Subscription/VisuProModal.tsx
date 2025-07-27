@@ -38,7 +38,7 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
   const {
     isInitialized,
     subscriptionTiers,
-    isLoading,
+    loading: isLoading,
     error,
     purchaseAndSync,
     setUserID,

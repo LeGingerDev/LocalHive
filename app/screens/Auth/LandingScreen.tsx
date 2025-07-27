@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { View, StyleSheet, Animated, Easing, Image, Dimensions } from "react-native"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useRoute } from "@react-navigation/native"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
 
 import { CustomAlert } from "@/components/Alert/CustomAlert"
@@ -11,6 +11,7 @@ import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
 import { useDemoMode, useGoogleAuthWithIntegrity } from "@/hooks"
+import { appleAuthService } from "@/services"
 import { hideNavigationBar } from "@/utils/navigationBarUtils"
 import { useSafeAreaInsetsStyle } from "@/utils/useSafeAreaInsetsStyle"
 
@@ -32,17 +33,24 @@ const AppleIcon = () => (
 
 export const LandingScreen = () => {
   const navigation = useNavigation<any>()
+  const route = useRoute<any>()
   const { refreshUser } = useAuth()
   const [isDemoSigningIn, setIsDemoSigningIn] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
   const translateYAnim = useRef(new Animated.Value(50)).current
   const $containerInsets = useSafeAreaInsetsStyle(["top", "bottom"])
 
+  // Check if user has a purchase from paywall onboarding
+  const hasPurchase = route.params?.hasPurchase || false
+
   // Demo mode hook
   const { isDemoEnabled, isLoading: isDemoLoading, signInWithDemo } = useDemoMode()
 
   // Google authentication with integrity checks
   const { isSigningIn: isGoogleSigningIn, signInWithGoogle } = useGoogleAuthWithIntegrity()
+
+  // Apple authentication state
+  const [isAppleSigningIn, setIsAppleSigningIn] = useState(false)
 
   // Alert state
   const [alertVisible, setAlertVisible] = useState(false)
@@ -73,7 +81,18 @@ export const LandingScreen = () => {
         useNativeDriver: true,
       }),
     ]).start()
-  }, [fadeAnim, translateYAnim])
+
+    // Show success message if user has made a purchase
+    if (hasPurchase) {
+      setTimeout(() => {
+        showAlert(
+          "Trial Started! 🎉",
+          "Your 3-day free trial is now active. Sign in to start using all premium features!",
+          "success"
+        )
+      }, 1000)
+    }
+  }, [fadeAnim, translateYAnim, hasPurchase])
 
   const showAlert = (
     title: string,
@@ -148,6 +167,35 @@ export const LandingScreen = () => {
         return
       }
       showAlert("Sign-In Error", "An unexpected error occurred. Please try again.")
+    }
+  }
+
+  const handleAppleSignIn = async () => {
+    if (isAppleSigningIn) return
+
+    setIsAppleSigningIn(true)
+    try {
+      const result = await appleAuthService.signInWithApple()
+
+      if (result.success) {
+        // Refresh user state to ensure it's properly updated
+        await refreshUser()
+
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Main" }],
+        })
+      } else {
+        showAlert(
+          "Apple Sign-In Failed",
+          result.error || "An error occurred during Apple sign-in. Please try again.",
+        )
+      }
+    } catch (error) {
+      console.error("Apple sign-in error:", error)
+      showAlert("Apple Sign-In Error", "An unexpected error occurred. Please try again.")
+    } finally {
+      setIsAppleSigningIn(false)
     }
   }
 
@@ -233,11 +281,12 @@ export const LandingScreen = () => {
             <View style={styles.buttonWrapper}>
               <AppleIcon />
               <RoundedButton
-                text="Sign in with Apple"
+                text={isAppleSigningIn ? "Signing in..." : "Sign in with Apple"}
                 preset="apple"
-                onPress={() => {}}
+                onPress={handleAppleSignIn}
                 style={styles.authButton}
-                disabled={isGoogleSigningIn}
+                loading={isAppleSigningIn}
+                disabled={isAppleSigningIn || isGoogleSigningIn}
               />
             </View>
 
@@ -253,7 +302,7 @@ export const LandingScreen = () => {
                   onPress={handleDemoSignIn}
                   style={styles.authButton}
                   loading={isDemoSigningIn}
-                  disabled={isDemoSigningIn || isGoogleSigningIn}
+                  disabled={isDemoSigningIn || isGoogleSigningIn || isAppleSigningIn}
                 />
               </View>
             )}

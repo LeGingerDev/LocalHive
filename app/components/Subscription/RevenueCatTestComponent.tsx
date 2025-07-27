@@ -14,7 +14,7 @@ export const RevenueCatTestComponent: React.FC = () => {
     hasActiveSubscription,
     customerInfo,
     subscriptionTiers,
-    isLoading,
+    loading: isLoading,
     error,
     setUserID,
     refreshCustomerInfo,
