@@ -68,9 +68,9 @@ export const EditGroupModal = ({ visible, group, onClose, onSuccess }: EditGroup
         category: formData.category,
         member_limit: formData.member_limit ? parseInt(formData.member_limit) : undefined,
       }
-      
+
       const { data: updatedGroup, error } = await GroupService.updateGroup(group.id, updateData)
-      
+
       if (error) {
         console.error("Error updating group:", error)
         // You might want to show an error alert here
@@ -186,11 +186,7 @@ export const EditGroupModal = ({ visible, group, onClose, onSuccess }: EditGroup
             </TouchableOpacity>
           </CustomGradient>
 
-          <TouchableOpacity
-            style={themed($cancelButtonRed)}
-            onPress={onClose}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={themed($cancelButtonRed)} onPress={onClose} activeOpacity={0.8}>
             <Text style={themed($cancelButtonTextRed)} text="Cancel" />
           </TouchableOpacity>
         </View>
@@ -296,4 +292,4 @@ const $cancelButtonTextRed = ({ typography, colors }: any): TextStyle => ({
   ...typography.button,
   color: colors.error,
   fontWeight: "600",
-}) 
+})

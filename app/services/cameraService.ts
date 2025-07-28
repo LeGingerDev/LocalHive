@@ -181,11 +181,11 @@ export class CameraService {
       }
     } catch (error) {
       console.error("[CameraService] Image compression failed:", error)
-      
+
       // Return the original image if compression fails
       console.log("[CameraService] Returning original image as fallback")
       const originalSize = await this.getFileSize(imageUri)
-      
+
       return {
         uri: imageUri,
         width: 0, // We don't have this info for the original
@@ -208,12 +208,12 @@ export class CameraService {
     try {
       console.log("[CameraService] Getting file size for:", uri)
       const response = await fetch(uri)
-      
+
       if (!response.ok) {
         console.warn("[CameraService] HTTP error getting file size:", response.status)
         return 0
       }
-      
+
       const blob = await response.blob()
       console.log("[CameraService] File size determined:", blob.size, "bytes")
       return blob.size

@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react"
 import { useMemo } from "react"
 import { View, ScrollView, ViewStyle, TextStyle, TouchableOpacity, Modal } from "react-native"
+import { useFocusEffect } from "@react-navigation/native"
 
 import { CustomAlert } from "@/components/Alert"
 import { CategoriesSection } from "@/components/CategoriesSection"
-import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { EditGroupModal } from "@/components/EditGroupModal"
+import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { MembersSection } from "@/components/Groups/MembersSection"
 import { RecentActivitySection } from "@/components/Groups/RecentActivitySection"
 import { Header } from "@/components/Header"
@@ -88,6 +89,14 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
     )
     setRecentItems(sorted.slice(0, 3))
   }, [items])
+
+  // Refresh data when screen comes into focus (e.g., returning from EditItemScreen)
+  useFocusEffect(
+    useCallback(() => {
+      console.log("[GroupDetailScreen] Screen focused - refreshing group items")
+      loadGroupItems()
+    }, [groupId]),
+  )
 
   const loadGroupDetails = async () => {
     try {
@@ -564,10 +573,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
                 onPress={handleEditGroup}
                 activeOpacity={0.8}
               >
-                <Text
-                  style={themed($editGroupButtonText)}
-                  text="Edit Group"
-                />
+                <Text style={themed($editGroupButtonText)} text="Edit Group" />
               </TouchableOpacity>
             )}
             {canManageGroup ? (

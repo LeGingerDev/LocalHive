@@ -436,8 +436,6 @@ const $sectionHeader = ({ colors, spacing }: any): ViewStyle => ({
   justifyContent: "space-between",
   paddingVertical: spacing.sm,
   paddingHorizontal: spacing.md,
-  backgroundColor: colors.primary100,
-  borderRadius: 8,
   marginBottom: spacing.xs,
 })
 const $sectionHeaderContent = (): ViewStyle => ({

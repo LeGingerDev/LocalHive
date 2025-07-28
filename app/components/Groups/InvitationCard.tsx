@@ -9,8 +9,8 @@ import Animated, {
 
 import { Icon } from "@/components/Icon"
 import { Text } from "@/components/Text"
-import { HapticService } from "@/services/hapticService"
 import { GroupInvitation } from "@/services/api/types"
+import { HapticService } from "@/services/hapticService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 

@@ -21,8 +21,6 @@ export class ProfileAvatarService {
     return ProfileAvatarService._instance
   }
 
-
-
   /**
    * Take a photo and upload it as profile avatar
    * @param userId - The user ID
@@ -31,7 +29,7 @@ export class ProfileAvatarService {
   async takeAndUploadPhoto(userId: string): Promise<ProfileAvatarUploadResult> {
     try {
       console.log("[ProfileAvatarService] Taking photo for user:", userId)
-      
+
       // Take photo
       const photoResult = await cameraService.takePhoto({
         mediaTypes: "Images" as any,
@@ -48,7 +46,10 @@ export class ProfileAvatarService {
       return await this.processAndUploadImage(userId, photoResult)
     } catch (error) {
       console.error("[ProfileAvatarService] Take photo error:", error)
-      return { success: false, error: error instanceof Error ? error.message : "Failed to take photo" }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to take photo",
+      }
     }
   }
 
@@ -60,7 +61,7 @@ export class ProfileAvatarService {
   async pickAndUploadFromGallery(userId: string): Promise<ProfileAvatarUploadResult> {
     try {
       console.log("[ProfileAvatarService] Picking image from gallery for user:", userId)
-      
+
       // Pick image from gallery
       const imageResult = await cameraService.pickFromGallery({
         mediaTypes: "Images" as any,
@@ -77,7 +78,10 @@ export class ProfileAvatarService {
       return await this.processAndUploadImage(userId, imageResult)
     } catch (error) {
       console.error("[ProfileAvatarService] Pick from gallery error:", error)
-      return { success: false, error: error instanceof Error ? error.message : "Failed to pick image" }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to pick image",
+      }
     }
   }
 
@@ -93,16 +97,16 @@ export class ProfileAvatarService {
   ): Promise<ProfileAvatarUploadResult> {
     try {
       console.log("[ProfileAvatarService] Processing image for user:", userId)
-      
+
       // Check network connectivity before proceeding
       const hasNetwork = await checkNetworkConnectivity()
       if (!hasNetwork) {
-        return { 
-          success: false, 
-          error: "No internet connection. Please check your network and try again." 
+        return {
+          success: false,
+          error: "No internet connection. Please check your network and try again.",
         }
       }
-      
+
       // Compress and resize the image
       const compressedImage = await cameraService.compressImage(
         imageResult.uri,
@@ -122,16 +126,16 @@ export class ProfileAvatarService {
       try {
         console.log("[ProfileAvatarService] Converting image to blob...")
         const response = await fetch(compressedImage.uri)
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
-        
+
         blob = await response.blob()
         console.log("[ProfileAvatarService] Blob created successfully, size:", blob.size)
       } catch (fetchError) {
         console.error("[ProfileAvatarService] Fetch error:", fetchError)
-        
+
         // Fallback: try to use the original image if compression failed
         console.log("[ProfileAvatarService] Trying fallback with original image...")
         try {
@@ -143,9 +147,9 @@ export class ProfileAvatarService {
           console.log("[ProfileAvatarService] Fallback blob created, size:", blob.size)
         } catch (fallbackError) {
           console.error("[ProfileAvatarService] Fallback fetch also failed:", fallbackError)
-          return { 
-            success: false, 
-            error: "Failed to process image. Please check your network connection and try again." 
+          return {
+            success: false,
+            error: "Failed to process image. Please check your network connection and try again.",
           }
         }
       }
@@ -167,12 +171,13 @@ export class ProfileAvatarService {
       }
     } catch (error) {
       console.error("[ProfileAvatarService] Process and upload error:", error)
-      
+
       // Provide more specific error messages
       let errorMessage = "Failed to upload image"
       if (error instanceof Error) {
         if (error.message.includes("Network request failed")) {
-          errorMessage = "Network connection failed. Please check your internet connection and try again."
+          errorMessage =
+            "Network connection failed. Please check your internet connection and try again."
         } else if (error.message.includes("fetch")) {
           errorMessage = "Failed to process image. Please try again."
         } else if (error.message.includes("storage")) {
@@ -185,7 +190,7 @@ export class ProfileAvatarService {
           errorMessage = error.message
         }
       }
-      
+
       return { success: false, error: errorMessage }
     }
   }
@@ -201,7 +206,7 @@ export class ProfileAvatarService {
         userId,
         avatarUrl,
       })
-      
+
       const { error } = await supabase
         .from("profiles")
         .update({ avatar_url: avatarUrl })
@@ -213,18 +218,21 @@ export class ProfileAvatarService {
       }
 
       console.log("[ProfileAvatarService] User profile updated successfully")
-      
+
       // Verify the update by fetching the profile
       const { data: verifyProfile, error: verifyError } = await supabase
         .from("profiles")
         .select("avatar_url")
         .eq("id", userId)
         .single()
-        
+
       if (verifyError) {
         console.error("[ProfileAvatarService] Verification error:", verifyError)
       } else {
-        console.log("[ProfileAvatarService] Verification - profile avatar_url:", verifyProfile?.avatar_url)
+        console.log(
+          "[ProfileAvatarService] Verification - profile avatar_url:",
+          verifyProfile?.avatar_url,
+        )
       }
     } catch (error) {
       console.error("[ProfileAvatarService] Update profile error:", error)
@@ -266,20 +274,23 @@ export class ProfileAvatarService {
   async deleteProfileAvatar(userId: string): Promise<ProfileAvatarUploadResult> {
     try {
       console.log("[ProfileAvatarService] Deleting profile avatar for user:", userId)
-      
+
       // Delete from storage
       await StorageService.deleteProfileAvatar(userId)
-      
+
       // Update database to remove avatar URL
       await this.updateUserProfileAvatar(userId, null)
 
       return { success: true }
     } catch (error) {
       console.error("[ProfileAvatarService] Delete avatar error:", error)
-      return { success: false, error: error instanceof Error ? error.message : "Failed to delete avatar" }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to delete avatar",
+      }
     }
   }
 }
 
 // Export singleton instance
-export const profileAvatarService = ProfileAvatarService.getInstance() 
+export const profileAvatarService = ProfileAvatarService.getInstance()

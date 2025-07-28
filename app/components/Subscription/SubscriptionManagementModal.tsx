@@ -35,7 +35,12 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
 }) => {
   const { themed, theme } = useAppTheme()
   const subscription = useSubscription(userId)
-  const { subscriptionTiers, canManageSubscription, openSubscriptionManagement, getSubscriptionManagementURL } = useRevenueCat()
+  const {
+    subscriptionTiers,
+    canManageSubscription,
+    openSubscriptionManagement,
+    getSubscriptionManagementURL,
+  } = useRevenueCat()
 
   // Get the monthly subscription package for pricing
   const monthlyPackage = subscriptionTiers.find(
@@ -49,7 +54,7 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
         Alert.alert(
           "No Active Subscription",
           "You don't have an active subscription to manage. If you recently cancelled, changes may take a few minutes to reflect.",
-          [{ text: "OK" }]
+          [{ text: "OK" }],
         )
         return
       }
@@ -72,7 +77,7 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
               }
             },
           },
-        ]
+        ],
       )
     }
   }
@@ -120,7 +125,7 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
 
   const getSubscriptionStatusText = () => {
     if (!subscription.subscriptionInfo) return "Loading..."
-    
+
     switch (subscription.subscriptionInfo.subscription_status) {
       case "pro":
         return "Pro Subscription"
@@ -136,7 +141,7 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
 
   const getSubscriptionStatusColor = () => {
     if (!subscription.subscriptionInfo) return theme.colors.textDim
-    
+
     switch (subscription.subscriptionInfo.subscription_status) {
       case "pro":
         return theme.colors.success
@@ -193,7 +198,9 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
                 <View style={themed($planRow)}>
                   <Text style={themed($planLabel)}>Plan:</Text>
                   <Text style={themed($planValue)}>
-                    {subscription.subscriptionInfo?.subscription_status === "pro" ? "Visu Pro" : "Free Plan"}
+                    {subscription.subscriptionInfo?.subscription_status === "pro"
+                      ? "Visu Pro"
+                      : "Free Plan"}
                   </Text>
                 </View>
                 {subscription.subscriptionInfo?.subscription_status === "pro" && (
@@ -249,54 +256,98 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
               <Text style={themed($sectionTitle)}>Pro Features</Text>
               <View style={themed($featuresContainer)}>
                 <View style={themed($featureItem)}>
-                  <Icon 
-                    icon="check" 
-                    size={16} 
-                    color={subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.success : theme.colors.textDim} 
+                  <Icon
+                    icon="check"
+                    size={16}
+                    color={
+                      subscription.subscriptionInfo?.subscription_status === "pro"
+                        ? theme.colors.success
+                        : theme.colors.textDim
+                    }
                   />
-                  <Text style={[
-                    themed($featureText), 
-                    { color: subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.text : theme.colors.textDim }
-                  ]}>
+                  <Text
+                    style={[
+                      themed($featureText),
+                      {
+                        color:
+                          subscription.subscriptionInfo?.subscription_status === "pro"
+                            ? theme.colors.text
+                            : theme.colors.textDim,
+                      },
+                    ]}
+                  >
                     Unlimited Groups
                   </Text>
                 </View>
                 <View style={themed($featureItem)}>
-                  <Icon 
-                    icon="check" 
-                    size={16} 
-                    color={subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.success : theme.colors.textDim} 
+                  <Icon
+                    icon="check"
+                    size={16}
+                    color={
+                      subscription.subscriptionInfo?.subscription_status === "pro"
+                        ? theme.colors.success
+                        : theme.colors.textDim
+                    }
                   />
-                  <Text style={[
-                    themed($featureText), 
-                    { color: subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.text : theme.colors.textDim }
-                  ]}>
+                  <Text
+                    style={[
+                      themed($featureText),
+                      {
+                        color:
+                          subscription.subscriptionInfo?.subscription_status === "pro"
+                            ? theme.colors.text
+                            : theme.colors.textDim,
+                      },
+                    ]}
+                  >
                     Unlimited Items
                   </Text>
                 </View>
                 <View style={themed($featureItem)}>
-                  <Icon 
-                    icon="check" 
-                    size={16} 
-                    color={subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.success : theme.colors.textDim} 
+                  <Icon
+                    icon="check"
+                    size={16}
+                    color={
+                      subscription.subscriptionInfo?.subscription_status === "pro"
+                        ? theme.colors.success
+                        : theme.colors.textDim
+                    }
                   />
-                  <Text style={[
-                    themed($featureText), 
-                    { color: subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.text : theme.colors.textDim }
-                  ]}>
+                  <Text
+                    style={[
+                      themed($featureText),
+                      {
+                        color:
+                          subscription.subscriptionInfo?.subscription_status === "pro"
+                            ? theme.colors.text
+                            : theme.colors.textDim,
+                      },
+                    ]}
+                  >
                     AI-Powered Search
                   </Text>
                 </View>
                 <View style={themed($featureItem)}>
-                  <Icon 
-                    icon="check" 
-                    size={16} 
-                    color={subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.success : theme.colors.textDim} 
+                  <Icon
+                    icon="check"
+                    size={16}
+                    color={
+                      subscription.subscriptionInfo?.subscription_status === "pro"
+                        ? theme.colors.success
+                        : theme.colors.textDim
+                    }
                   />
-                  <Text style={[
-                    themed($featureText), 
-                    { color: subscription.subscriptionInfo?.subscription_status === "pro" ? theme.colors.text : theme.colors.textDim }
-                  ]}>
+                  <Text
+                    style={[
+                      themed($featureText),
+                      {
+                        color:
+                          subscription.subscriptionInfo?.subscription_status === "pro"
+                            ? theme.colors.text
+                            : theme.colors.textDim,
+                      },
+                    ]}
+                  >
                     Priority Support
                   </Text>
                 </View>
@@ -308,7 +359,9 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
               <Text style={themed($sectionTitle)}>Subscription Management</Text>
               <View style={themed($infoContainer)}>
                 <Text style={themed($infoText)}>
-                  To cancel or modify your subscription, you'll need to manage it through your device's subscription settings. This ensures proper billing adjustments and immediate cancellation.
+                  To cancel or modify your subscription, you'll need to manage it through your
+                  device's subscription settings. This ensures proper billing adjustments and
+                  immediate cancellation.
                 </Text>
                 <Text style={themed($infoText)}>
                   Changes may take a few minutes to reflect in the app.
@@ -326,7 +379,9 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
             )}
             <TouchableOpacity style={themed($cancelButton)} onPress={handleCancelSubscription}>
               <Text style={themed($cancelButtonText)}>
-                {subscription.subscriptionInfo?.subscription_status === "pro" ? "Cancel Subscription" : "Subscription Help"}
+                {subscription.subscriptionInfo?.subscription_status === "pro"
+                  ? "Cancel Subscription"
+                  : "Subscription Help"}
               </Text>
             </TouchableOpacity>
           </View>

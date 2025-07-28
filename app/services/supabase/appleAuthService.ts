@@ -147,9 +147,10 @@ class AppleAuthService {
         // Extract relevant user information from Apple and Supabase
         const userId = data.user.id
         const email = data.user.email
-        const fullName = credential.fullName?.givenName && credential.fullName?.familyName 
-          ? `${credential.fullName.givenName} ${credential.fullName.familyName}`
-          : data.user.user_metadata?.full_name
+        const fullName =
+          credential.fullName?.givenName && credential.fullName?.familyName
+            ? `${credential.fullName.givenName} ${credential.fullName.familyName}`
+            : data.user.user_metadata?.full_name
         const avatarUrl = data.user.user_metadata?.avatar_url
 
         // Save profile data to the profiles table
@@ -287,4 +288,4 @@ class AppleAuthService {
 export const appleAuthService = new AppleAuthService()
 
 // Export the class for testing purposes
-export { AppleAuthService } 
+export { AppleAuthService }

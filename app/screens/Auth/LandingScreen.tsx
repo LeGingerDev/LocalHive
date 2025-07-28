@@ -88,7 +88,7 @@ export const LandingScreen = () => {
         showAlert(
           "Trial Started! 🎉",
           "Your 3-day free trial is now active. Sign in to start using all premium features!",
-          "success"
+          "success",
         )
       }, 1000)
     }

@@ -65,7 +65,7 @@ export interface AvatarProps {
 // #region Component
 /**
  * Avatar - A component that displays either a profile image or initials
- * 
+ *
  * Features:
  * - Displays profile image if available
  * - Falls back to initials if no image
@@ -87,10 +87,10 @@ export const Avatar: FC<AvatarProps> = memo((props) => {
   } = props
 
   const { themed } = useAppTheme()
-  
+
   // State for cache-busting
   const [cacheBuster, setCacheBuster] = useState<number>(Date.now())
-  
+
   // Update cache buster when imageUrl changes
   useEffect(() => {
     if (imageUrl) {
@@ -110,24 +110,18 @@ export const Avatar: FC<AvatarProps> = memo((props) => {
     styleOverride,
   ]
 
-  const imageStyle = [
-    themed($image(size)),
-    imageStyleOverride,
-  ]
+  const imageStyle = [themed($image(size)), imageStyleOverride]
 
-  const textStyle = [
-    themed($text(size)),
-    textStyleOverride,
-  ]
+  const textStyle = [themed($text(size)), textStyleOverride]
 
   const hasImage = !!imageUrl
 
   const renderContent = () => {
     if (hasImage) {
       // Add cache-busting parameter to force image reload
-      const separator = imageUrl!.includes('?') ? '&' : '?'
+      const separator = imageUrl!.includes("?") ? "&" : "?"
       const cacheBustedUrl = `${imageUrl}${separator}_cb=${cacheBuster}`
-      
+
       return (
         <Image
           key={`${imageUrl}-${cacheBuster}`} // More aggressive cache busting
@@ -170,26 +164,33 @@ Avatar.displayName = "Avatar"
 // #endregion
 
 // #region Styles
-const $container = (size: number): ThemedStyle<ViewStyle> => ({ colors }) => ({
-  width: size,
-  height: size,
-  borderRadius: size / 2,
-  alignItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-  borderWidth: 2,
-  borderColor: colors.palette.primary400,
-})
+const $container =
+  (size: number): ThemedStyle<ViewStyle> =>
+  ({ colors }) => ({
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderWidth: 2,
+    borderColor: colors.palette.primary400,
+  })
 
-const $avatarColor = (colorKey: string): ThemedStyle<ViewStyle> => ({ colors }) => ({
-  backgroundColor: colors.palette[colorKey as keyof typeof colors.palette] || colors.palette.primary300,
-})
+const $avatarColor =
+  (colorKey: string): ThemedStyle<ViewStyle> =>
+  ({ colors }) => ({
+    backgroundColor:
+      colors.palette[colorKey as keyof typeof colors.palette] || colors.palette.primary300,
+  })
 
-const $image = (size: number): ThemedStyle<ImageStyle> => () => ({
-  width: size,
-  height: size,
-  borderRadius: size / 2,
-})
+const $image =
+  (size: number): ThemedStyle<ImageStyle> =>
+  () => ({
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+  })
 
 const $textContainer: ThemedStyle<ViewStyle> = () => ({
   alignItems: "center",
@@ -197,10 +198,12 @@ const $textContainer: ThemedStyle<ViewStyle> = () => ({
   flex: 1,
 })
 
-const $text = (size: number): ThemedStyle<TextStyle> => ({ colors, typography }) => ({
-  color: colors.palette.neutral100,
-  fontFamily: typography.primary.medium,
-  fontSize: Math.max(12, size * 0.4), // Responsive font size
-  textAlign: "center",
-})
-// #endregion 
+const $text =
+  (size: number): ThemedStyle<TextStyle> =>
+  ({ colors, typography }) => ({
+    color: colors.palette.neutral100,
+    fontFamily: typography.primary.medium,
+    fontSize: Math.max(12, size * 0.4), // Responsive font size
+    textAlign: "center",
+  })
+// #endregion

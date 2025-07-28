@@ -12,8 +12,8 @@ import {
   Easing,
 } from "react-native"
 
-import { HapticService } from "@/services/hapticService"
 import { Text } from "@/components/Text"
+import { HapticService } from "@/services/hapticService"
 import { useAppTheme } from "@/theme/context"
 
 export interface CustomDropdownOption {

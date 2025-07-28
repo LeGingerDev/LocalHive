@@ -61,53 +61,57 @@ export class StorageService {
       contentType?: string
     },
   ) {
-    return retryWithBackoff(async () => {
-      console.log(`[StorageService] Starting profile avatar upload for user: ${userId}`)
-      
-      // Determine file extension from content type
-      const contentType = options?.contentType || "image/jpeg"
-      const extension = contentType.includes("png") ? "png" : "jpeg"
-      const fileName = `${userId}.${extension}`
-      
-      // Delete existing avatar if it exists (to ensure only one image per user)
-      await this.deleteProfileAvatar(userId)
-      
-      // Use the same direct fetch approach as AddScreen (which works)
-      const supabaseUrl = Config.SUPABASE_URL
-      const bucket = "profile-avatars"
-      const filePath = fileName
-      const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${filePath}`
-      const anonKey = Config.SUPABASE_KEY
+    return retryWithBackoff(
+      async () => {
+        console.log(`[StorageService] Starting profile avatar upload for user: ${userId}`)
 
-      console.log("[StorageService] Uploading to:", uploadUrl)
+        // Determine file extension from content type
+        const contentType = options?.contentType || "image/jpeg"
+        const extension = contentType.includes("png") ? "png" : "jpeg"
+        const fileName = `${userId}.${extension}`
 
-      const uploadResponse = await fetch(uploadUrl, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${anonKey}`,
-          "Content-Type": contentType,
-        },
-        body: file,
-      })
+        // Delete existing avatar if it exists (to ensure only one image per user)
+        await this.deleteProfileAvatar(userId)
 
-      console.log("[StorageService] Upload response status:", uploadResponse.status)
-      const result = await uploadResponse.text()
-      console.log("[StorageService] Upload response:", result)
+        // Use the same direct fetch approach as AddScreen (which works)
+        const supabaseUrl = Config.SUPABASE_URL
+        const bucket = "profile-avatars"
+        const filePath = fileName
+        const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${filePath}`
+        const anonKey = Config.SUPABASE_KEY
 
-      if (uploadResponse.ok) {
-        // Get the public URL
-        const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${filePath}`
-        console.log("[StorageService] Public URL:", publicUrl)
+        console.log("[StorageService] Uploading to:", uploadUrl)
 
-        return {
-          data: { path: filePath },
-          publicUrl,
-          fileName,
+        const uploadResponse = await fetch(uploadUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${anonKey}`,
+            "Content-Type": contentType,
+          },
+          body: file,
+        })
+
+        console.log("[StorageService] Upload response status:", uploadResponse.status)
+        const result = await uploadResponse.text()
+        console.log("[StorageService] Upload response:", result)
+
+        if (uploadResponse.ok) {
+          // Get the public URL
+          const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${filePath}`
+          console.log("[StorageService] Public URL:", publicUrl)
+
+          return {
+            data: { path: filePath },
+            publicUrl,
+            fileName,
+          }
+        } else {
+          throw new Error(`Upload failed: ${uploadResponse.status} - ${result}`)
         }
-      } else {
-        throw new Error(`Upload failed: ${uploadResponse.status} - ${result}`)
-      }
-    }, 3, 1000) // 3 retries, 1 second base delay
+      },
+      3,
+      1000,
+    ) // 3 retries, 1 second base delay
   }
 
   /**
@@ -132,8 +136,8 @@ export class StorageService {
     try {
       // Try to delete with different extensions
       const extensions = ["jpeg", "jpg", "png", "webp"]
-      const filesToDelete = extensions.map(ext => `${userId}.${ext}`)
-      
+      const filesToDelete = extensions.map((ext) => `${userId}.${ext}`)
+
       const { data, error } = await supabase.storage.from("profile-avatars").remove(filesToDelete)
 
       if (error) {

@@ -15,6 +15,7 @@ import { SplashScreen } from "@/screens/Auth/SplashScreen"
 import { ErrorBoundary } from "@/screens/ErrorScreen/ErrorBoundary"
 import { InvitationsScreen } from "@/screens/InvitationsScreen"
 import { CreateGroupScreen } from "@/screens/Main/CreateGroupScreen"
+import { EditItemScreen } from "@/screens/Main/EditItemScreen"
 import { GroupDetailScreen } from "@/screens/Main/GroupDetailScreen"
 import {
   OnboardingEntryScreen,
@@ -48,6 +49,7 @@ export type AppStackParamList = {
   Main: undefined // Main app with bottom tabs
   CreateGroup: undefined
   GroupDetail: { groupId: string }
+  EditItem: { item: any; returnScreen?: string; returnParams?: any }
   // 🔥 Your screens go here
   Invitations: undefined
   // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
@@ -95,6 +97,7 @@ const AppStack = () => {
       <Stack.Screen name="Main" component={SwipeableTabNavigator} />
       <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
+      <Stack.Screen name="EditItem" component={EditItemScreen} />
       <Stack.Screen name="Invitations" component={InvitationsScreen} />
       {/** 🔥 Your screens go here */}
       {/* IGNITE_GENERATOR_ANCHOR_APP_STACK_SCREENS */}

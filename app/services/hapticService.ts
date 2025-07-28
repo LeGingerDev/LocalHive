@@ -2,11 +2,11 @@ import ReactNativeHapticFeedback from "react-native-haptic-feedback"
 
 /**
  * Haptic feedback service for providing tactile feedback to users
- * 
+ *
  * Available haptic types:
  * - 'selection': Light feedback for selection changes
  * - 'impactLight': Light impact feedback
- * - 'impactMedium': Medium impact feedback  
+ * - 'impactMedium': Medium impact feedback
  * - 'impactHeavy': Heavy impact feedback
  * - 'notificationSuccess': Success notification feedback
  * - 'notificationWarning': Warning notification feedback
@@ -17,7 +17,16 @@ class HapticService {
    * Trigger a haptic feedback
    * @param type - The type of haptic feedback to trigger
    */
-  static trigger(type: "selection" | "impactLight" | "impactMedium" | "impactHeavy" | "notificationSuccess" | "notificationWarning" | "notificationError" = "selection"): void {
+  static trigger(
+    type:
+      | "selection"
+      | "impactLight"
+      | "impactMedium"
+      | "impactHeavy"
+      | "notificationSuccess"
+      | "notificationWarning"
+      | "notificationError" = "selection",
+  ): void {
     try {
       ReactNativeHapticFeedback.trigger(type, {
         enableVibrateFallback: true,
@@ -78,4 +87,4 @@ class HapticService {
   }
 }
 
-export { HapticService } 
+export { HapticService }

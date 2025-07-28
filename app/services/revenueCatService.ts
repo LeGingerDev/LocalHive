@@ -108,12 +108,12 @@ class RevenueCatService {
   private async handleSubscriptionStatusChange(customerInfo: CustomerInfo): Promise<void> {
     try {
       const hasActiveSubscription = Object.keys(customerInfo.entitlements.active).length > 0
-      
+
       if (hasActiveSubscription) {
         // User has active subscription - sync with Supabase
         const activeEntitlements = customerInfo.entitlements.active
         const proEntitlement = this.findProEntitlement(activeEntitlements)
-        
+
         if (proEntitlement && proEntitlement.expirationDate) {
           // Update to pro status
           await this.updateSubscriptionInSupabase("pro", proEntitlement.expirationDate)
@@ -122,7 +122,7 @@ class RevenueCatService {
         // No active subscription - check if it was cancelled or expired
         const allEntitlements = Object.values(customerInfo.entitlements.all)
         const recentlyExpired = this.findRecentlyExpiredEntitlement(allEntitlements)
-        
+
         if (recentlyExpired) {
           // Subscription was cancelled or expired
           await this.updateSubscriptionInSupabase("expired", recentlyExpired.expirationDate)
@@ -159,7 +159,7 @@ class RevenueCatService {
 
     return allEntitlements.find((entitlement) => {
       if (!entitlement.expirationDate) return false
-      
+
       const expirationDate = new Date(entitlement.expirationDate)
       return (
         expirationDate >= thirtyDaysAgo &&
@@ -184,8 +184,10 @@ class RevenueCatService {
       }
 
       // Skip Supabase update if this is an anonymous user (they haven't signed up yet)
-      if (customerInfo.originalAppUserId.startsWith('$RCAnonymousID:')) {
-        console.log(`ℹ️ [RevenueCat] Skipping Supabase update for anonymous user: ${customerInfo.originalAppUserId}`)
+      if (customerInfo.originalAppUserId.startsWith("$RCAnonymousID:")) {
+        console.log(
+          `ℹ️ [RevenueCat] Skipping Supabase update for anonymous user: ${customerInfo.originalAppUserId}`,
+        )
         return
       }
 
@@ -197,7 +199,7 @@ class RevenueCatService {
 
       if (result.success) {
         console.log(`✅ [RevenueCat] Successfully updated Supabase subscription to: ${status}`)
-        
+
         // Track the subscription change
         await AnalyticsService.trackEvent({
           name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
@@ -225,7 +227,7 @@ class RevenueCatService {
   async openSubscriptionManagement(): Promise<void> {
     try {
       await this.ensureInitialized()
-      
+
       if (Platform.OS === "ios") {
         // Open iOS subscription management
         await Linking.openURL("https://apps.apple.com/account/subscriptions")
@@ -274,10 +276,10 @@ class RevenueCatService {
   async refreshSubscriptionStatus(): Promise<void> {
     try {
       await this.ensureInitialized()
-      
+
       console.log("🔄 [RevenueCat] Refreshing subscription status...")
       const customerInfo = await this.getCustomerInfo()
-      
+
       if (customerInfo) {
         // This will trigger the customer info update listener
         // which will handle syncing with Supabase
@@ -406,33 +408,33 @@ class RevenueCatService {
   async linkAnonymousPurchase(userID: string): Promise<void> {
     try {
       await this.ensureInitialized()
-      
+
       console.log(`🔄 [RevenueCat] Linking anonymous purchase to user: ${userID}`)
-      
+
       // Get current customer info (should be anonymous)
       const customerInfo = await this.getCustomerInfo()
-      
+
       if (customerInfo) {
         console.log(`📊 [RevenueCat] Current customer info:`, {
           originalAppUserId: customerInfo.originalAppUserId,
           activeEntitlements: Object.keys(customerInfo.entitlements.active),
-          isAnonymous: customerInfo.originalAppUserId?.startsWith('$RCAnonymousID:'),
+          isAnonymous: customerInfo.originalAppUserId?.startsWith("$RCAnonymousID:"),
         })
 
         // If user has active entitlements, link them to the new account
         const hasActiveEntitlements = Object.keys(customerInfo.entitlements.active).length > 0
-        
+
         if (hasActiveEntitlements) {
           console.log(`✅ [RevenueCat] Found active entitlements, linking to user account`)
-          
+
           // Link anonymous purchase to real user ID
           await Purchases.logIn(userID)
-          
+
           // Sync with Supabase
           await this.syncSubscriptionWithSupabase(userID)
-          
+
           console.log(`✅ [RevenueCat] Successfully linked anonymous purchase to user: ${userID}`)
-          
+
           // Track the linking
           await AnalyticsService.trackEvent({
             name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,

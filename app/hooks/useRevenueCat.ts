@@ -82,11 +82,11 @@ export const useRevenueCat = () => {
   const setUserID = async (userID: string) => {
     try {
       await revenueCatService.setUserID(userID)
-      
+
       // Refresh customer info after setting user ID
       const info = await revenueCatService.getCustomerInfo()
       setCustomerInfo(info)
-      
+
       const hasActive = await revenueCatService.hasActiveSubscription()
       setHasActiveSubscription(hasActive)
     } catch (err) {
@@ -98,14 +98,14 @@ export const useRevenueCat = () => {
   const purchaseAndSync = async (userID: string, packageToPurchase: any) => {
     try {
       const result = await revenueCatService.purchaseAndSync(userID, packageToPurchase)
-      
+
       // Refresh customer info after purchase
       const info = await revenueCatService.getCustomerInfo()
       setCustomerInfo(info)
-      
+
       const hasActive = await revenueCatService.hasActiveSubscription()
       setHasActiveSubscription(hasActive)
-      
+
       return result
     } catch (err) {
       console.error("Failed to purchase and sync:", err)
@@ -116,11 +116,11 @@ export const useRevenueCat = () => {
   const linkAnonymousPurchase = async (userID: string) => {
     try {
       await revenueCatService.linkAnonymousPurchase(userID)
-      
+
       // Refresh customer info after linking
       const info = await revenueCatService.getCustomerInfo()
       setCustomerInfo(info)
-      
+
       const hasActive = await revenueCatService.hasActiveSubscription()
       setHasActiveSubscription(hasActive)
     } catch (err) {
@@ -133,7 +133,7 @@ export const useRevenueCat = () => {
     try {
       const info = await revenueCatService.getCustomerInfo()
       setCustomerInfo(info)
-      
+
       const hasActive = await revenueCatService.hasActiveSubscription()
       setHasActiveSubscription(hasActive)
     } catch (err) {

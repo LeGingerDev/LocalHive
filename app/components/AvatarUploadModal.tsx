@@ -11,10 +11,10 @@ import {
 } from "react-native"
 import Ionicons from "react-native-vector-icons/Ionicons"
 
-import { Text } from "@/components/Text"
 import { Button } from "@/components/Button"
-import { useAppTheme } from "@/theme/context"
+import { Text } from "@/components/Text"
 import { profileAvatarService } from "@/services/profileAvatarService"
+import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
 // #region Types & Interfaces
@@ -49,7 +49,7 @@ export interface AvatarUploadModalProps {
 // #region Component
 /**
  * AvatarUploadModal - A modal for uploading profile avatars
- * 
+ *
  * Features:
  * - Choose between camera and gallery
  * - Loading states during upload
@@ -57,13 +57,7 @@ export interface AvatarUploadModalProps {
  * - Success callbacks
  */
 export const AvatarUploadModal: FC<AvatarUploadModalProps> = (props) => {
-  const {
-    visible,
-    userId,
-    onClose,
-    onAvatarUploaded,
-    testID = "avatarUploadModal",
-  } = props
+  const { visible, userId, onClose, onAvatarUploaded, testID = "avatarUploadModal" } = props
 
   const { themed } = useAppTheme()
   const [isUploading, setIsUploading] = useState(false)
@@ -74,7 +68,7 @@ export const AvatarUploadModal: FC<AvatarUploadModalProps> = (props) => {
     setIsUploading(true)
     try {
       const result = await profileAvatarService.takeAndUploadPhoto(userId)
-      
+
       if (result.success && result.publicUrl) {
         // Wait for the callback to complete before closing
         if (onAvatarUploaded) {
@@ -98,7 +92,7 @@ export const AvatarUploadModal: FC<AvatarUploadModalProps> = (props) => {
     setIsUploading(true)
     try {
       const result = await profileAvatarService.pickAndUploadFromGallery(userId)
-      
+
       if (result.success && result.publicUrl) {
         // Wait for the callback to complete before closing
         if (onAvatarUploaded) {
@@ -154,8 +148,11 @@ export const AvatarUploadModal: FC<AvatarUploadModalProps> = (props) => {
               </View>
             ) : (
               <>
-                <Text style={themed($description)} text="Choose how you'd like to update your profile photo" />
-                
+                <Text
+                  style={themed($description)}
+                  text="Choose how you'd like to update your profile photo"
+                />
+
                 <View style={themed($optionsContainer)}>
                   {/* Take Photo Option */}
                   <TouchableOpacity
@@ -190,11 +187,7 @@ export const AvatarUploadModal: FC<AvatarUploadModalProps> = (props) => {
           {/* Footer */}
           {!isUploading && (
             <View style={themed($footer)}>
-              <Button
-                text="Cancel"
-                onPress={handleClose}
-                testID={`${testID}_cancelButton`}
-              />
+              <Button text="Cancel" onPress={handleClose} testID={`${testID}_cancelButton`} />
             </View>
           )}
         </View>
@@ -312,4 +305,4 @@ const $footer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   borderTopWidth: 1,
   borderTopColor: "rgba(0, 0, 0, 0.1)",
 })
-// #endregion 
+// #endregion

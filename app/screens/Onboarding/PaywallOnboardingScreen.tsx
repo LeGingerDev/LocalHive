@@ -13,9 +13,9 @@ import { LinearGradient } from "expo-linear-gradient"
 import { useNavigation } from "@react-navigation/native"
 import ReactNativeHapticFeedback from "react-native-haptic-feedback"
 
+import { Icon } from "@/components/Icon"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
-import { Icon } from "@/components/Icon"
 import { AnalyticsService } from "@/services/analyticsService"
 import { revenueCatService } from "@/services/revenueCatService"
 import { colors } from "@/theme/colors"
@@ -35,8 +35,6 @@ export const PaywallOnboardingScreen = () => {
   const priceAnim = useRef(new Animated.Value(0)).current
   const buttonScaleAnim = useRef(new Animated.Value(0.8)).current
   const buttonOpacityAnim = useRef(new Animated.Value(0)).current
-  
-
 
   // Track screen view on mount
   useEffect(() => {
@@ -95,8 +93,6 @@ export const PaywallOnboardingScreen = () => {
           }),
         ]).start()
       }, 800)
-
-
     }
 
     // Start animations after a short delay
@@ -137,28 +133,29 @@ export const PaywallOnboardingScreen = () => {
 
       // Get RevenueCat offerings
       const offerings = await revenueCatService.getOfferings()
-      
+
       if (!offerings) {
         throw new Error("No subscription offerings available")
       }
 
       // Find the trial package (usually the first one or one with "trial" in the name)
-      const trialPackage = offerings.availablePackages.find(
-        (pkg) => pkg.identifier.includes("trial") || pkg.identifier.includes("monthly")
-      ) || offerings.availablePackages[0]
+      const trialPackage =
+        offerings.availablePackages.find(
+          (pkg) => pkg.identifier.includes("trial") || pkg.identifier.includes("monthly"),
+        ) || offerings.availablePackages[0]
 
       if (!trialPackage) {
         throw new Error("No trial package found")
       }
 
       console.log(`🛒 [PaywallOnboarding] Starting anonymous trial purchase`)
-      
+
       // Purchase the trial package (anonymous purchase)
       const customerInfo = await revenueCatService.purchasePackage(trialPackage)
 
       if (customerInfo) {
         console.log(`✅ [PaywallOnboarding] Trial purchase successful`)
-        
+
         // Track successful purchase
         AnalyticsService.trackEvent({
           name: "paywall_trial_purchased",
@@ -177,7 +174,7 @@ export const PaywallOnboardingScreen = () => {
       }
     } catch (error) {
       console.error(`❌ [PaywallOnboarding] Trial purchase failed:`, error)
-      
+
       // Track purchase failure
       AnalyticsService.trackEvent({
         name: "paywall_trial_failed",
@@ -193,7 +190,7 @@ export const PaywallOnboardingScreen = () => {
         [
           { text: "Cancel", style: "cancel" },
           { text: "Try Again", onPress: () => handleStartTrial() },
-        ]
+        ],
       )
     } finally {
       setIsPurchasing(false)
@@ -228,8 +225,6 @@ export const PaywallOnboardingScreen = () => {
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
       />
-
-
 
       {/* Scrollable Content */}
       <ScrollView
@@ -321,9 +316,7 @@ export const PaywallOnboardingScreen = () => {
               </View>
               <View style={styles.featureTextContainer}>
                 <Text style={styles.featureTitle}>Unlimited Groups</Text>
-                <Text style={styles.featureDescription}>
-                  Create as many groups as you need
-                </Text>
+                <Text style={styles.featureDescription}>Create as many groups as you need</Text>
               </View>
             </View>
 
@@ -336,39 +329,37 @@ export const PaywallOnboardingScreen = () => {
               </View>
               <View style={styles.featureTextContainer}>
                 <Text style={styles.featureTitle}>Unlimited Items</Text>
-                <Text style={styles.featureDescription}>
-                  Catalog everything without limits
-                </Text>
+                <Text style={styles.featureDescription}>Catalog everything without limits</Text>
               </View>
             </View>
           </Animated.View>
 
-                  {/* Price Section */}
-        <Animated.View
-          style={[
-            styles.priceContainer,
-            {
-              opacity: priceAnim,
-              transform: [
-                {
-                  scale: priceAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.8, 1],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <Text style={styles.price}>$0</Text>
-          <Text style={styles.pricePeriod}>for 3 days</Text>
-          <Text style={styles.priceAfter}>Then $5.99/month</Text>
-        </Animated.View>
+          {/* Price Section */}
+          <Animated.View
+            style={[
+              styles.priceContainer,
+              {
+                opacity: priceAnim,
+                transform: [
+                  {
+                    scale: priceAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.8, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Text style={styles.price}>$0</Text>
+            <Text style={styles.pricePeriod}>for 3 days</Text>
+            <Text style={styles.priceAfter}>Then $5.99/month</Text>
+          </Animated.View>
 
-                  {/* Trust Indicators */}
-        <View style={styles.trustContainer}>
-          <Text style={styles.trustText}>Cancel anytime • No commitment • Instant access</Text>
-        </View>
+          {/* Trust Indicators */}
+          <View style={styles.trustContainer}>
+            <Text style={styles.trustText}>Cancel anytime • No commitment • Instant access</Text>
+          </View>
         </Animated.View>
       </ScrollView>
 
@@ -413,83 +404,55 @@ export const PaywallOnboardingScreen = () => {
 }
 
 const styles = StyleSheet.create({
+  buttonContainer: {
+    gap: spacing.md,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+  },
   container: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  gradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-
   content: {
     alignItems: "center",
     justifyContent: "flex-start",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl * 2,
   },
-  headerContainer: {
-    alignItems: "center",
-    marginBottom: spacing.xl,
-  },
-  title: {
-    color: colors.palette.neutral100,
-    fontFamily: typography.primary.bold,
-    fontSize: 36,
-    lineHeight: 42,
-    marginBottom: spacing.md,
-    textAlign: "center",
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    color: "rgba(255, 255, 255, 0.9)",
+  featureDescription: {
+    color: "rgba(255, 255, 255, 0.8)",
     fontFamily: typography.primary.normal,
-    fontSize: 18,
-    lineHeight: 26,
-    marginBottom: spacing.xl,
-    textAlign: "center",
+    fontSize: 14,
+    lineHeight: 20,
   },
-  featuresContainer: {
-    width: "100%",
-    maxWidth: 350,
-    marginBottom: spacing.xl,
-  },
-  featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  featureIconContainer: {
-    position: "relative",
-    marginRight: spacing.md,
+
+  featureGlow: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 32,
+    bottom: -4,
+    left: -4,
+    position: "absolute",
+    right: -4,
+    top: -4,
+    zIndex: -1,
   },
   featureIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
     alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 28,
+    borderWidth: 1,
+    height: 56,
+    justifyContent: "center",
+    width: 56,
   },
-  featureGlow: {
-    position: "absolute",
-    top: -4,
-    left: -4,
-    right: -4,
-    bottom: -4,
-    borderRadius: 32,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    zIndex: -1,
+  featureIconContainer: {
+    marginRight: spacing.md,
+    position: "relative",
+  },
+  featureItem: {
+    alignItems: "center",
+    flexDirection: "row",
+    marginBottom: spacing.lg,
   },
   featureTextContainer: {
     flex: 1,
@@ -500,15 +463,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: spacing.xs,
   },
-  featureDescription: {
-    color: "rgba(255, 255, 255, 0.8)",
-    fontFamily: typography.primary.normal,
-    fontSize: 14,
-    lineHeight: 20,
+  featuresContainer: {
+    marginBottom: spacing.xl,
+    maxWidth: 350,
+    width: "100%",
   },
-  priceContainer: {
+  gradient: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  headerContainer: {
     alignItems: "center",
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
   price: {
     color: colors.palette.neutral100,
@@ -519,16 +488,79 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
+  priceAfter: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontFamily: typography.primary.normal,
+    fontSize: 16,
+  },
+  priceContainer: {
+    alignItems: "center",
+    marginBottom: spacing.lg,
+  },
   pricePeriod: {
     color: "rgba(255, 255, 255, 0.9)",
     fontFamily: typography.primary.medium,
     fontSize: 20,
     marginBottom: spacing.xs,
   },
-  priceAfter: {
-    color: "rgba(255, 255, 255, 0.7)",
-    fontFamily: typography.primary.normal,
+  primaryButton: {
+    borderRadius: 16,
+    elevation: 8,
+    overflow: "hidden",
+    shadowColor: colors.palette.neutral800,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.6,
+  },
+  primaryButtonGradient: {
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+  },
+  primaryButtonText: {
+    color: colors.palette.primary400,
+    fontFamily: typography.primary.bold,
+    fontSize: 18,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  secondaryButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 16,
+    borderWidth: 2,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+  },
+  secondaryButtonText: {
+    color: colors.palette.neutral100,
+    fontFamily: typography.primary.medium,
     fontSize: 16,
+  },
+  subtitle: {
+    color: "rgba(255, 255, 255, 0.9)",
+    fontFamily: typography.primary.normal,
+    fontSize: 18,
+    lineHeight: 26,
+    marginBottom: spacing.xl,
+    textAlign: "center",
+  },
+  title: {
+    color: colors.palette.neutral100,
+    fontFamily: typography.primary.bold,
+    fontSize: 36,
+    letterSpacing: -0.5,
+    lineHeight: 42,
+    marginBottom: spacing.md,
+    textAlign: "center",
   },
   trustContainer: {
     alignItems: "center",
@@ -540,45 +572,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
-  buttonContainer: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
-    gap: spacing.md,
-  },
-  primaryButton: {
-    borderRadius: 16,
-    overflow: "hidden",
-    elevation: 8,
-    shadowColor: colors.palette.neutral800,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-  },
-  primaryButtonGradient: {
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    alignItems: "center",
-  },
-  primaryButtonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButtonText: {
-    color: colors.palette.primary400,
-    fontFamily: typography.primary.bold,
-    fontSize: 18,
-  },
-  secondaryButton: {
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    borderWidth: 2,
-    borderRadius: 16,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-  },
-  secondaryButtonText: {
-    color: colors.palette.neutral100,
-    fontFamily: typography.primary.medium,
-    fontSize: 16,
-  },
-}) 
+})

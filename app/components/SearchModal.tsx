@@ -23,11 +23,11 @@ import { Switch } from "@/components/Toggle/Switch"
 import { useAuth } from "@/context/AuthContext"
 import { useAnalytics } from "@/hooks/useAnalytics"
 import { useSubscription } from "@/hooks/useSubscription"
+import { HapticService } from "@/services/hapticService"
 import { askAIAboutItems, AIQueryResponse } from "@/services/openaiService"
 import { ItemWithProfile, ItemService } from "@/services/supabase/itemService"
 import { supabase } from "@/services/supabase/supabase"
 import { searchItemsByVector } from "@/services/vectorSearchService"
-import { HapticService } from "@/services/hapticService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
@@ -67,8 +67,6 @@ export const SearchModal: FC<SearchModalProps> = ({ visible, onClose, enableAI =
       })
     }
   }, [visible, trackEvent, events.SCREEN_VIEWED])
-
-
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -318,8 +316,8 @@ export const SearchModal: FC<SearchModalProps> = ({ visible, onClose, enableAI =
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView 
-        style={themed($root)} 
+      <KeyboardAvoidingView
+        style={themed($root)}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
@@ -396,8 +394,6 @@ const $root: ThemedStyle<ViewStyle> = ({ colors }) => ({
   flex: 1,
   backgroundColor: colors.background,
 })
-
-
 
 const $mainContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flex: 1,
@@ -517,4 +513,4 @@ const $emptyStateImage: ThemedStyle<ImageStyle> = ({ spacing }) => ({
   width: spacing.xxl,
   height: spacing.xxl,
   marginBottom: spacing.md,
-}) 
+})

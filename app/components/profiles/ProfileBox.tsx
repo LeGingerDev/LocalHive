@@ -145,15 +145,18 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
         avatar_url: userProfile.avatar_url,
         full_name: userProfile.full_name,
       })
-      
+
       // If we have an uploaded avatar in the database, use it
       // Otherwise, fall back to auth metadata
       let avatarUrl = userProfile.avatar_url
-      
+
       if (!avatarUrl) {
         // No uploaded avatar, try auth metadata
         if (user?.user_metadata?.avatar_url) {
-          console.log("[ProfileBox] No database avatar, using auth metadata:", user.user_metadata.avatar_url)
+          console.log(
+            "[ProfileBox] No database avatar, using auth metadata:",
+            user.user_metadata.avatar_url,
+          )
           avatarUrl = user.user_metadata.avatar_url
         } else if (googleUser?.picture) {
           console.log("[ProfileBox] No database avatar, using Google picture:", googleUser.picture)
@@ -162,7 +165,7 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
       } else {
         console.log("[ProfileBox] Using uploaded database avatar:", avatarUrl)
       }
-      
+
       return {
         id: userProfile.id,
         email: userProfile.email,
@@ -175,7 +178,10 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
 
     // Second priority: use Supabase user data (auth metadata)
     if (user) {
-      console.log("[ProfileBox] No database profile, using Supabase user avatar:", user.user_metadata?.avatar_url)
+      console.log(
+        "[ProfileBox] No database profile, using Supabase user avatar:",
+        user.user_metadata?.avatar_url,
+      )
       return {
         id: user.id,
         email: user.email,
@@ -244,22 +250,25 @@ export const ProfileBox: FC<ProfileBoxProps> = memo((props) => {
     }
   }, [_userData?.id])
 
-  const _handleAvatarUploaded = useCallback(async (avatarUrl: string): Promise<void> => {
-    console.log("[ProfileBox] Avatar uploaded successfully:", avatarUrl)
-    console.log("[ProfileBox] Current userProfile before refresh:", userProfile?.avatar_url)
-    
-    try {
-      // Refresh the user data to update the avatar in the UI
-      await refreshUser()
-      console.log("[ProfileBox] User data refreshed successfully")
-      
-      // Add a small delay to ensure UI updates
-      await new Promise(resolve => setTimeout(resolve, 100))
-      console.log("[ProfileBox] Avatar update complete")
-    } catch (error) {
-      console.error("[ProfileBox] Error refreshing user data:", error)
-    }
-  }, [refreshUser, userProfile?.avatar_url])
+  const _handleAvatarUploaded = useCallback(
+    async (avatarUrl: string): Promise<void> => {
+      console.log("[ProfileBox] Avatar uploaded successfully:", avatarUrl)
+      console.log("[ProfileBox] Current userProfile before refresh:", userProfile?.avatar_url)
+
+      try {
+        // Refresh the user data to update the avatar in the UI
+        await refreshUser()
+        console.log("[ProfileBox] User data refreshed successfully")
+
+        // Add a small delay to ensure UI updates
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        console.log("[ProfileBox] Avatar update complete")
+      } catch (error) {
+        console.error("[ProfileBox] Error refreshing user data:", error)
+      }
+    },
+    [refreshUser, userProfile?.avatar_url],
+  )
 
   const _handleCloseAvatarModal = useCallback((): void => {
     setShowAvatarUploadModal(false)

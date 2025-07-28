@@ -1,4 +1,4 @@
-import { FC, memo } from "react"
+import { FC, memo, useState } from "react"
 import {
   View,
   ViewStyle,
@@ -9,8 +9,11 @@ import {
   Modal,
   Pressable,
 } from "react-native"
+import { useNavigation } from "@react-navigation/native"
 
+import { Icon } from "@/components/Icon"
 import { Text } from "@/components/Text"
+import { useAuth } from "@/context/AuthContext"
 import { ItemWithProfile } from "@/services/supabase/itemService"
 import { getCategoryColor } from "@/theme/categoryColors"
 import { useAppTheme } from "@/theme/context"
@@ -58,6 +61,16 @@ export const ItemModal: FC<ItemModalProps> = memo((props) => {
 
   // #region Hooks & Context
   const { themed, themeContext } = useAppTheme()
+  const { user } = useAuth()
+  const navigation = useNavigation()
+  // #endregion
+
+  // #region State
+  // Removed showEditModal state since we're using navigation now
+  // #endregion
+
+  // #region Computed Values
+  const canEdit = user && item.user_id === user.id
   // #endregion
 
   // #region Computed Values
@@ -70,15 +83,36 @@ export const ItemModal: FC<ItemModalProps> = memo((props) => {
   const handleClose = () => {
     onClose()
   }
+
+  const handleEdit = () => {
+    // Navigate to EditItemScreen instead of opening modal
+    ;(navigation as any).navigate("EditItem", {
+      item,
+      returnScreen: "GroupDetail", // This will be handled by the screen that opened the modal
+      returnParams: { groupId: item.group_id },
+    })
+    onClose() // Close the modal when navigating to edit screen
+  }
   // #endregion
 
   // #region Render Methods
   const renderHeader = () => (
     <View style={themed($modalHeader)}>
       <Text style={themed($modalTitle)} text="Item Details" />
-      <TouchableOpacity onPress={handleClose} style={themed($closeButton)}>
-        <Text style={themed($closeButtonText)} text="✕" />
-      </TouchableOpacity>
+      <View style={themed($headerActions)}>
+        {canEdit && (
+          <TouchableOpacity onPress={handleEdit} style={themed($editButton)}>
+            <Icon
+              icon="settings"
+              size={20}
+              color={themeContext === "dark" ? "#FFFFFF" : "#000000"}
+            />
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity onPress={handleClose} style={themed($closeButton)}>
+          <Text style={themed($closeButtonText)} text="✕" />
+        </TouchableOpacity>
+      </View>
     </View>
   )
 
@@ -151,6 +185,8 @@ export const ItemModal: FC<ItemModalProps> = memo((props) => {
           </View>
         </View>
       </Pressable>
+
+      {/* Edit functionality now handled by navigation to EditItemScreen */}
     </Modal>
   )
   // #endregion
@@ -188,6 +224,17 @@ const $modalHeader = ({ spacing }: any): ViewStyle => ({
   padding: spacing.sm,
   borderBottomWidth: 1,
   borderBottomColor: "rgba(0,0,0,0.1)",
+})
+
+const $headerActions = ({ spacing }: any): ViewStyle => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: spacing.sm,
+})
+
+const $editButton = ({ spacing }: any): ViewStyle => ({
+  padding: spacing.xs,
+  borderRadius: 8,
 })
 
 const $modalTitle = ({ typography, colors }: any): TextStyle => ({

@@ -9,8 +9,8 @@
 export async function checkNetworkConnectivity(): Promise<boolean> {
   try {
     // Simple network check by trying to fetch a small resource
-    const response = await fetch('https://www.google.com/favicon.ico', {
-      method: 'HEAD',
+    const response = await fetch("https://www.google.com/favicon.ico", {
+      method: "HEAD",
     })
     return response.ok
   } catch (error) {
@@ -26,16 +26,16 @@ export async function checkNetworkConnectivity(): Promise<boolean> {
  */
 export async function waitForNetworkConnectivity(timeoutMs: number = 10000): Promise<boolean> {
   const startTime = Date.now()
-  
+
   while (Date.now() - startTime < timeoutMs) {
     if (await checkNetworkConnectivity()) {
       return true
     }
-    
+
     // Wait 1 second before checking again
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 1000))
   }
-  
+
   return false
 }
 
@@ -49,7 +49,7 @@ export async function waitForNetworkConnectivity(timeoutMs: number = 10000): Pro
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
-  baseDelay: number = 1000
+  baseDelay: number = 1000,
 ): Promise<T> {
   let lastError: Error | null = null
 
@@ -59,14 +59,14 @@ export async function retryWithBackoff<T>(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
       console.warn(`[NetworkUtils] Attempt ${attempt} failed:`, lastError)
-      
+
       if (attempt < maxRetries) {
         const delay = baseDelay * Math.pow(2, attempt - 1) // 1s, 2s, 4s
         console.log(`[NetworkUtils] Retrying in ${delay}ms...`)
-        await new Promise(resolve => setTimeout(resolve, delay))
+        await new Promise((resolve) => setTimeout(resolve, delay))
       }
     }
   }
 
   throw lastError || new Error("Operation failed after all retries")
-} 
+}

@@ -30,9 +30,9 @@ import { useSubscription } from "@/hooks/useSubscription"
 import type { BottomTabScreenProps, BottomTabParamList } from "@/navigators/BottomTabNavigator"
 import { navigate } from "@/navigators/navigationUtilities"
 import { cameraService } from "@/services/cameraService"
+import { HapticService } from "@/services/hapticService"
 import { ItemService } from "@/services/supabase/itemService"
 import { supabase } from "@/services/supabase/supabase"
-import { HapticService } from "@/services/hapticService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
@@ -235,10 +235,10 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
             `${Config.SUPABASE_URL}/functions/v1/generate-item-embedding`,
             {
               method: "POST",
-                              headers: {
-                  "Authorization": `Bearer ${Config.SUPABASE_KEY}`,
-                  "Content-Type": "application/json",
-                },
+              headers: {
+                "Authorization": `Bearer ${Config.SUPABASE_KEY}`,
+                "Content-Type": "application/json",
+              },
               body: JSON.stringify({
                 item_id: createdItem.id,
                 title: title.trim(),

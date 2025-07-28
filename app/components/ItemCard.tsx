@@ -4,8 +4,9 @@ import { View, ViewStyle, TextStyle, Image, TouchableOpacity, ImageStyle } from 
 import { CustomAlert } from "@/components/Alert/CustomAlert"
 import { ItemModal } from "@/components/ItemModal"
 import { Text } from "@/components/Text"
-import { ItemWithProfile } from "@/services/supabase/itemService"
+import { useAuth } from "@/context/AuthContext"
 import { HapticService } from "@/services/hapticService"
+import { ItemWithProfile } from "@/services/supabase/itemService"
 import { ItemService } from "@/services/supabase/itemService"
 import { getCategoryColor } from "@/theme/categoryColors"
 import { useAppTheme } from "@/theme/context"
@@ -28,9 +29,13 @@ export const ItemCard = ({
   groupName,
 }: ItemCardProps) => {
   const { themed, themeContext } = useAppTheme()
+  const { user } = useAuth()
   const imageUrls = item.image_urls ?? []
   const hasImage = imageUrls.length > 0
   const categoryColor = getCategoryColor(item.category, themeContext === "dark")
+  
+  // Check if current user is the owner of this item
+  const isOwner = user?.id === item.user_id
 
   // Debug logs
   console.log("[ItemCard] imageUrls:", imageUrls)
@@ -121,7 +126,10 @@ export const ItemCard = ({
                 ellipsizeMode="tail"
               />
               <Text
-                style={themed($userText)}
+                style={[
+                  themed($userText),
+                  isOwner && themed($userTextOwner)
+                ]}
                 text={item.full_name || item.email || "Unknown user"}
                 numberOfLines={1}
                 ellipsizeMode="tail"
@@ -133,8 +141,8 @@ export const ItemCard = ({
         {/* Group Name Tag */}
         {groupName && (
           <View style={themed($groupTagContainer)}>
-            <View style={themed($groupTagLine)} />
-            <View style={themed($groupTag)}>
+            <View style={[themed($groupTagLine), { backgroundColor: categoryColor }]} />
+            <View style={[themed($groupTag), { borderColor: categoryColor }]}>
               <Text style={themed($groupTagText)} text={groupName} />
             </View>
           </View>
@@ -261,6 +269,10 @@ const $userText = ({ typography, colors }: any): TextStyle => ({
   flexShrink: 1,
   flexGrow: 0,
   maxWidth: "50%",
+})
+
+const $userTextOwner = ({ colors, themeContext }: any): TextStyle => ({
+  color: themeContext === "dark" ? colors.palette.orange100 : colors.palette.orange500,
 })
 
 // Group Tag Styles
