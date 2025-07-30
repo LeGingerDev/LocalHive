@@ -205,7 +205,16 @@ export class ItemListService {
           quantity,
           notes,
         })
-        .select()
+        .select(
+          `
+          *,
+          items(
+            title,
+            category,
+            image_urls
+          )
+        `
+        )
         .single()
 
       if (error) {
@@ -213,7 +222,16 @@ export class ItemListService {
         return { data: null, error }
       }
 
-      return { data: listItem, error: null }
+      // Process the item data to match the ListItem interface
+      const processedItem = {
+        ...listItem,
+        item_title: listItem.items?.title,
+        item_category: listItem.items?.category,
+        item_image_urls: listItem.items?.image_urls,
+        items: undefined, // Remove the nested data
+      }
+
+      return { data: processedItem, error: null }
     } catch (error) {
       console.error("Error adding item to list:", error)
       return {

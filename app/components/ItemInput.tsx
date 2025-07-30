@@ -8,13 +8,16 @@ import {
   ImageStyle,
 } from "react-native"
 
+import { AllItemsModal } from "@/components/AllItemsModal"
 import { Icon } from "@/components/Icon"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
+import { ItemWithProfile } from "@/services/supabase/itemService"
 
 interface ItemInputProps {
   onConfirm: (text: string) => void
   onPicturePress?: () => void
+  onItemLink?: (item: ItemWithProfile) => void
   placeholder?: string
   initialValue?: string
   disabled?: boolean
@@ -23,12 +26,14 @@ interface ItemInputProps {
 export const ItemInput: React.FC<ItemInputProps> = ({
   onConfirm,
   onPicturePress,
+  onItemLink,
   placeholder = "Shopping Item Text",
   initialValue = "",
   disabled = false,
 }) => {
   const { themed } = useAppTheme()
   const [text, setText] = useState(initialValue)
+  const [isAllItemsModalVisible, setIsAllItemsModalVisible] = useState(false)
 
   const handleConfirm = () => {
     if (text.trim()) {
@@ -43,49 +48,72 @@ export const ItemInput: React.FC<ItemInputProps> = ({
     }
   }
 
+  const handleSearchPress = () => {
+    setIsAllItemsModalVisible(true)
+  }
+
+  const handleAllItemsModalClose = () => {
+    setIsAllItemsModalVisible(false)
+  }
+
+  const handleItemSelect = (item: ItemWithProfile & { group_name?: string }) => {
+    if (onItemLink) {
+      onItemLink(item)
+    }
+    setIsAllItemsModalVisible(false)
+  }
+
   return (
-    <View style={themed($container)}>
-      <TextInput
-        style={themed($textInput)}
-        value={text}
-        onChangeText={setText}
-        placeholder={placeholder}
-        placeholderTextColor={themed($placeholderText).color}
-        onSubmitEditing={handleConfirm}
-        returnKeyType="done"
-        editable={!disabled}
-        multiline={false}
-      />
-      <View style={themed($buttonContainer)}>
-        <TouchableOpacity
-          style={themed($pictureButton)}
-          onPress={handlePicturePress}
-          disabled={disabled}
-          activeOpacity={0.7}
-        >
-          <Icon
-            icon="view"
-            size={20}
-            color={themed($pictureButtonIcon).color}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            themed($confirmButton),
-            !text.trim() && themed($confirmButtonDisabled),
-          ]}
-          onPress={handleConfirm}
-          disabled={disabled || !text.trim()}
-          activeOpacity={0.7}
-        >
-          <Icon
-            icon="check"
-            size={20}
-            color={themed($confirmButtonIcon).color}
-          />
-        </TouchableOpacity>
+    <>
+      <View style={themed($container)}>
+        <TextInput
+          style={themed($textInput)}
+          value={text}
+          onChangeText={setText}
+          placeholder={placeholder}
+          placeholderTextColor={themed($placeholderText).color}
+          onSubmitEditing={handleConfirm}
+          returnKeyType="done"
+          editable={!disabled}
+          multiline={false}
+        />
+        <View style={themed($buttonContainer)}>
+          <TouchableOpacity
+            style={themed($pictureButton)}
+            onPress={handleSearchPress}
+            disabled={disabled}
+            activeOpacity={0.7}
+          >
+            <Icon
+              icon="view"
+              size={20}
+              color={themed($pictureButtonIcon).color}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              themed($confirmButton),
+              !text.trim() && themed($confirmButtonDisabled),
+            ]}
+            onPress={handleConfirm}
+            disabled={disabled || !text.trim()}
+            activeOpacity={0.7}
+          >
+            <Icon
+              icon="check"
+              size={20}
+              color={themed($confirmButtonIcon).color}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+
+      <AllItemsModal
+        visible={isAllItemsModalVisible}
+        onClose={handleAllItemsModalClose}
+        onItemSelect={handleItemSelect}
+      />
+    </>
   )
 }
 

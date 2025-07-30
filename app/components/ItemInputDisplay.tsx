@@ -10,10 +10,12 @@ import { ItemInput } from "@/components/ItemInput"
 import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
+import { ItemWithProfile } from "@/services/supabase/itemService"
 
 interface ItemInputDisplayProps {
   onAddItem: (text: string) => void
   onPicturePress?: () => void
+  onItemLink?: (item: ItemWithProfile) => void
   placeholder?: string
   disabled?: boolean
 }
@@ -21,6 +23,7 @@ interface ItemInputDisplayProps {
 export const ItemInputDisplay: React.FC<ItemInputDisplayProps> = ({
   onAddItem,
   onPicturePress,
+  onItemLink,
   placeholder = "Shopping Item Text",
   disabled = false,
 }) => {
@@ -40,12 +43,20 @@ export const ItemInputDisplay: React.FC<ItemInputDisplayProps> = ({
     setIsInputVisible(false)
   }
 
+  const handleItemLink = (item: ItemWithProfile) => {
+    if (onItemLink) {
+      onItemLink(item)
+    }
+    setIsInputVisible(false)
+  }
+
   if (isInputVisible) {
     return (
       <View style={themed($container)}>
         <ItemInput
           onConfirm={handleConfirm}
           onPicturePress={onPicturePress}
+          onItemLink={handleItemLink}
           placeholder={placeholder}
           disabled={disabled}
         />

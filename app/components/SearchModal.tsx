@@ -36,9 +36,15 @@ interface SearchModalProps {
   visible: boolean
   onClose: () => void
   enableAI?: boolean
+  onItemSelect?: (item: ItemWithProfile & { group_name?: string }) => void
 }
 
-export const SearchModal: FC<SearchModalProps> = ({ visible, onClose, enableAI = false }) => {
+export const SearchModal: FC<SearchModalProps> = ({ 
+  visible, 
+  onClose, 
+  enableAI = false,
+  onItemSelect 
+}) => {
   const { themed, theme } = useAppTheme()
   const { trackEvent, events } = useAnalytics()
   const { user } = useAuth()
@@ -260,11 +266,21 @@ export const SearchModal: FC<SearchModalProps> = ({ visible, onClose, enableAI =
     setAiResponse(null) // Clear AI response
   }, [isAIMode, query, trackEvent, events.SEARCH_MODE_SWITCHED, subscription.isPro, showAlert])
 
+  const handleItemPress = useCallback((item: ItemWithProfile & { group_name?: string }) => {
+    if (onItemSelect) {
+      onItemSelect(item)
+    }
+  }, [onItemSelect])
+
   const renderItem = useCallback(
     ({ item }: { item: ItemWithProfile & { group_name?: string } }) => {
-      return <ItemCard item={item} groupName={item.group_name} />
+      return (
+        <TouchableOpacity onPress={() => handleItemPress(item)} activeOpacity={0.7}>
+          <ItemCard item={item} groupName={item.group_name} />
+        </TouchableOpacity>
+      )
     },
-    [],
+    [handleItemPress],
   )
 
   const renderEmptyState = useCallback(() => {
@@ -331,7 +347,7 @@ export const SearchModal: FC<SearchModalProps> = ({ visible, onClose, enableAI =
       >
         {/* Header */}
         <Header
-          title="Search"
+          title={onItemSelect ? "Link Item" : "Search"}
           showBackButton
           onBackPress={onClose}
           rightActions={[
