@@ -27,6 +27,35 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window")
 export const PaywallOnboardingScreen = () => {
   const navigation = useNavigation<any>()
   const [isPurchasing, setIsPurchasing] = useState(false)
+  const [hasUsedTrial, setHasUsedTrial] = useState(false)
+
+  // Check if user has already used their trial
+  const checkTrialStatus = async () => {
+    try {
+      const { revenueCatService } = await import("@/services/revenueCatService")
+      const customerInfo = await revenueCatService.getCustomerInfo()
+
+      if (customerInfo) {
+        // Check if user has any trial-related entitlements in their history
+        const allEntitlements = Object.values(customerInfo.entitlements.all)
+        const hasTrialHistory = allEntitlements.some(
+          (entitlement) =>
+            entitlement.identifier.includes("trial") ||
+            entitlement.identifier.includes("intro") ||
+            entitlement.periodType === "intro",
+        )
+
+        setHasUsedTrial(hasTrialHistory)
+        console.log(
+          `🔍 [PaywallOnboarding] Trial status: ${hasTrialHistory ? "Used" : "Available"}`,
+        )
+      }
+    } catch (error) {
+      console.error("❌ [PaywallOnboarding] Error checking trial status:", error)
+      // Default to assuming trial is available if we can't check
+      setHasUsedTrial(false)
+    }
+  }
 
   // Enhanced animation refs
   const contentFadeAnim = useRef(new Animated.Value(0)).current
@@ -36,9 +65,10 @@ export const PaywallOnboardingScreen = () => {
   const buttonScaleAnim = useRef(new Animated.Value(0.8)).current
   const buttonOpacityAnim = useRef(new Animated.Value(0)).current
 
-  // Track screen view on mount
+  // Track screen view on mount and check trial status
   useEffect(() => {
     AnalyticsService.trackScreenView({ screenName: "PaywallOnboarding" })
+    checkTrialStatus()
 
     // Start enhanced content animations
     const startContentAnimations = () => {
@@ -260,7 +290,7 @@ export const PaywallOnboardingScreen = () => {
                 },
               ]}
             >
-              Start Your Free Trial
+              {hasUsedTrial ? "Upgrade to Pro" : "Start Your Free Trial"}
             </Animated.Text>
 
             <Animated.Text
@@ -271,7 +301,9 @@ export const PaywallOnboardingScreen = () => {
                 },
               ]}
             >
-              Get 3 days of unlimited access to all premium features
+              {hasUsedTrial
+                ? "Unlock unlimited access to all premium features"
+                : "Get 3 days of unlimited access to all premium features"}
             </Animated.Text>
           </Animated.View>
 
@@ -351,14 +383,28 @@ export const PaywallOnboardingScreen = () => {
               },
             ]}
           >
-            <Text style={styles.price}>$0</Text>
-            <Text style={styles.pricePeriod}>for 3 days</Text>
-            <Text style={styles.priceAfter}>Then $5.99/month</Text>
+            {hasUsedTrial ? (
+              <>
+                <Text style={styles.price}>$5.99</Text>
+                <Text style={styles.pricePeriod}>per month</Text>
+                <Text style={styles.priceAfter}>Cancel anytime</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.price}>$0</Text>
+                <Text style={styles.pricePeriod}>for 3 days</Text>
+                <Text style={styles.priceAfter}>Then $5.99/month</Text>
+              </>
+            )}
           </Animated.View>
 
           {/* Trust Indicators */}
           <View style={styles.trustContainer}>
-            <Text style={styles.trustText}>Cancel anytime • No commitment • Instant access</Text>
+            <Text style={styles.trustText}>
+              {hasUsedTrial
+                ? "Cancel anytime • No commitment • Instant access"
+                : "Cancel anytime • No commitment • 3-day free trial"}
+            </Text>
           </View>
         </Animated.View>
       </ScrollView>
@@ -386,7 +432,7 @@ export const PaywallOnboardingScreen = () => {
             end={{ x: 1, y: 1 }}
           >
             <Text style={styles.primaryButtonText}>
-              {isPurchasing ? "Starting Trial..." : "Start Free Trial"}
+              {isPurchasing ? "Processing..." : hasUsedTrial ? "Subscribe Now" : "Start Free Trial"}
             </Text>
           </LinearGradient>
         </TouchableOpacity>

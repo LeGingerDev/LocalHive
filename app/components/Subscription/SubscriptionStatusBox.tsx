@@ -42,40 +42,7 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
     setIsUpgradeModalVisible(false)
   }
 
-  const handleManualSync = async () => {
-    if (!userId) return
-
-    console.log("🔄 [SubscriptionStatusBox] Manual sync triggered")
-    try {
-      // Force a sync with RevenueCat
-      await revenueCatService.syncSubscriptionWithSupabase(userId)
-
-      // Refresh the subscription data
-      subscription.refresh()
-
-      // Show success message
-      Alert.alert("Sync Complete", "Subscription data has been refreshed.")
-    } catch (error) {
-      console.error("❌ [SubscriptionStatusBox] Manual sync failed:", error)
-      Alert.alert("Sync Failed", "Failed to sync subscription data. Please try again.")
-    }
-  }
-
-  const handleForceRestart = () => {
-    console.log("🔄 [SubscriptionStatusBox] Force restart triggered")
-    Alert.alert(
-      "Restart App",
-      "This will restart the app to refresh all subscription data. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Restart",
-          style: "destructive",
-          onPress: () => restartApp(500),
-        },
-      ],
-    )
-  }
+  // Debug handlers removed
 
   const handleUpgrade = async () => {
     if (!userId) return
@@ -229,14 +196,16 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
 
             {/* Action Buttons */}
             <View style={themed($actionsSection)}>
-              {(subscription.isFree || subscription.isTrial) && (
+              {(subscription.isFree || subscription.isTrial || subscription.isExpired) && (
                 <TouchableOpacity
                   style={themed($upgradeButton)}
                   onPress={handleUpgradePress}
                   activeOpacity={0.8}
                 >
                   <Icon icon="lightning" size={18} color={themed($upgradeButtonIconColor).color} />
-                  <Text style={themed($upgradeButtonText)}>Upgrade to Pro</Text>
+                  <Text style={themed($upgradeButtonText)}>
+                    {subscription.isExpired ? "Renew Pro" : "Upgrade to Pro"}
+                  </Text>
                 </TouchableOpacity>
               )}
 
@@ -249,29 +218,6 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
                   <Icon icon="settings" size={18} color={themed($manageButtonIconColor).color} />
                   <Text style={themed($manageButtonText)}>Manage Subscription</Text>
                 </TouchableOpacity>
-              )}
-
-              {/* Debug buttons for development */}
-              {__DEV__ && (
-                <View style={themed($debugSection)}>
-                  <TouchableOpacity
-                    style={themed($debugButton)}
-                    onPress={handleManualSync}
-                    activeOpacity={0.8}
-                  >
-                    <Icon icon="check" size={16} color={themed($debugButtonIconColor).color} />
-                    <Text style={themed($debugButtonText)}>Manual Sync</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={themed($debugButton)}
-                    onPress={handleForceRestart}
-                    activeOpacity={0.8}
-                  >
-                    <Icon icon="settings" size={16} color={themed($debugButtonIconColor).color} />
-                    <Text style={themed($debugButtonText)}>Force Restart</Text>
-                  </TouchableOpacity>
-                </View>
               )}
             </View>
           </>
@@ -638,32 +584,4 @@ const $loadingText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   textAlign: "center",
 })
 
-// Debug button styles
-const $debugSection: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  flexDirection: "row",
-  justifyContent: "space-around",
-  marginTop: spacing.sm,
-  gap: spacing.sm,
-})
-
-const $debugButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  flex: 1,
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: colors.palette.neutral200,
-  borderRadius: 8,
-  paddingVertical: spacing.xs,
-  paddingHorizontal: spacing.sm,
-  gap: spacing.xs,
-})
-
-const $debugButtonIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
-  color: colors.text,
-})
-
-const $debugButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  color: colors.text,
-  fontSize: 12,
-  fontWeight: "500",
-})
+// Debug button styles removed

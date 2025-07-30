@@ -79,6 +79,14 @@ export const SearchModal: FC<SearchModalProps> = ({ visible, onClose, enableAI =
     }
   }, [visible])
 
+  // Update AI mode when enableAI prop changes
+  useEffect(() => {
+    if (visible) {
+      const newAIMode = enableAI && subscription.isPro
+      setIsAIMode(newAIMode)
+    }
+  }, [visible, enableAI, subscription.isPro])
+
   // Debounced search using the vector service
   const handleChange = useCallback(
     (text: string) => {

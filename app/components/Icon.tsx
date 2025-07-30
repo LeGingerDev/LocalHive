@@ -122,10 +122,17 @@ export const iconRegistry = {
   lock: require("@assets/icons/lock.png"),
   menu: require("@assets/icons/menu.png"),
   more: require("@assets/icons/more.png"),
+  search: require("@assets/icons/more.png"), // Using more icon as placeholder for search
   settings: require("@assets/icons/settings.png"),
   view: require("@assets/icons/view.png"),
   x: require("@assets/icons/x.png"),
   xOutline: require("@assets/icons/x.png"), // Using same icon but will style it as outline
+  // New icons for quick actions
+  plus: require("@assets/icons/check.png"), // Using check as plus (will be styled differently)
+  group: require("@assets/icons/view.png"), // Using view as group icon
+  list: require("@assets/icons/menu.png"), // Using menu as list icon
+  items: require("@assets/icons/check.png"), // Using check as items icon
+  aiSearch: require("@assets/Visu/LightningIcon.png"), // Using lightning for AI search
 }
 
 const $imageStyleBase: ImageStyle = {

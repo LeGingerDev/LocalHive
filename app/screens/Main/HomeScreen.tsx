@@ -40,6 +40,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
   const [error, setError] = useState<HomeError | null>(null)
   const [isManageModalVisible, setIsManageModalVisible] = useState<boolean>(false)
   const [isSearchModalVisible, setIsSearchModalVisible] = useState<boolean>(false)
+  const [searchAIMode, setSearchAIMode] = useState<boolean>(false)
   const lastRefreshTimeRef = useRef<number>(0)
   const isRefreshingRef = useRef<boolean>(false)
   // #endregion
@@ -87,14 +88,33 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
     navigation.navigate("Add")
   }, [navigation])
 
-  const handleSearch = useCallback(() => {
+  const handleCreateList = useCallback(() => {
+    HapticService.selection()
+    navigation.navigate("CreateList" as any)
+  }, [navigation])
+
+  const handleSearch = useCallback((enableAI?: boolean) => {
     HapticService.selection()
     setIsSearchModalVisible(true)
+    // Store the AI mode preference to pass to the modal
+    setSearchAIMode(enableAI || false)
+  }, [])
+
+  const handleHeaderSearch = useCallback(() => {
+    HapticService.selection()
+    setIsSearchModalVisible(true)
+    // Header search uses regular search (non-AI mode)
+    setSearchAIMode(false)
   }, [])
 
   const handleViewGroups = useCallback(() => {
     HapticService.selection()
     navigation.navigate("Groups")
+  }, [navigation])
+
+  const handleShowAllItems = useCallback(() => {
+    HapticService.selection()
+    navigation.navigate("ShowAllItems")
   }, [navigation])
 
   const handleManagePress = useCallback(() => {
@@ -196,7 +216,15 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
 
   const renderContent = (): React.JSX.Element => (
     <Screen style={themed($root)} preset="fixed" safeAreaEdges={["top", "bottom"]}>
-      <Header title="Home" />
+      <Header
+        title="Home"
+        rightActions={[
+          {
+            text: "Search",
+            onPress: handleHeaderSearch,
+          },
+        ]}
+      />
 
       <ScrollView
         contentContainerStyle={themed($scrollContent)}
@@ -206,15 +234,17 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
         <WelcomeMessage userProfile={userProfile} />
 
         {/* Subscription Status */}
-        <SubscriptionStatusBox userId={user?.id || null} />
+        <SubscriptionStatusBox userId={user?.id || null} onManagePress={handleManagePress} />
 
         {/* Quick Actions */}
         <QuickActions
           userId={user?.id || null}
           onCreateGroup={handleCreateGroup}
           onAddItem={handleAddItem}
+          onCreateList={handleCreateList}
           onSearch={handleSearch}
           onViewGroups={handleViewGroups}
+          onShowAllItems={handleShowAllItems}
         />
 
         {/* Recent Activity Section */}
@@ -243,7 +273,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
       <SearchModal
         visible={isSearchModalVisible}
         onClose={() => setIsSearchModalVisible(false)}
-        enableAI={true}
+        enableAI={searchAIMode}
       />
     </Screen>
   )

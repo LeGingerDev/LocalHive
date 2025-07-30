@@ -163,36 +163,15 @@ export const useSubscription = (userId: string | null) => {
 
   /**
    * Activate trial for the user
+   * @deprecated Trials are now managed by RevenueCat. Use RevenueCat's trial system instead.
    */
   const activateTrial = useCallback(async () => {
-    if (!userId) return { success: false, error: "No user ID" }
-
-    setLoading(true)
-    setError(null)
-
-    try {
-      const { success, error } = await SubscriptionService.activateTrial(userId)
-
-      if (error) {
-        setError(error.message)
-        return { success: false, error: error.message }
-      }
-
-      if (success) {
-        // Clear cache and refresh subscription info after trial activation
-        subscriptionCache.delete(userId)
-        await loadSubscriptionInfo()
-      }
-
-      return { success, error: null }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to activate trial"
-      setError(errorMessage)
-      return { success: false, error: errorMessage }
-    } finally {
-      setLoading(false)
+    console.warn("activateTrial is deprecated. Trials are now managed by RevenueCat.")
+    return {
+      success: false,
+      error: "Trials are now managed by RevenueCat. Use RevenueCat's trial system instead.",
     }
-  }, [userId, loadSubscriptionInfo])
+  }, [])
 
   /**
    * Upgrade user to pro subscription
@@ -333,8 +312,8 @@ export const useSubscription = (userId: string | null) => {
 
   // Only log computed values in development and when they actually change
   // Reduced logging to prevent spam
-  if (__DEV__ && false) {
-    // Set to false to disable debug logging
+  if (__DEV__ && true) {
+    // Set to true to enable debug logging
     console.log(`📊 [useSubscription] Computed values:`, {
       subscriptionStatus: subscriptionInfo?.subscription_status,
       ...computedValues,

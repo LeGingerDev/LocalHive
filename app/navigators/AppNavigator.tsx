@@ -15,8 +15,10 @@ import { SplashScreen } from "@/screens/Auth/SplashScreen"
 import { ErrorBoundary } from "@/screens/ErrorScreen/ErrorBoundary"
 import { InvitationsScreen } from "@/screens/InvitationsScreen"
 import { CreateGroupScreen } from "@/screens/Main/CreateGroupScreen"
+import { CreateListScreen } from "@/screens/Main/CreateListScreen"
 import { EditItemScreen } from "@/screens/Main/EditItemScreen"
 import { GroupDetailScreen } from "@/screens/Main/GroupDetailScreen"
+import { ListDetailScreen } from "@/screens/Main/ListDetailScreen"
 import {
   OnboardingEntryScreen,
   OnboardingSlideshowScreen,
@@ -48,6 +50,8 @@ export type AppStackParamList = {
   PaywallOnboarding: undefined
   Main: undefined // Main app with bottom tabs
   CreateGroup: undefined
+  CreateList: undefined
+  ListDetail: { listName: string }
   GroupDetail: { groupId: string }
   EditItem: { item: any; returnScreen?: string; returnParams?: any }
   // 🔥 Your screens go here
@@ -96,6 +100,8 @@ const AppStack = () => {
       <Stack.Screen name="PaywallOnboarding" component={PaywallOnboardingScreen} />
       <Stack.Screen name="Main" component={SwipeableTabNavigator} />
       <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
+      <Stack.Screen name="CreateList" component={CreateListScreen} />
+      <Stack.Screen name="ListDetail" component={ListDetailScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
       <Stack.Screen name="EditItem" component={EditItemScreen} />
       <Stack.Screen name="Invitations" component={InvitationsScreen} />

@@ -42,6 +42,24 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
     getSubscriptionManagementURL,
   } = useRevenueCat()
 
+  // ADDED: Refresh subscription status
+  const handleRefreshSubscription = async () => {
+    try {
+      console.log("🔄 [SubscriptionManagementModal] Manually refreshing subscription status...")
+      await revenueCatService.refreshSubscriptionStatus()
+      Alert.alert(
+        "Subscription Refreshed",
+        "Your subscription status has been updated. The app will restart to reflect any changes.",
+        [{ text: "OK" }],
+      )
+    } catch (error) {
+      console.error("Failed to refresh subscription:", error)
+      Alert.alert("Error", "Failed to refresh subscription status. Please try again.", [
+        { text: "OK" },
+      ])
+    }
+  }
+
   // Get the monthly subscription package for pricing
   const monthlyPackage = subscriptionTiers.find(
     (tier) => tier.id.includes("monthly") || tier.id.includes("$rc_monthly"),
@@ -80,20 +98,6 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
         ],
       )
     }
-  }
-
-  const handleCancelSubscription = async () => {
-    Alert.alert(
-      "Manage Subscription",
-      "To cancel your subscription, you'll need to manage it through your device's subscription settings. This ensures proper cancellation and billing adjustments.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Manage Subscription",
-          onPress: handleManageSubscription,
-        },
-      ],
-    )
   }
 
   const formatDate = (dateString: string) => {
@@ -377,12 +381,8 @@ export const SubscriptionManagementModal: React.FC<SubscriptionManagementModalPr
                 <Text style={themed($manageButtonText)}>Manage Subscription</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={themed($cancelButton)} onPress={handleCancelSubscription}>
-              <Text style={themed($cancelButtonText)}>
-                {subscription.subscriptionInfo?.subscription_status === "pro"
-                  ? "Cancel Subscription"
-                  : "Subscription Help"}
-              </Text>
+            <TouchableOpacity style={themed($refreshButton)} onPress={handleRefreshSubscription}>
+              <Text style={themed($refreshButtonText)}>Refresh Status</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -555,9 +555,9 @@ const $manageButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   textAlign: "center",
 })
 
-const $cancelButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+const $refreshButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   borderWidth: 1,
-  borderColor: colors.error,
+  borderColor: colors.tint,
   borderRadius: 12,
   paddingVertical: spacing.lg,
   paddingHorizontal: spacing.xl,
@@ -565,10 +565,10 @@ const $cancelButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   justifyContent: "center",
 })
 
-const $cancelButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+const $refreshButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.medium,
   fontSize: 16,
-  color: colors.error,
+  color: colors.tint,
   textAlign: "center",
 })
 

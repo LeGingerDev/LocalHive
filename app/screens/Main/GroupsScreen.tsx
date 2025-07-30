@@ -123,6 +123,17 @@ export const GroupsScreen = ({ navigation, route }: any) => {
       error: subscription.error,
     })
 
+    // ADDED: Detailed debug logging
+    console.log(`🔍 [GroupsScreen] Raw values:`, {
+      groupsUsed: subscription.groupsUsed,
+      groupsLimit: subscription.groupsLimit,
+      groupsUsedType: typeof subscription.groupsUsed,
+      groupsLimitType: typeof subscription.groupsLimit,
+      comparison: subscription.groupsUsed >= subscription.groupsLimit,
+      canCreateGroupNow: subscription.canCreateGroupNow,
+      subscriptionInfo: subscription.subscriptionInfo,
+    })
+
     if (!user) {
       console.log(`❌ [GroupsScreen] No user found`)
       setAlertTitle("Authentication Required")

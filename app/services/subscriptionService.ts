@@ -180,8 +180,8 @@ export class SubscriptionService {
         return { info: null, error }
       }
 
-      if (__DEV__ && false) {
-        // Disable debug logging
+      if (__DEV__ && true) {
+        // Enable debug logging
         console.log(`📊 [SubscriptionService] Raw data from get_user_subscription_info:`, data)
       }
 
@@ -200,8 +200,8 @@ export class SubscriptionService {
         subscription_expires_at: data?.[0]?.subscription_expires_at || null,
       }
 
-      if (__DEV__ && false) {
-        // Disable debug logging
+      if (__DEV__ && true) {
+        // Enable debug logging
         console.log(`✅ [SubscriptionService] Processed subscription info:`, {
           subscription_status: info.subscription_status,
           groups_count: info.groups_count,
@@ -313,7 +313,6 @@ export class SubscriptionService {
     userId: string,
     status: SubscriptionStatus,
     options?: {
-      trial_ends_at?: string
       subscription_expires_at?: string
     },
   ): Promise<{
@@ -326,10 +325,7 @@ export class SubscriptionService {
         subscription_updated_at: new Date().toISOString(),
       }
 
-      if (options?.trial_ends_at) {
-        updateData.trial_ends_at = options.trial_ends_at
-      }
-
+      // Only handle subscription_expires_at - trials are managed by RevenueCat
       if (options?.subscription_expires_at) {
         updateData.subscription_expires_at = options.subscription_expires_at
       }
@@ -347,7 +343,6 @@ export class SubscriptionService {
         properties: {
           userId,
           newStatus: status,
-          trialEndsAt: options?.trial_ends_at,
           subscriptionExpiresAt: options?.subscription_expires_at,
         },
       })
@@ -364,37 +359,22 @@ export class SubscriptionService {
 
   /**
    * Activate trial for a user
+   * @deprecated This method is deprecated. Trials are now managed by RevenueCat.
+   * Use RevenueCat's trial system instead of this custom implementation.
    */
   static async activateTrial(userId: string): Promise<{
     success: boolean
     error: PostgrestError | null
   }> {
-    try {
-      const trialEndsAt = new Date()
-      trialEndsAt.setDate(trialEndsAt.getDate() + 3) // 3-day trial
-
-      const result = await this.updateSubscriptionStatus(userId, "trial", {
-        trial_ends_at: trialEndsAt.toISOString(),
-      })
-
-      if (result.success) {
-        // Track trial activation
-        await AnalyticsService.trackEvent({
-          name: AnalyticsEvents.TRIAL_ACTIVATED,
-          properties: {
-            userId,
-            trialEndsAt: trialEndsAt.toISOString(),
-          },
-        })
-      }
-
-      return result
-    } catch (error) {
-      console.error("Error activating trial:", error)
-      return {
-        success: false,
-        error: error as PostgrestError,
-      }
+    console.warn("activateTrial is deprecated. Trials are now managed by RevenueCat.")
+    return {
+      success: false,
+      error: {
+        message: "Trials are now managed by RevenueCat. Use RevenueCat's trial system instead.",
+        details: "This method is deprecated",
+        hint: "Use RevenueCat's trial system",
+        code: "DEPRECATED_METHOD",
+      } as PostgrestError,
     }
   }
 

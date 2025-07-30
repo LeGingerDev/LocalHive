@@ -13,16 +13,20 @@ interface QuickActionsProps {
   userId: string | null
   onCreateGroup?: () => void
   onAddItem?: () => void
-  onSearch?: () => void
+  onCreateList?: () => void
+  onSearch?: (enableAI?: boolean) => void
   onViewGroups?: () => void
+  onShowAllItems?: () => void
 }
 
 export const QuickActions: FC<QuickActionsProps> = ({
   userId,
   onCreateGroup,
   onAddItem,
+  onCreateList,
   onSearch,
   onViewGroups,
+  onShowAllItems,
 }) => {
   const { themed } = useAppTheme()
   const subscription = useSubscription(userId)
@@ -87,6 +91,16 @@ export const QuickActions: FC<QuickActionsProps> = ({
       loading: subscription.loading,
     })
 
+    // ADDED: Detailed debug logging
+    console.log(`🔍 [QuickActions] Raw values:`, {
+      groupsUsed: subscription.groupsUsed,
+      groupsLimit: subscription.groupsLimit,
+      groupsUsedType: typeof subscription.groupsUsed,
+      groupsLimitType: typeof subscription.groupsLimit,
+      comparison: subscription.groupsUsed >= subscription.groupsLimit,
+      canCreateGroupNow: subscription.canCreateGroupNow,
+    })
+
     // Only show alert if actually at the limit (groupsUsed >= groupsLimit)
     if (subscription.groupsUsed >= subscription.groupsLimit) {
       console.log(`❌ [QuickActions] Group limit reached - showing alert`)
@@ -126,6 +140,12 @@ export const QuickActions: FC<QuickActionsProps> = ({
     }
   }
 
+  const handleCreateList = () => {
+    if (onCreateList) {
+      onCreateList()
+    }
+  }
+
   const handleSearch = () => {
     if (!subscription.canUseAISearchNow) {
       Alert.alert(
@@ -140,7 +160,7 @@ export const QuickActions: FC<QuickActionsProps> = ({
     }
 
     if (onSearch) {
-      onSearch()
+      onSearch(true) // Enable AI mode for AI Search button
     }
   }
 
@@ -224,7 +244,7 @@ export const QuickActions: FC<QuickActionsProps> = ({
                   testID="create-first-group-button"
                 >
                   <View style={themed($firstGroupButtonContent)}>
-                    <Icon icon="check" size={32} color="#FFFFFF" />
+                    <Icon icon="group" size={32} color="#FFFFFF" />
                     <Text style={themed($firstGroupButtonText)}>Create Group</Text>
                   </View>
                 </TouchableOpacity>
@@ -244,7 +264,7 @@ export const QuickActions: FC<QuickActionsProps> = ({
               >
                 <View style={themed($actionIconContainer)}>
                   <Icon
-                    icon="check"
+                    icon="group"
                     size={24}
                     color={
                       subscription.groupsUsed >= subscription.groupsLimit
@@ -269,6 +289,17 @@ export const QuickActions: FC<QuickActionsProps> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
+                style={themed($actionButton)}
+                onPress={onViewGroups}
+                activeOpacity={0.8}
+              >
+                <View style={themed($actionIconContainer)}>
+                  <Icon icon="group" size={24} color={themed($actionIconColor).color} />
+                </View>
+                <Text style={themed($actionText)}>View Groups</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={[
                   themed($actionButton),
                   subscription.itemsUsed >= subscription.itemsLimit && themed($disabledButton),
@@ -279,7 +310,7 @@ export const QuickActions: FC<QuickActionsProps> = ({
               >
                 <View style={themed($actionIconContainer)}>
                   <Icon
-                    icon="check"
+                    icon="plus"
                     size={24}
                     color={
                       subscription.itemsUsed >= subscription.itemsLimit
@@ -304,6 +335,28 @@ export const QuickActions: FC<QuickActionsProps> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
+                style={themed($actionButton)}
+                onPress={handleCreateList}
+                activeOpacity={0.8}
+              >
+                <View style={themed($actionIconContainer)}>
+                  <Icon icon="list" size={24} color={themed($actionIconColor).color} />
+                </View>
+                <Text style={themed($actionText)}>Create List</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={themed($actionButton)}
+                onPress={onShowAllItems}
+                activeOpacity={0.8}
+              >
+                <View style={themed($actionIconContainer)}>
+                  <Icon icon="view" size={24} color={themed($actionIconColor).color} />
+                </View>
+                <Text style={themed($actionText)}>All Items</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={[
                   themed($actionButton),
                   !subscription.canUseAISearchNow && themed($disabledButton),
@@ -314,7 +367,7 @@ export const QuickActions: FC<QuickActionsProps> = ({
               >
                 <View style={themed($actionIconContainer)}>
                   <Icon
-                    icon="lightning"
+                    icon="aiSearch"
                     size={24}
                     color={
                       !subscription.canUseAISearchNow
@@ -336,17 +389,6 @@ export const QuickActions: FC<QuickActionsProps> = ({
                     <Text style={themed($limitBadgeText)}>Pro Only</Text>
                   </View>
                 )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={themed($actionButton)}
-                onPress={onViewGroups}
-                activeOpacity={0.8}
-              >
-                <View style={themed($actionIconContainer)}>
-                  <Icon icon="view" size={24} color={themed($actionIconColor).color} />
-                </View>
-                <Text style={themed($actionText)}>View Groups</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -445,6 +487,27 @@ const $disabledButton: ThemedStyle<ViewStyle> = ({ colors }) => ({
   backgroundColor: colors.palette.neutral100,
   borderColor: colors.palette.neutral300,
   opacity: 0.6,
+})
+
+const $aiActionButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.tint,
+  borderColor: colors.tint,
+  shadowColor: colors.tint,
+  shadowOffset: { width: 0, height: 3 },
+  shadowOpacity: 0.2,
+  shadowRadius: 6,
+  elevation: 4,
+})
+
+const $aiActionIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.background,
+})
+
+const $aiActionText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 12,
+  color: colors.background,
+  textAlign: "center",
 })
 
 const $actionIconContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({

@@ -347,6 +347,92 @@ export class ItemService {
   }
 
   /**
+   * Get all items from all groups the user is a member of with group names
+   */
+  static async getAllUserItemsWithGroupNames(userId: string): Promise<{
+    data: (ItemWithProfile & { group_name: string })[] | null
+    error: PostgrestError | null
+  }> {
+    try {
+      // First, get all groups the user is a member of with group names
+      const { data: userGroups, error: groupsError } = await supabase
+        .from("group_members")
+        .select(
+          `
+          group_id,
+          groups!inner(
+            id,
+            name
+          )
+        `,
+        )
+        .eq("user_id", userId)
+
+      if (groupsError) {
+        console.error("Error getting user groups:", groupsError)
+        return { data: null, error: groupsError }
+      }
+
+      if (!userGroups || userGroups.length === 0) {
+        return { data: [], error: null }
+      }
+
+      // Get group IDs
+      const groupIds = userGroups.map((ug) => ug.group_id)
+
+      // Get all items from all these groups with group information
+      const { data: items, error } = await supabase
+        .from("items")
+        .select(
+          `
+          *,
+          groups!inner(
+            id,
+            name
+          )
+        `,
+        )
+        .in("group_id", groupIds)
+        .order("title", { ascending: true })
+
+      if (error) {
+        console.error("Error getting all user items with group names:", error)
+        return { data: null, error }
+      }
+
+      // Transform the data to include group names
+      const itemsWithGroupNames: (ItemWithProfile & { group_name: string })[] = (items || []).map(
+        (item) => ({
+          id: item.id,
+          group_id: item.group_id,
+          user_id: item.user_id,
+          title: item.title,
+          category: item.category,
+          location: item.location,
+          details: item.details,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          image_urls: item.image_urls,
+          // Profile fields will be undefined since we're not joining with profiles
+          profile_id: undefined,
+          full_name: undefined,
+          email: undefined,
+          avatar_url: undefined,
+          group_name: item.groups?.name || "Unknown Group",
+        }),
+      )
+
+      return { data: itemsWithGroupNames, error: null }
+    } catch (error) {
+      console.error("Error getting all user items with group names:", error)
+      return {
+        data: null,
+        error: error as PostgrestError,
+      }
+    }
+  }
+
+  /**
    * Get recent items from all groups the user is a member of
    */
   static async getRecentItemsFromAllGroups(

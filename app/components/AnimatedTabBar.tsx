@@ -40,8 +40,8 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: AnimatedTabBa
     { name: "Home", icon: "home-outline", label: "Home", IconComponent: Ionicons, iconSize: 24 },
     {
       name: "Search",
-      icon: "search-outline",
-      label: "Search",
+      icon: "list-outline",
+      label: "Lists",
       IconComponent: Ionicons,
       iconSize: 24,
     },

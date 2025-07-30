@@ -45,13 +45,43 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
     refreshCustomerInfo,
   } = useRevenueCat()
   const [isPurchasing, setIsPurchasing] = useState(false)
+  const [hasUsedTrial, setHasUsedTrial] = useState(false)
 
-  // Set user ID when modal opens
+  // Set user ID when modal opens and check trial status
   useEffect(() => {
     if (visible && userProfile?.id && isInitialized) {
       setUserID(userProfile.id)
+      checkTrialStatus(userProfile.id)
     }
   }, [visible, userProfile?.id, isInitialized, setUserID])
+
+  // Check if user has already used their trial
+  const checkTrialStatus = async (userId: string) => {
+    try {
+      const { revenueCatService } = await import("@/services/revenueCatService")
+      const customerInfo = await revenueCatService.getCustomerInfo()
+
+      if (customerInfo) {
+        // Check if user has any trial-related entitlements in their history
+        const allEntitlements = Object.values(customerInfo.entitlements.all)
+        const hasTrialHistory = allEntitlements.some(
+          (entitlement) =>
+            entitlement.identifier.includes("trial") ||
+            entitlement.identifier.includes("intro") ||
+            entitlement.periodType === "intro",
+        )
+
+        setHasUsedTrial(hasTrialHistory)
+        console.log(
+          `🔍 [VisuProModal] Trial status for user ${userId}: ${hasTrialHistory ? "Used" : "Available"}`,
+        )
+      }
+    } catch (error) {
+      console.error("❌ [VisuProModal] Error checking trial status:", error)
+      // Default to assuming trial is available if we can't check
+      setHasUsedTrial(false)
+    }
+  }
 
   // Get the monthly subscription package for pricing
   const monthlyPackage = subscriptionTiers.find(
@@ -250,7 +280,11 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
                 style={themed($gradientStyle)}
               >
                 <Text style={themed($buttonText)}>
-                  {isPurchasing || isLoading ? "Processing..." : "Start 3-Day Free Trial"}
+                  {isPurchasing || isLoading
+                    ? "Processing..."
+                    : hasUsedTrial
+                      ? "Subscribe Now"
+                      : "Start 3-Day Free Trial"}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>

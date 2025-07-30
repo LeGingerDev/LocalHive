@@ -14,7 +14,8 @@ import { AddScreen } from "@/screens/Main/AddScreen"
 import { GroupsScreen } from "@/screens/Main/GroupsScreen"
 import { HomeScreen } from "@/screens/Main/HomeScreen"
 import ProfileScreen from "@/screens/Main/ProfileScreen"
-import { SearchScreen } from "@/screens/Main/SearchScreen"
+import { ListsScreen } from "@/screens/Main/SearchScreen"
+import { ShowAllItemsScreen } from "@/screens/Main/ShowAllItemsScreen"
 
 import { useAppTheme } from "../theme/context"
 
@@ -24,6 +25,7 @@ export type BottomTabParamList = {
   Add: { groupId?: string } | undefined
   Groups: { refresh?: boolean } | undefined
   Profile: undefined
+  ShowAllItems: undefined
 }
 
 const Tab = createBottomTabNavigator<BottomTabParamList>()
@@ -47,10 +49,11 @@ export function BottomTabNavigator() {
       tabBar={(props) => <AnimatedTabBar {...props} />}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Search" component={ListsScreen} />
       <Tab.Screen name="Add" component={AddScreen} />
       <Tab.Screen name="Groups" component={GroupsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="ShowAllItems" component={ShowAllItemsScreen} />
     </Tab.Navigator>
   )
 }

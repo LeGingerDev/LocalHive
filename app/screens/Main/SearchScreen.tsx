@@ -1,391 +1,184 @@
-import React, { FC, useState, useCallback, useRef, useEffect } from "react"
+import { FC, useState, useCallback } from "react"
 import {
   View,
-  TextInput,
-  ActivityIndicator,
-  FlatList,
   ViewStyle,
-  TextStyle,
-  ImageStyle,
   TouchableOpacity,
-  Keyboard,
-  Platform,
+  TextStyle,
+  FlatList,
   Image,
+  ImageStyle,
 } from "react-native"
+import { useFocusEffect } from "@react-navigation/native"
 
-import { useAlert } from "@/components/Alert"
+import { EmptyState } from "@/components/EmptyState"
 import { Header } from "@/components/Header"
-import { ItemCard } from "@/components/ItemCard"
+import { ListMenuModal } from "@/components/ListMenuModal"
+import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
-import { Switch } from "@/components/Toggle/Switch"
-import { useAuth } from "@/context/AuthContext"
-import { useAnalytics } from "@/hooks/useAnalytics"
-import { useSubscription } from "@/hooks/useSubscription"
+import { useItemLists } from "@/hooks/useItemLists"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
-import { HapticService } from "@/services/hapticService"
-import { askAIAboutItems, AIQueryResponse } from "@/services/openaiService"
-import { ItemWithProfile, ItemService } from "@/services/supabase/itemService"
-import { supabase } from "@/services/supabase/supabase"
-import { searchItemsByVector } from "@/services/vectorSearchService"
 import { useAppTheme } from "@/theme/context"
-import { spacing } from "@/theme/spacing"
 import type { ThemedStyle } from "@/theme/types"
 
-// Tab bar height from AnimatedTabBar component
-const TAB_BAR_HEIGHT = 80
-const TAB_BAR_PADDING = 40 // Extra padding for visual comfort
+export const ListsScreen: FC<BottomTabScreenProps<"Search">> = ({ navigation }) => {
+  const { themed } = useAppTheme()
+  const { lists, loading, error, deleteList, refetch } = useItemLists()
+  const [menuVisible, setMenuVisible] = useState(false)
+  const [selectedList, setSelectedList] = useState<any>(null)
 
-export const SearchScreen: FC<BottomTabScreenProps<"Search">> = ({ route }) => {
-  const { themed, theme } = useAppTheme()
-  const { trackEvent, events } = useAnalytics()
-  const { user } = useAuth()
-  const subscription = useSubscription(user?.id || null)
-  const { showAlert } = useAlert()
-  const [query, setQuery] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [results, setResults] = useState<(ItemWithProfile & { group_name?: string })[]>([])
-  const [isAIMode, setIsAIMode] = useState(() => {
-    // Only enable AI mode by default if user is pro and explicitly requested
-    const requestedAI = route.params?.enableAI || false
-    return requestedAI && subscription.isPro
-  })
-  const [aiResponse, setAiResponse] = useState<AIQueryResponse | null>(null)
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
-  const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
-  const flatListRef = useRef<FlatList>(null)
+  const handleNewList = () => {
+    navigation.navigate("CreateList" as any)
+  }
 
-  // Track screen view on mount
-  React.useEffect(() => {
-    trackEvent({
-      name: events.SCREEN_VIEWED,
-      properties: {
-        screen_name: "SearchScreen",
-      },
-    })
-  }, [trackEvent, events.SCREEN_VIEWED])
+  const handleMenuPress = (list: any) => {
+    setSelectedList(list)
+    setMenuVisible(true)
+  }
 
-  // Keyboard listeners
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      () => {
-        setIsKeyboardVisible(true)
-      },
-    )
-    const keyboardDidHideListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => {
-        setIsKeyboardVisible(false)
-      },
-    )
+  const handleMenuClose = () => {
+    setMenuVisible(false)
+    setSelectedList(null)
+  }
 
-    return () => {
-      keyboardDidShowListener?.remove()
-      keyboardDidHideListener?.remove()
+  const handleEditList = () => {
+    if (selectedList) {
+      // Navigate to edit list screen
+      navigation.navigate("CreateList" as any, { list: selectedList })
     }
-  }, [])
+    handleMenuClose()
+  }
 
-  // Debounced search using the vector service
-  const handleChange = useCallback(
-    (text: string) => {
-      setQuery(text)
-      setError(null)
-      setAiResponse(null)
-
-      // Only auto-search for vector search mode
-      if (!isAIMode) {
-        setIsLoading(true)
-        setResults([])
-        if (debounceTimeout.current) clearTimeout(debounceTimeout.current)
-        debounceTimeout.current = setTimeout(async () => {
-          if (!text) {
-            setResults([])
-            setIsLoading(false)
-            return
-          }
-
-          try {
-            console.log("[SearchScreen] Searching for:", text)
-            const items = await searchItemsByVector(text)
-            console.log("[SearchScreen] Search results:", items)
-            console.log("[SearchScreen] Number of results:", items.length)
-
-            // Fetch group names for the search results
-            const itemsWithGroupNames = await fetchGroupNamesForItems(items)
-            setResults(itemsWithGroupNames)
-          } catch (e) {
-            console.error("[SearchScreen] Search error:", e)
-            setError("Failed to search. Please try again.")
-          } finally {
-            setIsLoading(false)
-          }
-        }, 400)
+  const handleDeleteList = async () => {
+    if (selectedList) {
+      try {
+        await deleteList(selectedList.id)
+        // List will be automatically removed from the state by the hook
+      } catch (error) {
+        console.error("Failed to delete list:", error)
+        // You might want to show an error toast here
       }
-    },
-    [isAIMode],
+    }
+    handleMenuClose()
+  }
+
+  const handleViewList = () => {
+    if (selectedList) {
+      // Navigate to list detail screen
+      navigation.navigate("ListDetail" as any, { 
+        listId: selectedList.id,
+        listName: selectedList.name 
+      })
+    }
+    handleMenuClose()
+  }
+
+  // Refresh data when screen comes into focus (with throttling)
+  useFocusEffect(
+    useCallback(() => {
+      // Add a small delay to prevent rapid successive calls
+      const timeoutId = setTimeout(() => {
+        console.log("[ListsScreen] Screen focused - refreshing lists data")
+        refetch()
+      }, 100)
+
+      return () => clearTimeout(timeoutId)
+    }, []), // Remove refetch from dependencies to prevent infinite loops
   )
 
-  // Manual search for AI mode
-  const handleAISearch = useCallback(async () => {
-    if (!query.trim()) return
-
-    HapticService.medium()
-    setError(null)
-    setAiResponse(null)
-    setIsLoading(true)
-    setResults([])
-
-    try {
-      console.log("[SearchScreen] AI Query:", query)
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        setError("User not authenticated")
-        setIsLoading(false)
-        return
-      }
-
-      const { data: allItems, error: itemsError } = await ItemService.getAllUserItemsWithProfiles(
-        user.id,
-      )
-      if (itemsError || !allItems) {
-        setError("Failed to load items for AI analysis")
-        setIsLoading(false)
-        return
-      }
-
-      const aiResponse = await askAIAboutItems(query, allItems)
-      setAiResponse(aiResponse)
-
-      // Fetch group names for AI search results
-      const itemsWithGroupNames = await fetchGroupNamesForItems(aiResponse.relatedItems || [])
-      setResults(itemsWithGroupNames)
-    } catch (e) {
-      console.error("[SearchScreen] AI error:", e)
-      setError("Failed to get AI response. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [query])
-
-  // Handle search mode switch
-  // Function to fetch group names for search results
-  const fetchGroupNamesForItems = useCallback(async (items: ItemWithProfile[]) => {
-    if (items.length === 0) return items
-
-    try {
-      // Get unique group IDs from the items
-      const groupIds = [...new Set(items.map((item) => item.group_id))]
-
-      // Fetch group names
-      const { data: groups, error: groupsError } = await supabase
-        .from("groups")
-        .select("id, name")
-        .in("id", groupIds)
-
-      if (groupsError) {
-        console.error("Error fetching group names:", groupsError)
-        return items
-      }
-
-      // Create a map of group ID to group name
-      const groupMap = new Map()
-      groups?.forEach((group) => {
-        groupMap.set(group.id, group.name)
-      })
-
-      // Add group names to items
-      return items.map((item) => ({
-        ...item,
-        group_name: groupMap.get(item.group_id),
-      }))
-    } catch (error) {
-      console.error("Error fetching group names:", error)
-      return items
-    }
-  }, [])
-
-  const handleModeSwitch = useCallback(() => {
-    const newMode = !isAIMode
-
-    // If trying to enable AI mode and user is not pro, show upgrade modal
-    if (newMode && !subscription.isPro) {
-      showAlert({
-        title: "AI Search Requires Pro",
-        message:
-          "AI-powered search is a Pro feature. Upgrade to Pro to unlock advanced AI search capabilities and get intelligent answers about your items.",
-        buttons: [
-          {
-            label: "Maybe Later",
-            preset: "default",
-          },
-          {
-            label: "Upgrade to Pro",
-            preset: "filled",
-            onPress: () => {
-              // Navigate to subscription management or upgrade flow
-              // For now, we'll just show a message
-              showAlert({
-                title: "Upgrade to Pro",
-                message:
-                  "To upgrade to Pro, please go to your Profile screen and tap on the subscription management option.",
-                buttons: [{ label: "OK", preset: "filled" }],
-              })
-            },
-          },
-        ],
-      })
-      return
-    }
-
-    // Track mode switch
-    trackEvent({
-      name: events.SEARCH_MODE_SWITCHED,
-      properties: {
-        from_mode: isAIMode ? "ai" : "vector",
-        to_mode: newMode ? "ai" : "vector",
-        had_query: query.length > 0,
-        query_length: query.length,
-        is_pro_user: subscription.isPro,
-      },
-    })
-
-    HapticService.light()
-    setIsAIMode(newMode)
-    setQuery("") // Clear input
-    setResults([]) // Clear results
-    setError(null) // Clear any errors
-    setAiResponse(null) // Clear AI response
-  }, [isAIMode, query, trackEvent, events.SEARCH_MODE_SWITCHED, subscription.isPro, showAlert])
-
-  const renderItem = useCallback(
-    ({ item }: { item: ItemWithProfile & { group_name?: string } }) => {
-      return <ItemCard item={item} groupName={item.group_name} />
-    },
-    [],
-  )
-
-  const renderEmptyState = useCallback(() => {
-    if (isLoading) {
-      return (
-        <View style={themed($emptyContainer)}>
-          <ActivityIndicator size="small" color={themed($activityIndicator).color} />
-          <Text style={themed($emptyText)} text="Searching..." />
-        </View>
-      )
-    }
-
-    if (error) {
-      return (
-        <View style={themed($emptyContainer)}>
-          <Text style={themed($errorText)} text={error} />
-        </View>
-      )
-    }
-
-    if (query.length > 0 && results.length === 0 && !aiResponse) {
-      return (
-        <View style={themed($emptyContainer)}>
-          <Image
-            source={require("../../../assets/Visu/Visu_Searching.png")}
-            style={themed($emptyStateImage)}
-            resizeMode="contain"
-          />
-          <Text style={themed($emptyText)} text="No items found" />
-        </View>
-      )
-    }
-
-    if (query.length === 0) {
-      return (
-        <View style={themed($emptyContainer)}>
-          <Image
-            source={require("../../../assets/Visu/Visu_Searching.png")}
-            style={themed($emptyStateImage)}
-            resizeMode="contain"
-          />
+  const renderListItem = ({ item }: { item: any }) => (
+    <View style={themed($listCard)}>
+      <TouchableOpacity 
+        style={themed($listCardContent)}
+        onPress={() => navigation.navigate("ListDetail" as any, { 
+          listId: item.id,
+          listName: item.name 
+        })}
+        activeOpacity={0.7}
+      >
+        <Text style={themed($listTitle)} text={item.name} />
+        <View style={themed($listProgressContainer)}>
+          <View style={themed($listProgressBar)} />
           <Text
-            style={themed($emptyText)}
-            text={isAIMode ? "Ask about your items..." : "Search your items..."}
+            style={themed($listProgressText)}
+            text={`${item.completed_count || 0}/${item.item_count || 0}`}
           />
         </View>
-      )
-    }
-
-    return null
-  }, [isLoading, error, query, results.length, aiResponse, isAIMode, themed])
+      </TouchableOpacity>
+      <TouchableOpacity 
+        style={themed($listMenuButton)}
+        onPress={() => handleMenuPress(item)}
+      >
+        <Text style={themed($listMenuIcon)} text="⋮" />
+      </TouchableOpacity>
+    </View>
+  )
 
   return (
     <Screen
       style={themed($root)}
       preset="fixed"
-      safeAreaEdges={["top"]}
+      safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={themed($contentContainer)}
     >
       <Header
-        title="Search"
+        title="Lists"
         rightActions={[
           {
-            customComponent: (
-              <View style={themed($aiToggleContainer)}>
-                <Text style={themed($aiToggleText)}>Use AI</Text>
-                <Switch
-                  value={isAIMode}
-                  onValueChange={handleModeSwitch}
-                  disabled={!subscription.isPro}
-                />
-                {!subscription.isPro && <Text style={themed($proBadge)}>PRO</Text>}
-              </View>
-            ),
+            text: "New List",
+            onPress: handleNewList,
           },
         ]}
       />
 
       {/* Main Content Area */}
       <View style={themed($mainContent)}>
-        <FlatList
-          ref={flatListRef}
-          data={results}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={themed($flatListContent)}
-          ListEmptyComponent={renderEmptyState}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        />
+        {loading ? (
+          <LoadingSpinner />
+        ) : error ? (
+          <EmptyState heading="Error Loading Lists" content={error} />
+        ) : lists.length === 0 ? (
+          <View style={themed($emptyContainer)}>
+            <Image
+              source={require("@assets/Visu/Visu_Searching.png")}
+              style={themed($emptyImage)}
+            />
+            <Text style={themed($emptyTitle)} text="No Lists Yet" />
+            <Text style={themed($emptyContent)} text="Create your first list to get started" />
+          </View>
+        ) : (
+          <FlatList
+            data={lists}
+            renderItem={renderListItem}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={themed($listContainer)}
+          />
+        )}
       </View>
 
-      {/* Search Input Area - Fixed at Bottom */}
-      <View style={$searchInputAreaStyle(theme, isKeyboardVisible)}>
-        <View style={themed($searchContainer)}>
-          <View style={themed($inputWrapper)}>
-            <TextInput
-              placeholder={isAIMode ? "Ask about your items..." : "Search items..."}
-              placeholderTextColor={themed($placeholderText).color}
-              style={themed($textInput)}
-              value={query}
-              onChangeText={handleChange}
-              autoCapitalize="none"
-              autoCorrect={false}
-              clearButtonMode="while-editing"
-              returnKeyType={isAIMode ? "search" : "default"}
-              onSubmitEditing={isAIMode ? handleAISearch : undefined}
-            />
-          </View>
-          {isAIMode && (
-            <TouchableOpacity
-              style={themed($searchButton)}
-              onPress={handleAISearch}
-              disabled={!query.trim() || isLoading}
-            >
-              <Text style={themed($searchButtonText)} text="Search" />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+
+
+      {/* List Menu Modal */}
+      <ListMenuModal
+        visible={menuVisible}
+        onClose={handleMenuClose}
+        options={[
+          {
+            label: "View List",
+            onPress: handleViewList,
+          },
+          {
+            label: "Edit List",
+            onPress: handleEditList,
+          },
+          {
+            label: "Delete List",
+            onPress: handleDeleteList,
+            destructive: true,
+          },
+        ]}
+      />
     </Screen>
   )
 }
@@ -395,7 +188,7 @@ const $root: ThemedStyle<ViewStyle> = ({ colors }) => ({
   backgroundColor: colors.background,
 })
 
-const $contentContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $contentContainer: ThemedStyle<ViewStyle> = ({ spacing: _spacing }) => ({
   flex: 1,
   display: "flex",
   flexDirection: "column",
@@ -407,124 +200,113 @@ const $mainContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   paddingTop: spacing.md,
 })
 
-const $inputWrapper: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  backgroundColor: colors.palette.neutral200,
-  borderColor: colors.palette.neutral400,
-  borderWidth: 1,
-  borderRadius: 8,
+const $buttonContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   paddingHorizontal: spacing.md,
-  height: 48,
-  flex: 1,
-  justifyContent: "center",
+  paddingBottom: spacing.lg,
+  paddingTop: spacing.md,
 })
 
-const $textInput: ThemedStyle<TextStyle> = ({ typography, colors }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 16,
-  color: colors.text,
-  padding: 0,
-  margin: 0,
-  height: 46, // Slightly less than wrapper to account for border
-  textAlignVertical: "center",
-  includeFontPadding: false,
-})
-
-const $placeholderText: ThemedStyle<{ color: string }> = ({ colors }) => ({
-  color: colors.textDim,
-})
-
-const $activityIndicator: ThemedStyle<{ color: string }> = ({ colors }) => ({
-  color: colors.tint,
-})
-
-const $errorText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  color: colors.error,
-  fontFamily: typography.primary.normal,
-  fontSize: 15,
-})
-
-const $emptyContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  marginVertical: spacing.lg,
-  alignItems: "center",
-})
-
-const $emptyText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  color: colors.textDim,
-  fontFamily: typography.primary.normal,
-  fontSize: 15,
-})
-
-const $flatListContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  paddingBottom: spacing.sm,
-})
-
-const $searchContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  flexDirection: "row",
-  alignItems: "center",
-  gap: spacing.sm,
-})
-
-const $searchButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+const $newListButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.tint,
-  paddingHorizontal: spacing.md,
-  borderRadius: 8,
-  height: 48, // Match input height
-  minWidth: 80,
+  borderRadius: 12,
+  paddingVertical: spacing.md,
   alignItems: "center",
   justifyContent: "center",
-  flexShrink: 0,
+  width: "100%",
 })
 
-const $searchButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+const $buttonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.background,
   fontFamily: typography.primary.medium,
   fontSize: 16,
   fontWeight: "600",
 })
 
-const $aiToggleContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $listContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  paddingBottom: spacing.lg,
+})
+
+const $listCard: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.palette.neutral100,
+  borderRadius: 12,
+  padding: spacing.md,
+  marginBottom: spacing.sm,
   flexDirection: "row",
   alignItems: "center",
-  gap: spacing.sm,
+  justifyContent: "space-between",
+  borderWidth: 1,
+  borderColor: colors.palette.neutral400,
 })
 
-const $aiToggleText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.medium,
-  fontSize: 14,
+const $listCardContent: ThemedStyle<ViewStyle> = ({ spacing: _spacing }) => ({
+  flex: 1,
+})
+
+const $listTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing: _spacing }) => ({
   color: colors.text,
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
+  fontWeight: "600",
+  marginBottom: _spacing.xs,
 })
 
-const $proBadge: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
-  fontFamily: typography.primary.bold,
-  fontSize: 10,
-  color: colors.background,
-  backgroundColor: colors.tint,
-  paddingHorizontal: spacing.xs,
-  paddingVertical: 2,
-  borderRadius: 4,
-  marginLeft: spacing.xs,
-  overflow: "hidden",
+const $listProgressContainer: ThemedStyle<ViewStyle> = ({ spacing: _spacing }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: _spacing.sm,
 })
 
-const $searchInputArea: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  backgroundColor: colors.background,
-  paddingHorizontal: spacing.md,
-  paddingVertical: spacing.sm,
-  borderTopWidth: 1,
-  borderTopColor: colors.palette.neutral200,
+const $listProgressBar: ThemedStyle<ViewStyle> = ({ colors, spacing: _spacing }) => ({
+  flex: 1,
+  height: 2,
+  backgroundColor: colors.border,
+  borderRadius: 1,
 })
 
-const $searchInputAreaStyle = (theme: any, isKeyboardVisible: boolean) => ({
-  backgroundColor: theme.colors.background,
-  paddingHorizontal: theme.spacing.md,
-  paddingVertical: theme.spacing.sm,
-  paddingBottom: isKeyboardVisible ? 80 : 120,
-  borderTopWidth: 1,
-  borderTopColor: theme.colors.palette.neutral200,
+const $listProgressText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.textDim,
+  fontFamily: typography.primary.normal,
+  fontSize: 12,
 })
 
-const $emptyStateImage: ThemedStyle<ImageStyle> = ({ spacing }) => ({
-  width: spacing.xxl,
-  height: spacing.xxl,
-  marginBottom: spacing.md,
+const $listMenuButton: ThemedStyle<ViewStyle> = ({ spacing: _spacing }) => ({
+  padding: _spacing.xs,
+})
+
+const $listMenuIcon: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.textDim,
+  fontFamily: typography.primary.normal,
+  fontSize: 24,
+  fontWeight: "bold",
+})
+
+const $emptyContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flex: 1,
+  alignItems: "center",
+  justifyContent: "center",
+  paddingHorizontal: spacing.lg,
+})
+
+const $emptyImage: ThemedStyle<ImageStyle> = ({ spacing }) => ({
+  width: 120,
+  height: 120,
+  marginBottom: spacing.lg,
+  resizeMode: "contain",
+})
+
+const $emptyTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing: _spacing }) => ({
+  color: colors.text,
+  fontFamily: typography.primary.medium,
+  fontSize: 18,
+  fontWeight: "600",
+  marginBottom: _spacing.sm,
+  textAlign: "center",
+})
+
+const $emptyContent: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.textDim,
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  textAlign: "center",
+  lineHeight: 20,
 })

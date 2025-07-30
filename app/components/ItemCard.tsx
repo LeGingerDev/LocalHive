@@ -33,7 +33,7 @@ export const ItemCard = ({
   const imageUrls = item.image_urls ?? []
   const hasImage = imageUrls.length > 0
   const categoryColor = getCategoryColor(item.category, themeContext === "dark")
-  
+
   // Check if current user is the owner of this item
   const isOwner = user?.id === item.user_id
 
@@ -126,10 +126,7 @@ export const ItemCard = ({
                 ellipsizeMode="tail"
               />
               <Text
-                style={[
-                  themed($userText),
-                  isOwner && themed($userTextOwner)
-                ]}
+                style={[themed($userText), isOwner && themed($userTextOwner)]}
                 text={item.full_name || item.email || "Unknown user"}
                 numberOfLines={1}
                 ellipsizeMode="tail"

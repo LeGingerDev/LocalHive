@@ -76,10 +76,35 @@ class RevenueCatService {
 
       this._isInitialized = true
       console.log("✅ RevenueCat initialized successfully")
+
+      // ADDED: Automatically sync subscription status on app start
+      await this.syncSubscriptionOnAppStart()
     } catch (error) {
       console.error("❌ Failed to initialize RevenueCat:", error)
       // Don't throw error to prevent app crash, just log it
       this._isInitialized = false
+    }
+  }
+
+  /**
+   * ADDED: Sync subscription status on app start
+   */
+  private async syncSubscriptionOnAppStart(): Promise<void> {
+    try {
+      console.log("🔄 [RevenueCat] Syncing subscription status on app start...")
+      const customerInfo = await this.getCustomerInfo()
+
+      if (
+        customerInfo?.originalAppUserId &&
+        !customerInfo.originalAppUserId.startsWith("$RCAnonymousID:")
+      ) {
+        console.log("🔄 [RevenueCat] Syncing with Supabase on app start...")
+        await this.syncSubscriptionWithSupabase(customerInfo.originalAppUserId)
+      } else {
+        console.log("ℹ️ [RevenueCat] No authenticated user found for sync on app start")
+      }
+    } catch (error) {
+      console.error("❌ [RevenueCat] Error syncing subscription on app start:", error)
     }
   }
 
@@ -107,6 +132,12 @@ class RevenueCatService {
    */
   private async handleSubscriptionStatusChange(customerInfo: CustomerInfo): Promise<void> {
     try {
+      console.log("🔄 [RevenueCat] Handling subscription status change:", {
+        activeEntitlements: Object.keys(customerInfo.entitlements.active),
+        allEntitlements: Object.keys(customerInfo.entitlements.all),
+        originalAppUserId: customerInfo.originalAppUserId,
+      })
+
       const hasActiveSubscription = Object.keys(customerInfo.entitlements.active).length > 0
 
       if (hasActiveSubscription) {
@@ -115,20 +146,49 @@ class RevenueCatService {
         const proEntitlement = this.findProEntitlement(activeEntitlements)
 
         if (proEntitlement && proEntitlement.expirationDate) {
+          console.log("✅ [RevenueCat] Active pro subscription found, updating to pro status")
           // Update to pro status
-          await this.updateSubscriptionInSupabase("pro", proEntitlement.expirationDate)
+          const success = await this.updateSubscriptionInSupabase(
+            "pro",
+            proEntitlement.expirationDate,
+          )
+          if (success) {
+            console.log("🔄 [RevenueCat] Pro subscription updated, scheduling app restart...")
+            // Schedule app restart to reflect the new subscription status
+            restartApp(1000)
+          }
         }
       } else {
         // No active subscription - check if it was cancelled or expired
+        console.log(
+          "❌ [RevenueCat] No active subscription found, checking for cancellations/expirations",
+        )
         const allEntitlements = Object.values(customerInfo.entitlements.all)
         const recentlyExpired = this.findRecentlyExpiredEntitlement(allEntitlements)
 
         if (recentlyExpired) {
+          console.log(
+            "📅 [RevenueCat] Recently expired subscription found, updating to expired status",
+          )
           // Subscription was cancelled or expired
-          await this.updateSubscriptionInSupabase("expired", recentlyExpired.expirationDate)
+          const success = await this.updateSubscriptionInSupabase(
+            "expired",
+            recentlyExpired.expirationDate,
+          )
+          if (success) {
+            console.log("🔄 [RevenueCat] Expired subscription updated, scheduling app restart...")
+            // Schedule app restart to reflect the new subscription status
+            restartApp(1000)
+          }
         } else {
+          console.log("🆓 [RevenueCat] No subscription found, setting to free status")
           // No subscription found - set to free
-          await this.updateSubscriptionInSupabase("free")
+          const success = await this.updateSubscriptionInSupabase("free")
+          if (success) {
+            console.log("🔄 [RevenueCat] Free status updated, scheduling app restart...")
+            // Schedule app restart to reflect the new subscription status
+            restartApp(1000)
+          }
         }
       }
     } catch (error) {
@@ -170,17 +230,35 @@ class RevenueCatService {
   }
 
   /**
+   * Check if an expiration date indicates a trial period (7 days or less from now)
+   */
+  private isTrialPeriod(expirationDate: string): boolean {
+    const expiration = new Date(expirationDate)
+    const now = new Date()
+    const daysDifference = (expiration.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+
+    console.log(`📅 [RevenueCat] Trial period check:`, {
+      expirationDate,
+      now: now.toISOString(),
+      daysDifference,
+      isTrial: daysDifference <= 7,
+    })
+
+    return daysDifference <= 7
+  }
+
+  /**
    * Update subscription status in Supabase
    */
   private async updateSubscriptionInSupabase(
-    status: "free" | "pro" | "expired",
+    status: "free" | "trial" | "pro" | "expired",
     expirationDate?: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       const customerInfo = await this.getCustomerInfo()
       if (!customerInfo?.originalAppUserId) {
         console.warn("❌ No user ID found for subscription update")
-        return
+        return false
       }
 
       // Skip Supabase update if this is an anonymous user (they haven't signed up yet)
@@ -188,7 +266,7 @@ class RevenueCatService {
         console.log(
           `ℹ️ [RevenueCat] Skipping Supabase update for anonymous user: ${customerInfo.originalAppUserId}`,
         )
-        return
+        return false
       }
 
       const result = await SubscriptionService.updateSubscriptionStatus(
@@ -213,11 +291,14 @@ class RevenueCatService {
 
         // Schedule app restart to reflect changes
         restartApp(1000)
+        return true
       } else {
         console.error(`❌ [RevenueCat] Failed to update Supabase:`, result.error)
+        return false
       }
     } catch (error) {
       console.error("❌ Error updating subscription in Supabase:", error)
+      return false
     }
   }
 
@@ -281,8 +362,14 @@ class RevenueCatService {
       const customerInfo = await this.getCustomerInfo()
 
       if (customerInfo) {
-        // This will trigger the customer info update listener
-        // which will handle syncing with Supabase
+        // Force sync with Supabase
+        if (
+          customerInfo.originalAppUserId &&
+          !customerInfo.originalAppUserId.startsWith("$RCAnonymousID:")
+        ) {
+          console.log("🔄 [RevenueCat] Forcing sync with Supabase...")
+          await this.syncSubscriptionWithSupabase(customerInfo.originalAppUserId)
+        }
         console.log("✅ [RevenueCat] Subscription status refreshed")
       } else {
         console.log("❌ [RevenueCat] No customer info found during refresh")
@@ -488,79 +575,151 @@ class RevenueCatService {
         const activeEntitlements = customerInfo.entitlements.active
         console.log(`✅ [RevenueCat] Active entitlements:`, activeEntitlements)
 
-        // Look for any pro-related entitlement (pro, premium, etc.)
-        const proEntitlement =
-          activeEntitlements.pro ||
-          activeEntitlements.premium ||
-          activeEntitlements.visu_pro ||
-          Object.values(activeEntitlements).find(
-            (ent) => ent.identifier.includes("pro") || ent.identifier.includes("premium"),
-          )
+        // Check if this is a trial (look for trial-related entitlements or intro offers)
+        const isTrial = Object.values(activeEntitlements).some((entitlement) => {
+          const isTrialIdentifier =
+            entitlement.identifier.includes("trial") ||
+            entitlement.identifier.includes("intro") ||
+            entitlement.periodType === "intro"
 
-        if (proEntitlement && proEntitlement.expirationDate) {
-          const expiresAt = proEntitlement.expirationDate
-          console.log(`🎯 [RevenueCat] Found pro entitlement:`, {
-            identifier: proEntitlement.identifier,
-            expirationDate: expiresAt,
-            periodType: proEntitlement.periodType,
+          const isShortPeriod =
+            entitlement.expirationDate && this.isTrialPeriod(entitlement.expirationDate)
+
+          console.log(`🔍 [RevenueCat] Checking entitlement for trial:`, {
+            identifier: entitlement.identifier,
+            periodType: entitlement.periodType,
+            expirationDate: entitlement.expirationDate,
+            isTrialIdentifier,
+            isShortPeriod,
           })
 
-          // Update Supabase with pro subscription
-          console.log(`🔄 [RevenueCat] Updating Supabase with pro subscription...`)
-          const result = await SubscriptionService.upgradeToPro(userID, expiresAt)
+          return isTrialIdentifier || isShortPeriod
+        })
 
-          if (result.success) {
-            console.log(`✅ [RevenueCat] Successfully updated Supabase subscription`)
-            // Schedule app restart to reflect the new subscription status
-            console.log(`🔄 [RevenueCat] Scheduling app restart for subscription change...`)
-            restartApp(1000)
+        if (isTrial) {
+          console.log(`🎯 [RevenueCat] Detected trial subscription`)
+
+          // Update Supabase with trial status
+          const success = await this.updateSubscriptionInSupabase("trial")
+          if (success) {
+            console.log(`✅ [RevenueCat] Successfully updated Supabase with trial status`)
+
+            // Track trial sync
+            await AnalyticsService.trackEvent({
+              name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
+              properties: {
+                userId: userID,
+                newStatus: "trial",
+                source: "revenuecat_sync",
+              },
+            })
           } else {
-            console.error(`❌ [RevenueCat] Failed to update Supabase:`, result.error)
+            console.error(`❌ [RevenueCat] Failed to update Supabase with trial status`)
           }
-
-          // Track subscription sync
-          await AnalyticsService.trackEvent({
-            name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
-            properties: {
-              userId: userID,
-              newStatus: "pro",
-              source: "revenuecat_sync",
-              expiresAt,
-              entitlementId: proEntitlement.identifier,
-            },
-          })
         } else {
-          console.log(`⚠️ [RevenueCat] No pro entitlement found in active entitlements`)
-
-          // Try to find any active entitlement and treat it as pro
-          const firstActiveEntitlement = Object.values(activeEntitlements)[0]
-          if (firstActiveEntitlement && firstActiveEntitlement.expirationDate) {
-            console.log(
-              `🔄 [RevenueCat] Using first active entitlement as pro:`,
-              firstActiveEntitlement.identifier,
+          // Look for any pro-related entitlement (pro, premium, etc.)
+          const proEntitlement =
+            activeEntitlements.pro ||
+            activeEntitlements.premium ||
+            activeEntitlements.visu_pro ||
+            Object.values(activeEntitlements).find(
+              (ent) => ent.identifier.includes("pro") || ent.identifier.includes("premium"),
             )
 
-            const result = await SubscriptionService.upgradeToPro(
-              userID,
-              firstActiveEntitlement.expirationDate,
-            )
+          if (proEntitlement && proEntitlement.expirationDate) {
+            const expiresAt = proEntitlement.expirationDate
+            console.log(`🎯 [RevenueCat] Found pro entitlement:`, {
+              identifier: proEntitlement.identifier,
+              expirationDate: expiresAt,
+              periodType: proEntitlement.periodType,
+            })
+
+            // Update Supabase with pro subscription
+            console.log(`🔄 [RevenueCat] Updating Supabase with pro subscription...`)
+            const result = await SubscriptionService.upgradeToPro(userID, expiresAt)
 
             if (result.success) {
-              console.log(
-                `✅ [RevenueCat] Successfully updated Supabase with first active entitlement`,
-              )
+              console.log(`✅ [RevenueCat] Successfully updated Supabase subscription`)
               // Schedule app restart to reflect the new subscription status
               console.log(`🔄 [RevenueCat] Scheduling app restart for subscription change...`)
               restartApp(1000)
             } else {
               console.error(`❌ [RevenueCat] Failed to update Supabase:`, result.error)
             }
+
+            // Track subscription sync
+            await AnalyticsService.trackEvent({
+              name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
+              properties: {
+                userId: userID,
+                newStatus: "pro",
+                source: "revenuecat_sync",
+                expiresAt,
+                entitlementId: proEntitlement.identifier,
+              },
+            })
+          } else {
+            console.log(`⚠️ [RevenueCat] No pro entitlement found in active entitlements`)
+
+            // Check if there are any active entitlements that might be trials
+            const activeEntitlementsList = Object.values(activeEntitlements)
+            if (activeEntitlementsList.length > 0) {
+              const firstActiveEntitlement = activeEntitlementsList[0]
+              console.log(
+                `🔍 [RevenueCat] Found active entitlement:`,
+                firstActiveEntitlement.identifier,
+                firstActiveEntitlement.expirationDate,
+              )
+
+              // Check if this is a trial
+              const isTrial =
+                firstActiveEntitlement.identifier.includes("trial") ||
+                firstActiveEntitlement.identifier.includes("intro") ||
+                firstActiveEntitlement.periodType === "intro" ||
+                (firstActiveEntitlement.expirationDate &&
+                  this.isTrialPeriod(firstActiveEntitlement.expirationDate))
+
+              if (isTrial) {
+                console.log(`🎯 [RevenueCat] Detected trial subscription`)
+
+                // Update Supabase with trial status
+                const success = await this.updateSubscriptionInSupabase("trial")
+                if (success) {
+                  console.log(`✅ [RevenueCat] Successfully updated Supabase with trial status`)
+
+                  // Track trial sync
+                  await AnalyticsService.trackEvent({
+                    name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
+                    properties: {
+                      userId: userID,
+                      newStatus: "trial",
+                      source: "revenuecat_sync",
+                      entitlementId: firstActiveEntitlement.identifier,
+                    },
+                  })
+                } else {
+                  console.error(`❌ [RevenueCat] Failed to update Supabase with trial status`)
+                }
+              } else {
+                console.log(`⚠️ [RevenueCat] Unknown active entitlement type - treating as free`)
+
+                // Unknown entitlement type - treat as free to be safe
+                const result = await SubscriptionService.updateSubscriptionStatus(userID, "free")
+                if (result.success) {
+                  console.log(`✅ [RevenueCat] Successfully marked unknown entitlement as free`)
+                } else {
+                  console.error(`❌ [RevenueCat] Failed to mark as free:`, result.error)
+                }
+              }
+            } else {
+              console.log(`ℹ️ [RevenueCat] No active entitlements found`)
+            }
           }
         }
       } else {
         console.log(`📉 [RevenueCat] No active subscriptions found`)
 
-        // Check if subscription expired - look in all entitlements
+        // Check if subscription expired or was cancelled - look in all entitlements
         const allEntitlements = Object.values(customerInfo.entitlements.all)
         console.log(
           `🔍 [RevenueCat] All entitlements:`,
@@ -571,29 +730,40 @@ class RevenueCatService {
           })),
         )
 
-        const expiredProEntitlement = allEntitlements.find(
-          (entitlement) =>
-            (entitlement.identifier === "pro" ||
-              entitlement.identifier.includes("pro") ||
-              entitlement.identifier.includes("premium")) &&
-            entitlement.expirationDate,
-        )
+        // Look for any expired entitlement (not just pro)
+        const expiredEntitlement = allEntitlements.find((entitlement) => {
+          if (!entitlement.expirationDate) return false
 
-        if (expiredProEntitlement && expiredProEntitlement.expirationDate) {
           const now = new Date()
-          const expirationDate = new Date(expiredProEntitlement.expirationDate)
+          const expirationDate = new Date(entitlement.expirationDate)
 
-          if (now > expirationDate) {
-            console.log(
-              `⏰ [RevenueCat] Subscription has expired:`,
-              expiredProEntitlement.expirationDate,
-            )
+          // Check if it's expired (past expiration date)
+          return now > expirationDate
+        })
 
-            // Subscription has expired
+        if (expiredEntitlement) {
+          console.log(
+            `⏰ [RevenueCat] Found expired entitlement:`,
+            expiredEntitlement.identifier,
+            expiredEntitlement.expirationDate,
+          )
+
+          // Check if this was a pro subscription that expired
+          const isProSubscription =
+            expiredEntitlement.identifier === "pro" ||
+            expiredEntitlement.identifier.includes("pro") ||
+            expiredEntitlement.identifier.includes("premium") ||
+            expiredEntitlement.identifier.includes("monthly") ||
+            expiredEntitlement.identifier.includes("yearly")
+
+          if (isProSubscription) {
+            console.log(`💳 [RevenueCat] Pro subscription has expired - marking as expired`)
+
+            // Mark as expired for pro subscriptions
             const result = await SubscriptionService.updateSubscriptionStatus(userID, "expired")
 
             if (result.success) {
-              console.log(`✅ [RevenueCat] Successfully marked subscription as expired`)
+              console.log(`✅ [RevenueCat] Successfully marked pro subscription as expired`)
               // Schedule app restart to reflect the expired subscription status
               console.log(`🔄 [RevenueCat] Scheduling app restart for subscription expiration...`)
               restartApp(1000)
@@ -608,12 +778,37 @@ class RevenueCatService {
                 userId: userID,
                 newStatus: "expired",
                 source: "revenuecat_sync",
-                expiredAt: expiredProEntitlement.expirationDate,
+                expiredAt: expiredEntitlement.expirationDate,
+                entitlementId: expiredEntitlement.identifier,
               },
             })
+          } else {
+            console.log(`ℹ️ [RevenueCat] Non-pro subscription expired - marking as free`)
+
+            // For non-pro subscriptions (like trials), mark as free
+            const result = await SubscriptionService.updateSubscriptionStatus(userID, "free")
+
+            if (result.success) {
+              console.log(`✅ [RevenueCat] Successfully marked non-pro subscription as free`)
+            } else {
+              console.error(`❌ [RevenueCat] Failed to mark subscription as free:`, result.error)
+            }
           }
         } else {
-          console.log(`ℹ️ [RevenueCat] No expired pro entitlements found`)
+          console.log(
+            `ℹ️ [RevenueCat] No expired entitlements found - user has no subscription history`,
+          )
+
+          // No expired entitlements found - user is free
+          const result = await SubscriptionService.updateSubscriptionStatus(userID, "free")
+
+          if (result.success) {
+            console.log(
+              `✅ [RevenueCat] Successfully marked user as free (no subscription history)`,
+            )
+          } else {
+            console.error(`❌ [RevenueCat] Failed to mark user as free:`, result.error)
+          }
         }
       }
 
