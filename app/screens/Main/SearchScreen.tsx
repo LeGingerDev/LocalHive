@@ -18,17 +18,26 @@ import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { useItemLists } from "@/hooks/useItemLists"
+import { useSubscription } from "@/hooks/useSubscription"
+import { useAuth } from "@/context/AuthContext"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
 export const ListsScreen: FC<BottomTabScreenProps<"Search">> = ({ navigation }) => {
   const { themed, theme } = useAppTheme()
+  const { user } = useAuth()
+  const subscription = useSubscription(user?.id || null)
   const { lists, loading, error, deleteList, refetch } = useItemLists()
   const [menuVisible, setMenuVisible] = useState(false)
   const [selectedList, setSelectedList] = useState<any>(null)
 
   const handleNewList = () => {
+    // Check subscription limits
+    if (!subscription.canCreateListNow) {
+      // Show limit warning - this will be handled by the CreateListScreen
+      return
+    }
     navigation.navigate("CreateList" as any)
   }
 
@@ -114,6 +123,7 @@ export const ListsScreen: FC<BottomTabScreenProps<"Search">> = ({ navigation }) 
           {
             text: "New List",
             onPress: handleNewList,
+            disabled: !subscription.canCreateListNow,
           },
         ]}
       />
@@ -134,13 +144,23 @@ export const ListsScreen: FC<BottomTabScreenProps<"Search">> = ({ navigation }) 
             <Text style={themed($emptyContent)} text="Create your first list to get started" />
           </View>
         ) : (
-          <FlatList
-            data={lists}
-            renderItem={renderListItem}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={themed($listContainer)}
-          />
+          <>
+            {/* List Limit Warning */}
+            {!subscription.canCreateListNow && (
+              <View style={themed($limitWarningContainer)}>
+                <Text style={themed($limitWarningText)}>
+                  ⚠️ You've reached your list limit. Upgrade to Pro for unlimited lists!
+                </Text>
+              </View>
+            )}
+            <FlatList
+              data={lists}
+              renderItem={renderListItem}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={themed($listContainer)}
+            />
+          </>
         )}
       </View>
 
@@ -244,4 +264,20 @@ const $emptyContent: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontSize: 14,
   textAlign: "center",
   lineHeight: 20,
+})
+
+const $limitWarningContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.error + "20",
+  borderWidth: 1,
+  borderColor: colors.error,
+  padding: spacing.sm,
+  borderRadius: 8,
+  marginBottom: spacing.sm,
+})
+
+const $limitWarningText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.error,
+  textAlign: "center",
 })

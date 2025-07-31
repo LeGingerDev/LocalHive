@@ -22,6 +22,7 @@ interface ItemInputProps {
   placeholder?: string
   initialValue?: string
   disabled?: boolean
+  canLinkItems?: boolean
 }
 
 export const ItemInput: React.FC<ItemInputProps> = ({
@@ -31,6 +32,7 @@ export const ItemInput: React.FC<ItemInputProps> = ({
   placeholder = "Shopping Item Text",
   initialValue = "",
   disabled = false,
+  canLinkItems = true,
 }) => {
   const { themed } = useAppTheme()
   const [text, setText] = useState(initialValue)
@@ -80,12 +82,15 @@ export const ItemInput: React.FC<ItemInputProps> = ({
         />
         <View style={themed($buttonContainer)}>
           <TouchableOpacity
-            style={themed($pictureButton)}
+            style={[
+              themed($pictureButton),
+              !canLinkItems && themed($pictureButtonDisabled),
+            ]}
             onPress={handleSearchPress}
-            disabled={disabled}
+            disabled={disabled || !canLinkItems}
             activeOpacity={0.7}
           >
-            <Text style={themed($linkIconText)} text="🔗" />
+            <Text style={themed($linkIconText(!canLinkItems))} text="🔗" />
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -155,6 +160,11 @@ const $pictureButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   justifyContent: "center",
 })
 
+const $pictureButtonDisabled: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  borderColor: colors.textDim + "60",
+  opacity: 0.4,
+})
+
 const $pictureButtonIcon: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.text,
 })
@@ -179,8 +189,8 @@ const $confirmButtonIcon: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.background,
 })
 
-const $linkIconText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  color: colors.text,
+const $linkIconText = (disabled?: boolean): ThemedStyle<TextStyle> => ({ colors, typography }) => ({
+  color: disabled ? colors.textDim + "60" : colors.text,
   fontFamily: typography.primary.normal,
   fontSize: 16,
   textAlign: "center",

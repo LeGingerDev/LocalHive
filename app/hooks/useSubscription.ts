@@ -288,6 +288,21 @@ export const useSubscription = (userId: string | null) => {
   }, [userId])
 
   /**
+   * Check if user can create a list
+   */
+  const canCreateList = useCallback(async () => {
+    if (!userId) return false
+
+    try {
+      const { canCreate } = await SubscriptionService.canCreateList(userId)
+      return canCreate
+    } catch (err) {
+      console.error("Error checking list creation permission:", err)
+      return false
+    }
+  }, [userId])
+
+  /**
    * Check if user can use AI search
    */
   const canUseAISearch = useCallback(async () => {
@@ -333,12 +348,16 @@ export const useSubscription = (userId: string | null) => {
     const groupsLimit = subscriptionInfo?.max_groups || 1
     const itemsUsed = subscriptionInfo?.items_count || 0
     const itemsLimit = subscriptionInfo?.max_items || 10
+    const listsUsed = subscriptionInfo?.lists_count || 0
+    const listsLimit = subscriptionInfo?.max_lists || 5
 
     const groupsPercentage = groupsLimit > 0 ? (groupsUsed / groupsLimit) * 100 : 0
     const itemsPercentage = itemsLimit > 0 ? (itemsUsed / itemsLimit) * 100 : 0
+    const listsPercentage = listsLimit > 0 ? (listsUsed / listsLimit) * 100 : 0
 
     const canCreateGroupNow = subscriptionInfo?.can_create_group || false
     const canCreateItemNow = subscriptionInfo?.can_create_item || false
+    const canCreateListNow = subscriptionInfo?.can_create_list || false
     const canUseAISearchNow = subscriptionInfo?.can_use_ai || false
 
     return {
@@ -352,8 +371,12 @@ export const useSubscription = (userId: string | null) => {
       itemsUsed,
       itemsLimit,
       itemsPercentage,
+      listsUsed,
+      listsLimit,
+      listsPercentage,
       canCreateGroupNow,
       canCreateItemNow,
+      canCreateListNow,
       canUseAISearchNow,
     }
   }, [subscriptionInfo])
@@ -386,6 +409,7 @@ export const useSubscription = (userId: string | null) => {
     upgradeToPro,
     canCreateGroup,
     canCreateItem,
+    canCreateList,
     canUseAISearch,
     isApproachingLimits,
   }

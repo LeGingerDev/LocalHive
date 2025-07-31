@@ -63,6 +63,7 @@ export interface SubscriptionPlan {
 export interface UserUsage {
   groups_count: number
   items_count: number
+  lists_count: number
   last_updated: string
 }
 
@@ -72,6 +73,7 @@ export interface UserUsage {
 export interface UserLimits {
   max_groups: number
   max_items: number
+  max_lists: number
   ai_search_enabled: boolean
 }
 
@@ -82,11 +84,14 @@ export interface SubscriptionInfo {
   subscription_status: SubscriptionStatus
   groups_count: number
   items_count: number
+  lists_count: number
   max_groups: number
   max_items: number
+  max_lists: number
   ai_search_enabled: boolean
   can_create_group: boolean
   can_create_item: boolean
+  can_create_list: boolean
   can_use_ai: boolean
   trial_ends_at: string | null
   subscription_expires_at: string | null
@@ -202,10 +207,11 @@ export class SubscriptionService {
         return { usage: null, error }
       }
 
-      // The function returns a single row with groups_count and items_count
+      // The function returns a single row with groups_count, items_count, and lists_count
       const usage: UserUsage = {
         groups_count: data?.[0]?.groups_count || 0,
         items_count: data?.[0]?.items_count || 0,
+        lists_count: data?.[0]?.lists_count || 0,
         last_updated: new Date().toISOString(),
       }
 
@@ -240,6 +246,7 @@ export class SubscriptionService {
       const limits: UserLimits = {
         max_groups: data?.[0]?.max_groups || 1,
         max_items: data?.[0]?.max_items || 10,
+        max_lists: data?.[0]?.max_lists || 5,
         ai_search_enabled: data?.[0]?.ai_search_enabled || false,
       }
 
@@ -285,11 +292,14 @@ export class SubscriptionService {
         subscription_status: data?.[0]?.subscription_status || "free",
         groups_count: data?.[0]?.groups_count || 0,
         items_count: data?.[0]?.items_count || 0,
+        lists_count: data?.[0]?.lists_count || 0,
         max_groups: data?.[0]?.max_groups || 1,
         max_items: data?.[0]?.max_items || 10,
+        max_lists: data?.[0]?.max_lists || 5,
         ai_search_enabled: data?.[0]?.ai_search_enabled || false,
         can_create_group: data?.[0]?.can_create_group || false,
         can_create_item: data?.[0]?.can_create_item || false,
+        can_create_list: data?.[0]?.can_create_list || false,
         can_use_ai: data?.[0]?.can_use_ai || false,
         trial_ends_at: data?.[0]?.trial_ends_at || null,
         subscription_expires_at: data?.[0]?.subscription_expires_at || null,
@@ -396,6 +406,33 @@ export class SubscriptionService {
       console.error("Error checking AI search permission:", error)
       return {
         canUse: false,
+        error: error as PostgrestError,
+      }
+    }
+  }
+
+  /**
+   * Check if user can create a new list
+   */
+  static async canCreateList(userId: string): Promise<{
+    canCreate: boolean
+    error: PostgrestError | null
+  }> {
+    try {
+      const { data, error } = await supabase.rpc("can_create_list", {
+        user_uuid: userId,
+      })
+
+      if (error) {
+        console.error("Error checking list creation permission:", error)
+        return { canCreate: false, error }
+      }
+
+      return { canCreate: data as boolean, error: null }
+    } catch (error) {
+      console.error("Error checking list creation permission:", error)
+      return {
+        canCreate: false,
         error: error as PostgrestError,
       }
     }

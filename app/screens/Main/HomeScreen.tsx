@@ -92,8 +92,16 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleCreateList = useCallback(() => {
     HapticService.selection()
+    
+    // Check if user can create a list
+    if (!subscription.canCreateListNow) {
+      // Show alert for limit reached
+      // This will be handled by the CreateListScreen, but we can add a quick check here
+      return
+    }
+    
     navigation.navigate("CreateList" as any)
-  }, [navigation])
+  }, [navigation, subscription.canCreateListNow])
 
   const handleSearch = useCallback((enableAI?: boolean) => {
     HapticService.selection()
@@ -258,7 +266,6 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
             })
           }}
           onCreateList={handleCreateList}
-          limit={3}
         />
 
         {/* Recent Activity Section */}

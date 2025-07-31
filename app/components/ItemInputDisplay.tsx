@@ -18,6 +18,7 @@ interface ItemInputDisplayProps {
   onItemLink?: (item: ItemWithProfile) => void
   placeholder?: string
   disabled?: boolean
+  canLinkItems?: boolean
 }
 
 export const ItemInputDisplay: React.FC<ItemInputDisplayProps> = ({
@@ -26,6 +27,7 @@ export const ItemInputDisplay: React.FC<ItemInputDisplayProps> = ({
   onItemLink,
   placeholder = "Shopping Item Text",
   disabled = false,
+  canLinkItems = true,
 }) => {
   const { themed } = useAppTheme()
   const [isInputVisible, setIsInputVisible] = useState(false)
@@ -59,6 +61,7 @@ export const ItemInputDisplay: React.FC<ItemInputDisplayProps> = ({
           onItemLink={handleItemLink}
           placeholder={placeholder}
           disabled={disabled}
+          canLinkItems={canLinkItems}
         />
         <TouchableOpacity
           style={themed($cancelButton)}

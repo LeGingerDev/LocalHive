@@ -15,12 +15,14 @@ export interface HeaderProps {
     text?: string
     onPress?: () => void
     customComponent?: React.ReactNode
+    disabled?: boolean
   }>
   rightAction?: {
     icon?: IconTypes
     text?: string
     onPress?: () => void
     customComponent?: React.ReactNode
+    disabled?: boolean
   }
 }
 
@@ -56,11 +58,15 @@ export const Header: React.FC<HeaderProps> = ({
             {action.customComponent ? (
               action.customComponent
             ) : (
-              <TouchableOpacity onPress={action.onPress} activeOpacity={0.8}>
+              <TouchableOpacity 
+                onPress={action.onPress} 
+                activeOpacity={0.8}
+                disabled={action.disabled}
+              >
                 {action.icon ? (
-                  <Icon icon={action.icon} size={20} style={themed($actionIcon)} />
+                  <Icon icon={action.icon} size={20} style={themed($actionIcon(action.disabled))} />
                 ) : (
-                  <Text style={themed($actionText)} text={action.text || ""} />
+                  <Text style={themed($actionText(action.disabled))} text={action.text || ""} />
                 )}
               </TouchableOpacity>
             )}
@@ -143,13 +149,13 @@ const $actionButton = ({ spacing }: any): ViewStyle => ({
   justifyContent: "center",
 })
 
-const $actionIcon = ({ colors }: any): ImageStyle => ({
-  tintColor: colors.text,
+const $actionIcon = (disabled?: boolean) => ({ colors }: any): ImageStyle => ({
+  tintColor: disabled ? colors.textDim + "60" : colors.text, // 60 = 37.5% opacity
 })
 
-const $actionText = ({ typography, colors }: any): TextStyle => ({
+const $actionText = (disabled?: boolean) => ({ typography, colors }: any): TextStyle => ({
   fontFamily: typography.primary.medium,
   fontSize: 18,
-  color: colors.tint,
+  color: disabled ? colors.textDim + "60" : colors.tint, // 60 = 37.5% opacity
   textAlign: "center",
 })

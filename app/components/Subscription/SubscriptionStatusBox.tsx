@@ -90,7 +90,7 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
     return "check"
   }
 
-  const isAtLimit = subscription.groupsPercentage >= 100 || subscription.itemsPercentage >= 100
+  const isAtLimit = subscription.groupsPercentage >= 100 || subscription.itemsPercentage >= 100 || subscription.listsPercentage >= 100
 
   if (subscription.loading) {
     return (
@@ -185,6 +185,23 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
                       : `${subscription.itemsUsed}/${subscription.itemsLimit}`}
                   </Text>
                   {subscription.itemsUsed >= subscription.itemsLimit && (
+                    <View style={themed($limitBadge)}>
+                      <Text style={themed($limitBadgeText)}>Limit Reached</Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={themed($usageCard)}>
+                  <View style={themed($usageCardHeader)}>
+                    <Icon icon="list" size={20} color={themed($usageIconColor).color} />
+                    <Text style={themed($usageCardLabel)}>Lists</Text>
+                  </View>
+                  <Text style={themed($usageCardCount)}>
+                    {subscription.isPro || subscription.isTrial
+                      ? subscription.listsUsed.toString()
+                      : `${subscription.listsUsed}/${subscription.listsLimit}`}
+                  </Text>
+                  {subscription.listsUsed >= subscription.listsLimit && (
                     <View style={themed($limitBadge)}>
                       <Text style={themed($limitBadgeText)}>Limit Reached</Text>
                     </View>
@@ -405,12 +422,14 @@ const $usageTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) =>
 
 const $usageGrid: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flexDirection: "row",
-  gap: spacing.md,
+  gap: spacing.sm,
   marginBottom: spacing.lg,
+  flexWrap: "wrap",
 })
 
 const $usageCard: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   flex: 1,
+  minWidth: "30%",
   backgroundColor: colors.cardColor,
   borderRadius: 12,
   padding: spacing.md,

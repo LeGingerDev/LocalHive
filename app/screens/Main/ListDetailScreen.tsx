@@ -10,6 +10,7 @@ import { ItemModal } from "@/components/ItemModal"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { useAuth } from "@/context/AuthContext"
+import { useSubscription } from "@/hooks/useSubscription"
 import { ItemListService, type ListItem } from "@/services/supabase/itemListService"
 import { ItemWithProfile, ItemService } from "@/services/supabase/itemService"
 import { useAppTheme } from "@/theme/context"
@@ -23,6 +24,7 @@ interface ListDetailScreenProps {
 export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route }) => {
   const { themed } = useAppTheme()
   const { user } = useAuth()
+  const subscription = useSubscription(user?.id || null)
   const { listName, listId } = route.params || {}
   const [listItems, setListItems] = useState<ListItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -193,6 +195,20 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
     setEditText("")
   }
 
+  const handleDeleteItem = async (itemId: string) => {
+    try {
+      const { error } = await ItemListService.removeItemFromList(itemId)
+      if (error) {
+        console.error("Error deleting item:", error)
+      } else {
+        // Remove the item from local state
+        setListItems(prevItems => prevItems.filter(item => item.id !== itemId))
+      }
+    } catch (error) {
+      console.error("Error deleting item:", error)
+    }
+  }
+
   const handleEditItemLink = async (item: ItemWithProfile) => {
     if (!editingItemId) return
 
@@ -319,84 +335,99 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
     }
 
     return (
-      <TouchableOpacity
-        style={[
-          themed($listItem),
-          item.is_completed && themed($listItemCompleted),
-        ]}
-        onPress={() => handleToggleItem(item.id, item.is_completed)}
-        activeOpacity={0.7}
-      >
-        <View style={themed($itemContent)}>
-          {/* Item Image or First Letter (for linked items) */}
-          {isLinkedItem && (
-            <TouchableOpacity
-              style={themed($itemImageContainer)}
-              onPress={(e) => {
-                e.stopPropagation()
-                handleItemImagePress(item)
-              }}
-              activeOpacity={0.8}
-            >
-              {hasImage ? (
-                <Image
-                  source={{ uri: item.item_image_urls![0] }}
-                  style={themed($itemImage)}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={themed($imagePlaceholder)}>
-                  <Text style={themed($imagePlaceholderText)} text={itemTitle.charAt(0).toUpperCase()} />
-                </View>
-              )}
-            </TouchableOpacity>
-          )}
+      <View style={themed($listItemWrapper)}>
+        <TouchableOpacity
+          style={[
+            themed($listItem),
+            item.is_completed && themed($listItemCompleted),
+          ]}
+          onPress={() => handleToggleItem(item.id, item.is_completed)}
+          activeOpacity={0.7}
+        >
+          <View style={themed($itemContent)}>
+            {/* Item Image or First Letter (for linked items) */}
+            {isLinkedItem && (
+              <TouchableOpacity
+                style={themed($itemImageContainer)}
+                onPress={(e) => {
+                  e.stopPropagation()
+                  handleItemImagePress(item)
+                }}
+                activeOpacity={0.8}
+              >
+                {hasImage ? (
+                  <Image
+                    source={{ uri: item.item_image_urls![0] }}
+                    style={themed($itemImage)}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={themed($imagePlaceholder)}>
+                    <Text style={themed($imagePlaceholderText)} text={itemTitle.charAt(0).toUpperCase()} />
+                  </View>
+                )}
+              </TouchableOpacity>
+            )}
 
-          {/* Item Text */}
-          <View style={themed($itemTextContainer)}>
-            <View style={themed($itemTextRow)}>
-              <Text
-                style={[
-                  themed($itemText),
-                  item.is_completed && themed($itemTextCompleted),
-                ]}
-                text={itemTitle}
-              />
-              {isLinkedItem && (
-                <TouchableOpacity
-                  style={themed($linkedItemBadge)}
-                  onPress={(e) => {
-                    e.stopPropagation()
-                    handleItemImagePress(item)
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={themed($linkedItemBadgeText)} text="🔗" />
-                </TouchableOpacity>
+            {/* Item Text */}
+            <View style={themed($itemTextContainer)}>
+              <View style={themed($itemTextRow)}>
+                <Text
+                  style={[
+                    themed($itemText),
+                    item.is_completed && themed($itemTextCompleted),
+                  ]}
+                  text={itemTitle}
+                />
+                {isLinkedItem && (
+                  <TouchableOpacity
+                    style={themed($linkedItemBadge)}
+                    onPress={(e) => {
+                      e.stopPropagation()
+                      handleItemImagePress(item)
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={themed($linkedItemBadgeText)} text="🔗" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              {item.quantity > 1 && (
+                <Text style={themed($itemQuantity)} text={`×${item.quantity}`} />
               )}
             </View>
-            {item.quantity > 1 && (
-              <Text style={themed($itemQuantity)} text={`×${item.quantity}`} />
-            )}
-          </View>
 
-          {/* Pen Icon */}
-          <TouchableOpacity
-            style={themed($penIconContainer)}
-            onPress={(e) => {
-              e.stopPropagation()
-              handleStartEdit(item)
-            }}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="pencil"
-              size={16}
-              color={themed($penIconColor).color}
-            />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+            {/* Pen Icon */}
+            <TouchableOpacity
+              style={themed($penIconContainer)}
+              onPress={(e) => {
+                e.stopPropagation()
+                handleStartEdit(item)
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="pencil"
+                size={16}
+                color={themed($penIconColor).color}
+              />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+
+        {/* Delete Button */}
+        <TouchableOpacity
+          style={themed($deleteButton)}
+          onPress={() => handleDeleteItem(item.id)}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="close"
+            size={18}
+            color={themed($deleteButtonColor).color}
+          />
+        </TouchableOpacity>
+      </View>
     )
   }
 
@@ -431,12 +462,22 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
       )}
 
       <View style={themed($contentArea)}>
+        {/* Upgrade Message for Item Linking */}
+        {!subscription.isPro && !subscription.isTrial && (
+          <View style={themed($upgradeMessageContainer)}>
+            <Text style={themed($upgradeMessageText)}>
+              Upgrade to Pro to link items directly from lists
+            </Text>
+          </View>
+        )}
+
         {/* Add New Item Button */}
         <ItemInputDisplay
           onAddItem={handleAddItem}
           onItemLink={editingItemId ? handleEditItemLink : handleLinkItem}
           placeholder={editingItemId ? "Search for items to link..." : "Enter item name..."}
           disabled={loading}
+          canLinkItems={subscription.isPro || subscription.isTrial}
         />
 
         {/* List Items */}
@@ -503,9 +544,9 @@ const $listItem: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.background,
   borderRadius: 4,
   padding: spacing.xs,
-  marginBottom: spacing.xs,
   borderWidth: 1,
   borderColor: colors.border,
+  flex: 1,
 })
 
 const $listItemCompleted: ThemedStyle<ViewStyle> = ({ colors }) => ({
@@ -710,4 +751,44 @@ const $linkButton: ThemedStyle<ViewStyle> = ({ colors }) => ({
 
 const $linkButtonColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.tint,
+})
+
+const $listItemWrapper: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  marginBottom: spacing.xs,
+  width: "100%",
+})
+
+const $deleteButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  backgroundColor: colors.error + "20",
+  borderWidth: 1,
+  borderColor: colors.error,
+  alignItems: "center",
+  justifyContent: "center",
+  marginLeft: spacing.xs,
+})
+
+const $deleteButtonColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.error,
+})
+
+const $upgradeMessageContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.cardColor,
+  borderWidth: 1,
+  borderColor: colors.border,
+  borderRadius: 8,
+  padding: spacing.sm,
+  marginBottom: spacing.sm,
+  alignItems: "center",
+})
+
+const $upgradeMessageText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.textDim,
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  textAlign: "center",
 })

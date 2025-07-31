@@ -8,6 +8,8 @@ import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { useItemLists } from "@/hooks/useItemLists"
 import { useGroups } from "@/hooks/useGroups"
+import { useSubscription } from "@/hooks/useSubscription"
+import { useAuth } from "@/context/AuthContext"
 import { ItemListService } from "@/services/supabase/itemListService"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
@@ -19,6 +21,8 @@ interface CreateListScreenProps {
 
 export const CreateListScreen: FC<CreateListScreenProps> = ({ navigation, route }) => {
   const { themed } = useAppTheme()
+  const { user } = useAuth()
+  const subscription = useSubscription(user?.id || null)
   const { createList } = useItemLists()
   const { groups } = useGroups()
   const { showAlert } = useAlert()
@@ -39,6 +43,16 @@ export const CreateListScreen: FC<CreateListScreenProps> = ({ navigation, route 
 
   const handleCreateList = async () => {
     if (!listName.trim()) return
+
+    // Check subscription limits for new lists only
+    if (!isEditing && !subscription.canCreateListNow) {
+      showAlert({
+        title: "List Limit Reached",
+        message: "You've reached your list limit. Upgrade to Pro for unlimited lists!",
+        buttons: [{ label: "OK" }],
+      })
+      return
+    }
 
     try {
       setIsCreating(true)

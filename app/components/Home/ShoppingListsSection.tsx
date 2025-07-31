@@ -8,6 +8,8 @@ import { Text } from "@/components/Text"
 import { Icon } from "@/components/Icon"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { useItemLists } from "@/hooks/useItemLists"
+import { useSubscription } from "@/hooks/useSubscription"
+import { useAuth } from "@/context/AuthContext"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 import { ItemList } from "@/services/supabase/itemListService"
@@ -22,6 +24,8 @@ export const ShoppingListsSection: React.FC<ShoppingListsSectionProps> = ({
   onCreateList,
 }) => {
   const { themed } = useAppTheme()
+  const { user } = useAuth()
+  const subscription = useSubscription(user?.id || null)
   const { lists, loading, error, refetch } = useItemLists()
   const [shoppingLists, setShoppingLists] = useState<ItemList[]>([])
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -29,8 +33,11 @@ export const ShoppingListsSection: React.FC<ShoppingListsSectionProps> = ({
   refetchRef.current = refetch
 
   useEffect(() => {
-    // Show all lists, but sort personal lists first
-    const sortedLists = lists
+    // Filter lists to only show user's own lists (where user_id matches user.id)
+    const userLists = lists.filter(list => list.user_id === user?.id)
+    
+    // Sort personal lists first
+    const sortedLists = userLists
       .sort((a, b) => {
         // Personal lists (no group_id) come first
         if (!a.group_id && b.group_id) return -1
@@ -39,7 +46,7 @@ export const ShoppingListsSection: React.FC<ShoppingListsSectionProps> = ({
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       })
     setShoppingLists(sortedLists)
-  }, [lists])
+  }, [lists, user?.id])
 
   // Refresh data when screen comes into focus
   useFocusEffect(
@@ -56,6 +63,15 @@ export const ShoppingListsSection: React.FC<ShoppingListsSectionProps> = ({
   const handleToggleCollapse = useCallback(() => {
     setIsCollapsed(!isCollapsed)
   }, [isCollapsed])
+
+  const handleCreateList = useCallback(() => {
+    // Check if user can create a list
+    if (!subscription.canCreateListNow) {
+      // Show limit warning - this will be handled by the parent component
+      return
+    }
+    onCreateList?.()
+  }, [subscription.canCreateListNow, onCreateList])
 
   if (loading) {
     return <LoadingSpinner text="Loading lists..." />
@@ -81,7 +97,7 @@ export const ShoppingListsSection: React.FC<ShoppingListsSectionProps> = ({
           <View style={themed($headerContent)}>
             <View style={themed($headerTextContainer)}>
               <Icon icon="list" size={20} color="#FFFFFF" />
-              <Text style={themed($headerTitle)} text="Shopping Lists" />
+              <Text style={themed($headerTitle)} text={`Shopping Lists (${shoppingLists.length}/${subscription.listsLimit})`} />
             </View>
             <Icon
               icon={isCollapsed ? "caretRight" : "caretLeft"}
@@ -106,18 +122,28 @@ export const ShoppingListsSection: React.FC<ShoppingListsSectionProps> = ({
               <Text style={themed($emptySubtext)} text="Create a list to get started" />
             </View>
           ) : (
-            <ScrollView style={themed($listsContainer)} showsVerticalScrollIndicator={false}>
-              {shoppingLists.map((list) => (
-                <ListCard
-                  key={list.id}
-                  list={list}
-                  onPress={handleListPress}
-                  showLockIcon={true}
-                  showMenuButton={false}
-                  groupName={list.group_name}
-                />
-              ))}
-            </ScrollView>
+            <>
+              {/* List Limit Warning */}
+              {!subscription.canCreateListNow && (
+                <View style={themed($limitWarningContainer)}>
+                  <Text style={themed($limitWarningText)}>
+                    ⚠️ You've reached your list limit. Upgrade to Pro for unlimited lists!
+                  </Text>
+                </View>
+              )}
+              <ScrollView style={themed($listsContainer)} showsVerticalScrollIndicator={false}>
+                {shoppingLists.map((list) => (
+                  <ListCard
+                    key={list.id}
+                    list={list}
+                    onPress={handleListPress}
+                    showLockIcon={true}
+                    showMenuButton={false}
+                    groupName={list.group_name}
+                  />
+                ))}
+              </ScrollView>
+            </>
           )}
         </View>
       )}
@@ -216,4 +242,20 @@ const $errorText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.error,
   fontFamily: typography.primary.normal,
   fontSize: 14,
+})
+
+const $limitWarningContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.error + "20",
+  borderWidth: 1,
+  borderColor: colors.error,
+  padding: spacing.sm,
+  borderRadius: 8,
+  marginBottom: spacing.sm,
+})
+
+const $limitWarningText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  color: colors.error,
+  textAlign: "center",
 }) 
