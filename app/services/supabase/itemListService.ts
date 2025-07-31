@@ -6,6 +6,7 @@ export interface CreateListData {
   user_id: string
   name: string
   description?: string
+  group_id?: string
 }
 
 export interface ItemList {
@@ -18,6 +19,9 @@ export interface ItemList {
   updated_at: string
   item_count?: number
   completed_count?: number
+  group_id?: string
+  group_name?: string // Group name for display
+  creator_name?: string // Creator's full name for display
 }
 
 export interface ListItem {
@@ -54,6 +58,7 @@ export class ItemListService {
           user_id: data.user_id,
           name: data.name,
           description: data.description,
+          group_id: data.group_id,
         })
         .select()
         .single()
@@ -88,6 +93,9 @@ export class ItemListService {
           list_items(
             id,
             is_completed
+          ),
+          groups!item_lists_group_id_fkey(
+            name
           )
         `,
         )
@@ -109,9 +117,27 @@ export class ItemListService {
           ...list,
           item_count: itemCount,
           completed_count: completedCount,
+          group_name: list.groups?.name, // Extract group name
           list_items: undefined, // Remove the nested data
+          groups: undefined, // Remove the nested data
         }
       })
+
+      // Fetch creator names for all lists
+      if (processedLists && processedLists.length > 0) {
+        const userIds = [...new Set(processedLists.map(list => list.user_id))]
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", userIds)
+
+        if (!profilesError && profiles) {
+          const profilesMap = new Map(profiles.map(profile => [profile.id, profile.full_name]))
+          processedLists.forEach(list => {
+            list.creator_name = profilesMap.get(list.user_id)
+          })
+        }
+      }
 
       return { data: processedLists || null, error: null }
     } catch (error) {
@@ -313,6 +339,36 @@ export class ItemListService {
   }
 
   /**
+   * Update text content of a list item
+   */
+  static async updateListItemText(
+    listItemId: string,
+    textContent: string,
+  ): Promise<{ data: ListItem | null; error: PostgrestError | null }> {
+    try {
+      const { data: updatedItem, error } = await supabase
+        .from("list_items")
+        .update({ text_content: textContent })
+        .eq("id", listItemId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Error updating list item text:", error)
+        return { data: null, error }
+      }
+
+      return { data: updatedItem, error: null }
+    } catch (error) {
+      console.error("Error updating list item text:", error)
+      return {
+        data: null,
+        error: error as PostgrestError,
+      }
+    }
+  }
+
+  /**
    * Remove an item from a list
    */
   static async removeItemFromList(listItemId: string): Promise<{ error: PostgrestError | null }> {
@@ -347,6 +403,40 @@ export class ItemListService {
     } catch (error) {
       console.error("Error deleting list:", error)
       return { error: error as PostgrestError }
+    }
+  }
+
+  /**
+   * Update a list
+   */
+  static async updateList(
+    listId: string,
+    data: Partial<{
+      name: string
+      description: string
+      group_id: string | null
+    }>,
+  ): Promise<{ data: ItemList | null; error: PostgrestError | null }> {
+    try {
+      const { data: updatedList, error } = await supabase
+        .from("item_lists")
+        .update(data)
+        .eq("id", listId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Error updating list:", error)
+        return { data: null, error }
+      }
+
+      return { data: updatedList, error: null }
+    } catch (error) {
+      console.error("Error updating list:", error)
+      return {
+        data: null,
+        error: error as PostgrestError,
+      }
     }
   }
 

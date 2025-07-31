@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, useMemo, useRef } from "react"
 
 import {
   SubscriptionService,
+  subscriptionEventEmitter,
   type SubscriptionInfo,
   type SubscriptionStatus,
 } from "@/services/subscriptionService"
@@ -28,6 +29,7 @@ export const useSubscription = (userId: string | null) => {
   const [error, setError] = useState<string | null>(null)
   const lastRefreshTimeRef = useRef<number>(0)
   const isRefreshingRef = useRef<boolean>(false)
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   /**
    * Load subscription information with caching and deduplication
@@ -126,6 +128,52 @@ export const useSubscription = (userId: string | null) => {
       setLoading(false)
     }
   }, [userId])
+
+  // Listen for real-time subscription changes
+  useEffect(() => {
+    if (!userId) return
+
+    // Listen for cache cleared events
+    const unsubscribeCacheCleared = subscriptionEventEmitter.subscribe('cacheCleared', (data) => {
+      if (data.userId === userId) {
+        console.log(`🔄 [useSubscription] Cache cleared for user: ${userId}, scheduling refresh...`)
+        // Debounce the refresh to prevent excessive calls
+        if (refreshTimeoutRef.current) {
+          clearTimeout(refreshTimeoutRef.current)
+        }
+        refreshTimeoutRef.current = setTimeout(() => {
+          subscriptionCache.delete(userId)
+          loadSubscriptionInfo()
+        }, 500) // 500ms debounce
+      }
+    })
+
+    // Listen for subscription changed events
+    const unsubscribeSubscriptionChanged = subscriptionEventEmitter.subscribe('subscriptionChanged', (data) => {
+      if (data.userId === userId) {
+        console.log(`🔄 [useSubscription] Subscription changed for user: ${userId}:`, {
+          oldStatus: data.oldStatus,
+          newStatus: data.newStatus,
+        })
+        // Debounce the refresh to prevent excessive calls
+        if (refreshTimeoutRef.current) {
+          clearTimeout(refreshTimeoutRef.current)
+        }
+        refreshTimeoutRef.current = setTimeout(() => {
+          subscriptionCache.delete(userId)
+          loadSubscriptionInfo()
+        }, 500) // 500ms debounce
+      }
+    })
+
+    return () => {
+      unsubscribeCacheCleared()
+      unsubscribeSubscriptionChanged()
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current)
+      }
+    }
+  }, [userId, loadSubscriptionInfo])
 
   /**
    * Refresh subscription information (bypasses cache) with throttling

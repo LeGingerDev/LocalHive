@@ -45,6 +45,7 @@ import { AppNavigator } from "./navigators/AppNavigator"
 import { useNavigationPersistence } from "./navigators/navigationUtilities"
 import { AnalyticsService, AnalyticsEvents } from "./services/analyticsService"
 import { revenueCatService } from "./services/revenueCatService"
+import { SubscriptionService } from "./services/subscriptionService"
 import { setupAppStateListener } from "./services/supabase/supabase"
 import { ThemeProvider } from "./theme/context"
 import { customFontsToLoad } from "./theme/typography"
@@ -114,6 +115,8 @@ export function App() {
     setupAppStateListener()
   }, [])
 
+
+
   // Initialize RevenueCat
   useEffect(() => {
     const initRevenueCat = async () => {
@@ -126,6 +129,18 @@ export function App() {
     }
 
     initRevenueCat()
+  }, [])
+
+  // Initialize real-time subscription service
+  useEffect(() => {
+    console.log("[App] Initializing real-time subscription service")
+    SubscriptionService.initializeRealtimeSubscription()
+
+    // Cleanup on unmount
+    return () => {
+      console.log("[App] Cleaning up real-time subscription service")
+      SubscriptionService.cleanupRealtimeSubscription()
+    }
   }, [])
 
   // Initialize Firebase Analytics

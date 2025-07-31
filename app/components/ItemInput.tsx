@@ -10,6 +10,7 @@ import {
 
 import { AllItemsModal } from "@/components/AllItemsModal"
 import { Icon } from "@/components/Icon"
+import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 import { ItemWithProfile } from "@/services/supabase/itemService"
@@ -84,11 +85,7 @@ export const ItemInput: React.FC<ItemInputProps> = ({
             disabled={disabled}
             activeOpacity={0.7}
           >
-            <Icon
-              icon="view"
-              size={20}
-              color={themed($pictureButtonIcon).color}
-            />
+            <Text style={themed($linkIconText)} text="🔗" />
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -180,4 +177,11 @@ const $confirmButtonDisabled: ThemedStyle<ViewStyle> = ({ colors }) => ({
 
 const $confirmButtonIcon: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.background,
+})
+
+const $linkIconText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.text,
+  fontFamily: typography.primary.normal,
+  fontSize: 16,
+  textAlign: "center",
 }) 

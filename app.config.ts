@@ -25,6 +25,9 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
       openaiApiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY,
       googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      // RevenueCat API Keys
+      revenueCatAndroidKey: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY,
+      revenueCatIosKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY,
     },
     ios: {
       ...config.ios,

@@ -1,6 +1,8 @@
-import { FC, useState, useEffect } from "react"
-import { View, ViewStyle, FlatList, TouchableOpacity, TextStyle, Image, ImageStyle } from "react-native"
+import { FC, useState, useEffect, useMemo } from "react"
+import { View, ViewStyle, FlatList, TouchableOpacity, TextStyle, Image, ImageStyle, TextInput } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
 
+import { AllItemsModal } from "@/components/AllItemsModal"
 import { Header } from "@/components/Header"
 import { Icon } from "@/components/Icon"
 import { ItemInputDisplay } from "@/components/ItemInputDisplay"
@@ -26,11 +28,23 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
   const [loading, setLoading] = useState(true)
   const [selectedItem, setSelectedItem] = useState<ItemWithProfile | null>(null)
   const [isItemModalVisible, setIsItemModalVisible] = useState(false)
+  
+  // Edit mode state
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editText, setEditText] = useState("")
+  const [isAllItemsModalVisible, setIsAllItemsModalVisible] = useState(false)
 
   // Calculate progress
   const completedCount = listItems.filter(item => item.is_completed).length
   const totalCount = listItems.length
   const progressText = `${completedCount}/${totalCount}`
+
+  // Extract already linked item IDs to filter them out from AllItemsModal
+  const alreadyLinkedItemIds = useMemo(() => {
+    return listItems
+      .filter(item => item.item_id) // Only linked items have item_id
+      .map(item => item.item_id!)
+  }, [listItems])
 
   const handleBackPress = () => {
     navigation.goBack()
@@ -131,6 +145,90 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
     setSelectedItem(null)
   }
 
+  const handleStartEdit = (item: ListItem) => {
+    setEditingItemId(item.id)
+    setEditText(item.item_title || item.text_content || "")
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingItemId || !editText.trim()) return
+
+    try {
+      const itemToUpdate = listItems.find(item => item.id === editingItemId)
+      if (!itemToUpdate) return
+
+      if (itemToUpdate.is_text_item) {
+        // Update text item
+        const { error } = await ItemListService.updateListItemText(editingItemId, editText.trim())
+        if (error) {
+          console.error("Error updating text item:", error)
+          return
+        }
+      } else {
+        // For linked items, we need to update the text content
+        // This might require a different approach depending on your database structure
+        console.log("Updating linked item text:", editText.trim())
+        // TODO: Implement linked item text update if needed
+      }
+
+      // Update local state
+      setListItems(prevItems =>
+        prevItems.map(item =>
+          item.id === editingItemId
+            ? { ...item, item_title: editText.trim(), text_content: editText.trim() }
+            : item
+        )
+      )
+
+      // Exit edit mode
+      setEditingItemId(null)
+      setEditText("")
+    } catch (error) {
+      console.error("Error saving edit:", error)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingItemId(null)
+    setEditText("")
+  }
+
+  const handleEditItemLink = async (item: ItemWithProfile) => {
+    if (!editingItemId) return
+
+    try {
+      // Remove the current item
+      const { error: removeError } = await ItemListService.removeItemFromList(editingItemId)
+      if (removeError) {
+        console.error("Error removing current item:", removeError)
+        return
+      }
+
+      // Add the new linked item
+      const { data: newListItem, error: addError } = await ItemListService.addItemToList(listId, item.id)
+      if (addError) {
+        console.error("Error adding new linked item:", addError)
+        return
+      }
+
+      if (newListItem) {
+        // Update local state - replace the editing item with the new linked item
+        setListItems(prevItems =>
+          prevItems.map(listItem =>
+            listItem.id === editingItemId ? newListItem : listItem
+          )
+        )
+      }
+
+      // Exit edit mode and close AllItemsModal
+      setEditingItemId(null)
+      setEditText("")
+      setIsAllItemsModalVisible(false)
+    } catch (error) {
+      console.error("Error linking new item:", error)
+    }
+  }
+
   useEffect(() => {
     loadListItems()
   }, [listId])
@@ -149,6 +247,7 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
     const isLinkedItem = item.item_id && !item.is_text_item
     const hasImage = isLinkedItem && item.item_image_urls && item.item_image_urls.length > 0
     const itemTitle = item.item_title || item.text_content || "Unknown Item"
+    const isEditing = editingItemId === item.id
     
     // Debug logging to understand the data structure
     console.log('ListItem render:', {
@@ -159,8 +258,65 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
       item_title: item.item_title,
       text_content: item.text_content,
       item_image_urls: item.item_image_urls,
-      hasImage
+      hasImage,
+      isEditing
     })
+
+    if (isEditing) {
+      return (
+        <View style={themed($listItem)}>
+          <View style={themed($editContent)}>
+            <TextInput
+              style={themed($editInput)}
+              value={editText}
+              onChangeText={setEditText}
+              placeholder="Enter item name..."
+              placeholderTextColor={themed($placeholderText).color}
+              autoFocus
+              onSubmitEditing={handleSaveEdit}
+              returnKeyType="done"
+            />
+            <View style={themed($editButtons)}>
+              <TouchableOpacity
+                style={themed($editButton)}
+                onPress={handleSaveEdit}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="checkmark"
+                  size={16}
+                  color={themed($editButtonColor).color}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={themed($linkButton)}
+                onPress={() => {
+                  setIsAllItemsModalVisible(true)
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="link"
+                  size={16}
+                  color={themed($linkButtonColor).color}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={themed($editButton)}
+                onPress={handleCancelEdit}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="close"
+                  size={16}
+                  color={themed($editButtonColor).color}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )
+    }
 
     return (
       <TouchableOpacity
@@ -207,9 +363,16 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
                 text={itemTitle}
               />
               {isLinkedItem && (
-                <View style={themed($linkedItemBadge)}>
+                <TouchableOpacity
+                  style={themed($linkedItemBadge)}
+                  onPress={(e) => {
+                    e.stopPropagation()
+                    handleItemImagePress(item)
+                  }}
+                  activeOpacity={0.7}
+                >
                   <Text style={themed($linkedItemBadgeText)} text="🔗" />
-                </View>
+                </TouchableOpacity>
               )}
             </View>
             {item.quantity > 1 && (
@@ -222,14 +385,13 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
             style={themed($penIconContainer)}
             onPress={(e) => {
               e.stopPropagation()
-              // TODO: Handle edit functionality
-              console.log('Edit item:', item.id)
+              handleStartEdit(item)
             }}
             activeOpacity={0.7}
           >
-            <Icon
-              icon="settings"
-              size={20}
+            <Ionicons
+              name="pencil"
+              size={16}
               color={themed($penIconColor).color}
             />
           </TouchableOpacity>
@@ -245,7 +407,20 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
       safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={themed($contentContainer)}
     >
-      <Header title={listName || "List"} showBackButton onBackPress={handleBackPress} />
+      <Header 
+        title={listName || "List"} 
+        showBackButton 
+        onBackPress={handleBackPress}
+        rightActions={[
+          {
+            customComponent: (
+              <TouchableOpacity onPress={() => navigation.navigate("CreateList", { list: { id: listId, name: listName } })} activeOpacity={0.8}>
+                <Ionicons name="pencil" size={20} color={themed($penIconColor).color} />
+              </TouchableOpacity>
+            ),
+          },
+        ]}
+      />
 
       {/* Progress Display */}
       {totalCount > 0 && (
@@ -259,8 +434,8 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
         {/* Add New Item Button */}
         <ItemInputDisplay
           onAddItem={handleAddItem}
-          onItemLink={handleLinkItem}
-          placeholder="Enter item name..."
+          onItemLink={editingItemId ? handleEditItemLink : handleLinkItem}
+          placeholder={editingItemId ? "Search for items to link..." : "Enter item name..."}
           disabled={loading}
         />
 
@@ -290,6 +465,14 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
           onClose={handleItemModalClose}
         />
       )}
+
+      {/* All Items Modal for linking during edit */}
+              <AllItemsModal
+          visible={isAllItemsModalVisible}
+          onClose={() => setIsAllItemsModalVisible(false)}
+          onItemSelect={handleEditItemLink}
+          excludeItemIds={alreadyLinkedItemIds}
+        />
     </Screen>
   )
 }
@@ -307,20 +490,20 @@ const $contentContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
 
 const $contentArea: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flex: 1,
-  paddingHorizontal: spacing.md,
-  paddingTop: spacing.md,
+  paddingHorizontal: spacing.sm, // Reduced from spacing.md
+  paddingTop: spacing.sm, // Reduced from spacing.md
 })
 
 const $listContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  paddingTop: spacing.md,
-  paddingBottom: spacing.lg,
+  paddingTop: spacing.xs, // Reduced from spacing.md
+  paddingBottom: spacing.md, // Reduced from spacing.lg
 })
 
 const $listItem: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   backgroundColor: colors.background,
-  borderRadius: 8,
-  padding: spacing.md,
-  marginBottom: spacing.sm,
+  borderRadius: 4,
+  padding: spacing.xs,
+  marginBottom: spacing.xs,
   borderWidth: 1,
   borderColor: colors.border,
 })
@@ -334,13 +517,13 @@ const $itemContent: ViewStyle = {
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "flex-start",
-  paddingHorizontal: 8, // Add some padding to the content area
+  paddingHorizontal: 4, // Reduced from 8
 }
 
 const $itemImageContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  width: 50,
-  height: 50,
-  borderRadius: 8,
+  width: 40, // Reduced from 50
+  height: 40, // Reduced from 50
+  borderRadius: 4, // Reduced from 8
   overflow: "hidden",
   borderWidth: 1,
   borderColor: "rgba(0,0,0,0.1)",
@@ -355,7 +538,7 @@ const $imagePlaceholder: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   width: "100%",
   height: "100%",
   backgroundColor: colors.palette.neutral100,
-  borderRadius: 8,
+  borderRadius: 4, // Reduced from 8 to match container
   justifyContent: "center",
   alignItems: "center",
   borderWidth: 1,
@@ -365,7 +548,7 @@ const $imagePlaceholder: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
 const $imagePlaceholderText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.textDim,
   fontFamily: typography.primary.medium,
-  fontSize: 18,
+  fontSize: 16, // Reduced from 18 to match smaller container
 })
 
 const $itemIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
@@ -373,12 +556,12 @@ const $itemIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
 })
 
 const $penIconContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  width: 32,
-  height: 32,
-  borderRadius: 16,
+  width: 28, // Reduced from 32
+  height: 28, // Reduced from 32
+  borderRadius: 14, // Reduced from 16
   justifyContent: "center",
   alignItems: "center",
-  marginLeft: spacing.sm,
+  marginLeft: spacing.xs, // Reduced from spacing.sm
 })
 
 const $penIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
@@ -390,7 +573,7 @@ const $itemTextContainer: ViewStyle = {
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "space-between",
-  marginLeft: 12, // Add margin to separate from image
+  marginLeft: 8, // Reduced from 12
 }
 
 const $itemTextRow: ViewStyle = {
@@ -420,8 +603,9 @@ const $itemText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
 })
 
 const $itemTextCompleted: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.textDim,
+  color: "#FF4444", // Red color for completed text
   textDecorationLine: "line-through",
+  textDecorationColor: "#FF4444", // Red color for the strikethrough line
 })
 
 const $itemQuantity: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
@@ -473,4 +657,57 @@ const $progressLabel: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.normal,
   fontSize: 14,
   marginTop: 2,
+})
+
+const $editContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "column",
+  paddingVertical: spacing.xs,
+  paddingHorizontal: spacing.sm,
+})
+
+const $editInput: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
+  borderWidth: 1,
+  borderColor: colors.border,
+  borderRadius: 8,
+  paddingVertical: spacing.xs,
+  paddingHorizontal: spacing.sm,
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
+  color: colors.text,
+})
+
+const $placeholderText: ThemedStyle<TextStyle> = ({ colors }) => ({
+  color: colors.textDim,
+})
+
+const $editButtons: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  justifyContent: "space-around",
+  marginTop: spacing.xs,
+})
+
+const $editButton: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  width: 40,
+  height: 40,
+  borderRadius: 20,
+  justifyContent: "center",
+  alignItems: "center",
+  backgroundColor: colors.palette.primary100,
+})
+
+const $editButtonColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.tint,
+})
+
+const $linkButton: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  width: 40,
+  height: 40,
+  borderRadius: 20,
+  justifyContent: "center",
+  alignItems: "center",
+  backgroundColor: colors.palette.primary100,
+})
+
+const $linkButtonColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.tint,
 })

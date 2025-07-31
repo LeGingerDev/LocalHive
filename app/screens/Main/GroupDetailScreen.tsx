@@ -1,12 +1,14 @@
-import React, { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState, useCallback, useRef } from "react"
 import { useMemo } from "react"
 import { View, ScrollView, ViewStyle, TextStyle, TouchableOpacity, Modal } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
+import { Ionicons } from "@expo/vector-icons"
 
 import { CustomAlert } from "@/components/Alert"
 import { CategoriesSection } from "@/components/CategoriesSection"
 import { EditGroupModal } from "@/components/EditGroupModal"
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
+import { ListsSection } from "@/components/Groups/ListsSection"
 import { MembersSection } from "@/components/Groups/MembersSection"
 import { RecentActivitySection } from "@/components/Groups/RecentActivitySection"
 import { Header } from "@/components/Header"
@@ -19,6 +21,7 @@ import { Text } from "@/components/Text"
 import { UserStatsModal } from "@/components/UserStatsModal"
 import { useAuth } from "@/context/AuthContext"
 import { useGroups } from "@/hooks/useGroups"
+import { useItemLists } from "@/hooks/useItemLists"
 import { Group, GroupMember, GroupPost } from "@/services/api/types"
 import { GroupService } from "@/services/supabase/groupService"
 import { ItemService, ItemWithProfile } from "@/services/supabase/itemService"
@@ -33,7 +36,10 @@ interface GroupDetailScreenProps {
 export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps) => {
   const { themed, theme } = useAppTheme()
   const { deleteGroup } = useGroups()
+  const { lists, refetch: refetchLists } = useItemLists()
   const { user } = useAuth()
+  const refetchListsRef = useRef(refetchLists)
+  refetchListsRef.current = refetchLists
   const { groupId } = route.params
   const [group, setGroup] = useState<Group | null>(null)
   const [members, setMembers] = useState<GroupMember[]>([])
@@ -66,6 +72,7 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   const [selectedMember, setSelectedMember] = useState<GroupMember | null>(null)
 
   // Collapsible sections state
+  const [listsCollapsed, setListsCollapsed] = useState(false)
   const [membersCollapsed, setMembersCollapsed] = useState(false)
   const [itemsCollapsed, setItemsCollapsed] = useState(false)
   const [recentActivityCollapsed, setRecentActivityCollapsed] = useState(false)
@@ -93,8 +100,9 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   // Refresh data when screen comes into focus (e.g., returning from EditItemScreen)
   useFocusEffect(
     useCallback(() => {
-      console.log("[GroupDetailScreen] Screen focused - refreshing group items")
+      console.log("[GroupDetailScreen] Screen focused - refreshing group items and lists")
       loadGroupItems()
+      refetchListsRef.current() // Refresh lists data to update progress
     }, [groupId]),
   )
 
@@ -347,6 +355,10 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
   }
 
   // Collapsible section handlers
+  const handleListsToggle = useCallback(() => {
+    setListsCollapsed(!listsCollapsed)
+  }, [listsCollapsed])
+
   const handleMembersToggle = useCallback(() => {
     setMembersCollapsed(!membersCollapsed)
   }, [membersCollapsed])
@@ -394,6 +406,13 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
         onBackPress={() => navigation.goBack()}
         rightActions={[
           {
+            customComponent: (
+              <TouchableOpacity onPress={() => handleEditGroup()} activeOpacity={0.8}>
+                <Ionicons name="pencil" size={20} color={themed($penIconColor).color} />
+              </TouchableOpacity>
+            ),
+          },
+          {
             text: "...",
             onPress: () => setShowMenuModal(true),
           },
@@ -410,6 +429,64 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             text={`${group.member_count || 0} members • ${group.item_count || 0} items`}
           />
         </View>
+
+        {/* Collapsible Lists Section */}
+        <View style={themed($sectionHeader)}>
+          <View style={themed($sectionHeaderContent)}>
+            <TouchableOpacity
+              style={themed($sectionHeaderLeft)}
+              onPress={handleListsToggle}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={themed($sectionHeaderTitle)}
+                text={`Lists (${lists.filter((list: any) => list.group_id === groupId).length})`}
+              />
+            </TouchableOpacity>
+            <View style={themed($sectionHeaderRight)}>
+              {listsCollapsed && (
+                <Text
+                  style={themed($collapsedSectionSummary)}
+                  text={`${lists.filter((list: any) => list.group_id === groupId).length} list${lists.filter((list: any) => list.group_id === groupId).length !== 1 ? "s" : ""} hidden`}
+                />
+              )}
+              {!listsCollapsed && (
+                <TouchableOpacity
+                  style={themed($inviteButton)}
+                  onPress={() => navigation.navigate("CreateList", { groupId })}
+                  activeOpacity={0.8}
+                >
+                  <Text style={themed($inviteButtonText)} text="New List" />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={themed($caretButton)}
+                onPress={handleListsToggle}
+                activeOpacity={0.7}
+              >
+                <Icon
+                  icon={listsCollapsed ? "caretRight" : "caretLeft"}
+                  size={20}
+                  color={theme.colors.text}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {!listsCollapsed && (
+          <ListsSection
+            groupId={groupId}
+            groupName={group?.name}
+            onListPress={(list) => {
+              // Navigate to list detail screen
+              navigation.navigate("ListDetail", { 
+                listId: list.id,
+                listName: list.name 
+              })
+            }}
+          />
+        )}
 
         {/* Collapsible Members Section */}
         <View style={themed($sectionHeader)}>
@@ -1032,4 +1109,8 @@ const $collapsedSectionSummary = ({ typography, colors }: any): TextStyle => ({
   fontSize: 14,
   color: colors.textDim,
   fontStyle: "italic",
+})
+
+const $penIconColor = ({ colors }: any): { color: string } => ({
+  color: colors.textDim,
 })

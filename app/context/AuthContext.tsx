@@ -209,18 +209,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const googleUserData = await googleAuthService.getCurrentUser()
           setGoogleUser(googleUserData)
 
-          // Link anonymous purchase if user made one during onboarding
+          // Set RevenueCat user ID and link anonymous purchase if user made one during onboarding
           try {
             console.log(
-              `🔄 [AuthContext] Attempting to link anonymous purchase for user: ${session.user.id}`,
+              `🔄 [AuthContext] Setting RevenueCat user ID for user: ${session.user.id}`,
             )
-            await revenueCatService.linkAnonymousPurchase(session.user.id)
+            await revenueCatService.setUserID(session.user.id)
             console.log(
-              `✅ [AuthContext] Successfully linked anonymous purchase for user: ${session.user.id}`,
+              `✅ [AuthContext] Successfully set RevenueCat user ID for user: ${session.user.id}`,
             )
           } catch (error) {
-            console.log(`ℹ️ [AuthContext] No anonymous purchase to link or linking failed:`, error)
-            // Don't throw error - this is expected for users who didn't make anonymous purchases
+            console.log(`❌ [AuthContext] Failed to set RevenueCat user ID:`, error)
+            // Don't throw error - this shouldn't break the auth flow
           }
 
           // Fetch or create user profile

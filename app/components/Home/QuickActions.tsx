@@ -1,5 +1,6 @@
 import React, { FC, useState, useCallback, useEffect, useRef } from "react"
 import { View, Text, TouchableOpacity, Alert, ViewStyle, TextStyle, Animated } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
 
 import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { Icon } from "@/components/Icon"
@@ -309,8 +310,8 @@ export const QuickActions: FC<QuickActionsProps> = ({
                 activeOpacity={0.8}
               >
                 <View style={themed($actionIconContainer)}>
-                  <Icon
-                    icon="plus"
+                  <Ionicons
+                    name="pencil"
                     size={24}
                     color={
                       subscription.itemsUsed >= subscription.itemsLimit

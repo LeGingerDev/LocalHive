@@ -42,6 +42,11 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
     setIsUpgradeModalVisible(false)
   }
 
+  const handleManualRefresh = () => {
+    console.log("🔄 [SubscriptionStatusBox] Manual refresh triggered")
+    subscription.refresh()
+  }
+
   // Debug handlers removed
 
   const handleUpgrade = async () => {
@@ -117,12 +122,25 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
                 </Text>
               </View>
 
-              <Icon
-                icon={isCollapsed ? "caretRight" : "caretLeft"}
-                size={20}
-                color="#FFFFFF"
-                style={themed($arrowIcon)}
-              />
+              <View style={themed($headerActions)}>
+                <TouchableOpacity
+                  style={themed($refreshButton)}
+                  onPress={handleManualRefresh}
+                  activeOpacity={0.7}
+                >
+                  <Icon
+                    icon="view"
+                    size={16}
+                    color="#FFFFFF"
+                  />
+                </TouchableOpacity>
+                <Icon
+                  icon={isCollapsed ? "caretRight" : "caretLeft"}
+                  size={20}
+                  color="#FFFFFF"
+                  style={themed($arrowIcon)}
+                />
+              </View>
             </View>
           </CustomGradient>
         </TouchableOpacity>
@@ -285,6 +303,18 @@ const $headerContent: ThemedStyle<ViewStyle> = () => ({
   flexDirection: "row",
   justifyContent: "space-between",
   alignItems: "center",
+})
+
+const $headerActions: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: spacing.xs,
+})
+
+const $refreshButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.background + "20",
+  padding: spacing.xs,
+  borderRadius: 8,
 })
 
 const $statusBadge: ThemedStyle<ViewStyle> = () => ({

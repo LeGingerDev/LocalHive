@@ -1,24 +1,31 @@
 import React, { FC, useState } from "react"
 import { View, ViewStyle, TextStyle, TouchableOpacity, TextInput, ScrollView } from "react-native"
+import { Picker } from "@react-native-picker/picker"
 
 import { useAlert } from "@/components/Alert"
 import { Header } from "@/components/Header"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { useItemLists } from "@/hooks/useItemLists"
+import { useGroups } from "@/hooks/useGroups"
+import { ItemListService } from "@/services/supabase/itemListService"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
 interface CreateListScreenProps {
   navigation: any
+  route?: { params?: { groupId?: string; list?: any } }
 }
 
-export const CreateListScreen: FC<CreateListScreenProps> = ({ navigation }) => {
+export const CreateListScreen: FC<CreateListScreenProps> = ({ navigation, route }) => {
   const { themed } = useAppTheme()
   const { createList } = useItemLists()
+  const { groups } = useGroups()
   const { showAlert } = useAlert()
-  const [listName, setListName] = useState("")
+  const [listName, setListName] = useState(route?.params?.list?.name || "")
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(route?.params?.groupId || route?.params?.list?.group_id || "")
   const [isCreating, setIsCreating] = useState(false)
+  const isEditing = !!route?.params?.list
 
   // Get today's date in DD/MM/YYYY format
   const today = new Date()
@@ -35,19 +42,39 @@ export const CreateListScreen: FC<CreateListScreenProps> = ({ navigation }) => {
 
     try {
       setIsCreating(true)
-      await createList({
-        name: listName.trim(),
-      })
-      showAlert({
-        title: "Success!",
-        message: `List "${listName.trim()}" has been created successfully.`,
-        buttons: [{ label: "OK" }],
-      })
+      
+      if (isEditing) {
+        // Update existing list
+        const { error } = await ItemListService.updateList(route?.params?.list?.id, {
+          name: listName.trim(),
+          group_id: selectedGroupId || null,
+        })
+        
+        if (error) throw error
+        
+        showAlert({
+          title: "Success!",
+          message: `List "${listName.trim()}" has been updated successfully.`,
+          buttons: [{ label: "OK" }],
+        })
+      } else {
+        // Create new list
+        await createList({
+          name: listName.trim(),
+          group_id: selectedGroupId || undefined,
+        })
+        showAlert({
+          title: "Success!",
+          message: `List "${listName.trim()}" has been created successfully.`,
+          buttons: [{ label: "OK" }],
+        })
+      }
+      
       navigation.goBack()
     } catch (error) {
       showAlert({
         title: "Error",
-        message: error instanceof Error ? error.message : "Failed to create list",
+        message: error instanceof Error ? error.message : `Failed to ${isEditing ? 'update' : 'create'} list`,
         buttons: [{ label: "OK" }],
       })
     } finally {
@@ -70,7 +97,7 @@ export const CreateListScreen: FC<CreateListScreenProps> = ({ navigation }) => {
       safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={themed($contentContainer)}
     >
-      <Header title="New List" showBackButton onBackPress={handleBackPress} />
+      <Header title={isEditing ? "Edit List" : "New List"} showBackButton onBackPress={handleBackPress} />
 
       {/* Scrollable Content */}
       <ScrollView
@@ -88,6 +115,23 @@ export const CreateListScreen: FC<CreateListScreenProps> = ({ navigation }) => {
             onChangeText={setListName}
             autoFocus
           />
+        </View>
+
+        {/* Group Selection */}
+        <View style={themed($inputContainer)}>
+          <Text style={themed($labelText)} text="Link to Group (Optional)" />
+          <View style={themed($pickerContainer)}>
+            <Picker
+              selectedValue={selectedGroupId}
+              onValueChange={(itemValue) => setSelectedGroupId(itemValue as string)}
+              style={themed($picker)}
+            >
+              <Picker.Item label="No Group (Personal List)" value="" />
+              {groups.map((group) => (
+                <Picker.Item key={group.id} label={group.name} value={group.id} />
+              ))}
+            </Picker>
+          </View>
         </View>
 
         {/* Suggestions */}
@@ -114,7 +158,7 @@ export const CreateListScreen: FC<CreateListScreenProps> = ({ navigation }) => {
           onPress={handleCreateList}
           disabled={!listName.trim() || isCreating}
         >
-          <Text style={themed($createButtonText)} text={isCreating ? "CREATING..." : "CREATE"} />
+          <Text style={themed($createButtonText)} text={isCreating ? (isEditing ? "UPDATING..." : "CREATING...") : (isEditing ? "UPDATE" : "CREATE")} />
         </TouchableOpacity>
       </View>
     </Screen>
@@ -215,4 +259,24 @@ const $createButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontFamily: typography.primary.medium,
   fontSize: 16,
   fontWeight: "600",
+})
+
+const $labelText: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
+  color: colors.text,
+  fontFamily: typography.primary.medium,
+  fontSize: 16,
+  marginBottom: spacing.sm,
+})
+
+const $pickerContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  borderWidth: 2,
+  borderColor: colors.tint,
+  borderRadius: 12,
+  backgroundColor: colors.background,
+})
+
+const $picker: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.text,
+  fontFamily: typography.primary.normal,
+  fontSize: 16,
 })

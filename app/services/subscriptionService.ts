@@ -3,6 +3,39 @@ import { PostgrestError } from "@supabase/supabase-js"
 import { AnalyticsService, AnalyticsEvents } from "./analyticsService"
 import { supabase } from "./supabase/supabase"
 
+// Event emitter for subscription changes
+class SubscriptionEventEmitter {
+  private listeners: Map<string, Set<(data: any) => void>> = new Map()
+
+  subscribe(event: string, callback: (data: any) => void): () => void {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set())
+    }
+    this.listeners.get(event)!.add(callback)
+
+    // Return unsubscribe function
+    return () => {
+      const eventListeners = this.listeners.get(event)
+      if (eventListeners) {
+        eventListeners.delete(callback)
+        if (eventListeners.size === 0) {
+          this.listeners.delete(event)
+        }
+      }
+    }
+  }
+
+  emit(event: string, data: any): void {
+    const eventListeners = this.listeners.get(event)
+    if (eventListeners) {
+      eventListeners.forEach(callback => callback(data))
+    }
+  }
+}
+
+// Global event emitter instance
+export const subscriptionEventEmitter = new SubscriptionEventEmitter()
+
 /**
  * Subscription status types
  */
@@ -63,6 +96,68 @@ export interface SubscriptionInfo {
  * Service for handling subscription-related operations
  */
 export class SubscriptionService {
+  private static realtimeSubscription: any = null
+
+  /**
+   * Initialize real-time subscription for profile changes
+   */
+  static initializeRealtimeSubscription(): void {
+    if (this.realtimeSubscription) {
+      console.log("🔄 [SubscriptionService] Real-time subscription already initialized")
+      return
+    }
+
+    console.log("🔄 [SubscriptionService] Initializing real-time subscription for profile changes")
+
+    this.realtimeSubscription = supabase
+      .channel('subscription-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: 'subscription_status=neq.subscription_status',
+        },
+        (payload) => {
+          console.log("🔄 [SubscriptionService] Profile subscription status changed:", payload)
+          
+          // Emit event for subscription change
+          subscriptionEventEmitter.emit('subscriptionChanged', {
+            userId: payload.new.id,
+            oldStatus: payload.old.subscription_status,
+            newStatus: payload.new.subscription_status,
+            timestamp: new Date().toISOString(),
+          })
+
+          // Clear cache for this user
+          this.clearUserCache(payload.new.id)
+        }
+      )
+      .subscribe((status) => {
+        console.log("📡 [SubscriptionService] Real-time subscription status:", status)
+      })
+  }
+
+  /**
+   * Clean up real-time subscription
+   */
+  static cleanupRealtimeSubscription(): void {
+    if (this.realtimeSubscription) {
+      console.log("🧹 [SubscriptionService] Cleaning up real-time subscription")
+      supabase.removeChannel(this.realtimeSubscription)
+      this.realtimeSubscription = null
+    }
+  }
+
+  /**
+   * Clear cache for a specific user
+   */
+  static clearUserCache(userId: string): void {
+    // This will be used by the useSubscription hook
+    subscriptionEventEmitter.emit('cacheCleared', { userId })
+  }
+
   /**
    * Get the current user's subscription status
    */

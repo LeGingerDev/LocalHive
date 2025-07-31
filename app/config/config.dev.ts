@@ -19,6 +19,14 @@ if (__DEV__) {
     "  - EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID:",
     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ? "✅ Found" : "❌ Missing",
   )
+  console.log(
+    "  - EXPO_PUBLIC_REVENUECAT_ANDROID_KEY:",
+    process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ? "✅ Found" : "❌ Missing",
+  )
+  console.log(
+    "  - EXPO_PUBLIC_REVENUECAT_IOS_KEY:",
+    process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ? "✅ Found" : "❌ Missing",
+  )
 }
 
 export default {
@@ -35,5 +43,14 @@ export default {
   GOOGLE_WEB_CLIENT_ID:
     Constants.expoConfig?.extra?.googleWebClientId ||
     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+    "",
+  // RevenueCat API Keys
+  REVENUECAT_ANDROID_KEY:
+    Constants.expoConfig?.extra?.revenueCatAndroidKey ||
+    process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ||
+    "",
+  REVENUECAT_IOS_KEY:
+    Constants.expoConfig?.extra?.revenueCatIosKey ||
+    process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ||
     "",
 }

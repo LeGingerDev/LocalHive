@@ -36,12 +36,14 @@ interface AllItemsModalProps {
   visible: boolean
   onClose: () => void
   onItemSelect?: (item: ItemWithProfile & { group_name?: string }) => void
+  excludeItemIds?: string[] // Array of item IDs that are already linked to the current list
 }
 
 export const AllItemsModal: FC<AllItemsModalProps> = ({ 
   visible, 
   onClose, 
-  onItemSelect 
+  onItemSelect,
+  excludeItemIds = []
 }) => {
   const { themed, theme } = useAppTheme()
   const { trackEvent, events } = useAnalytics()
@@ -95,8 +97,13 @@ export const AllItemsModal: FC<AllItemsModalProps> = ({
         setError(fetchError.message)
         setItems([])
       } else {
+        // Filter out items that are already linked to the current list
+        const filteredItems = (data || []).filter((item: ItemWithGroupName) => 
+          !excludeItemIds.includes(item.id)
+        )
+        
         // Sort items alphabetically by title
-        const sortedItems = (data || []).sort((a: ItemWithGroupName, b: ItemWithGroupName) =>
+        const sortedItems = filteredItems.sort((a: ItemWithGroupName, b: ItemWithGroupName) =>
           a.title.toLowerCase().localeCompare(b.title.toLowerCase()),
         )
         setItems(sortedItems)
@@ -107,7 +114,7 @@ export const AllItemsModal: FC<AllItemsModalProps> = ({
     } finally {
       setIsLoading(false)
     }
-  }, [user?.id])
+  }, [user?.id, excludeItemIds])
 
   // Filter items based on search query and categories
   const filteredItems = useMemo(() => {
@@ -132,6 +139,23 @@ export const AllItemsModal: FC<AllItemsModalProps> = ({
 
     return filtered
   }, [items, searchQuery, selectedCategories])
+
+  // Calculate filtered items count for display
+  const filteredItemsCount = useMemo(() => {
+    return items.filter(item => {
+      const matchesSearch = !searchQuery || 
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.group_name.toLowerCase().includes(searchQuery.toLowerCase())
+      
+      const matchesCategory = selectedCategories.length === 0 || 
+        selectedCategories.includes(item.category)
+      
+      return matchesSearch && matchesCategory
+    }).length
+  }, [items, searchQuery, selectedCategories])
+
+  // Show helpful message about filtered items
+  const showFilteredMessage = excludeItemIds.length > 0 && filteredItemsCount === 0 && !searchQuery && selectedCategories.length === 0
 
   // Handle pull-to-refresh
   const handleRefresh = useCallback(async () => {
@@ -163,6 +187,12 @@ export const AllItemsModal: FC<AllItemsModalProps> = ({
     setSelectedCategories(categories)
   }, [])
 
+  // Clear all filters
+  const clearAllFilters = useCallback(() => {
+    setSearchQuery("")
+    setSelectedCategories([])
+  }, [])
+
   // Render item
   const renderItem = useCallback(
     ({ item }: { item: ItemWithGroupName }) => (
@@ -186,25 +216,33 @@ export const AllItemsModal: FC<AllItemsModalProps> = ({
 
   // Render empty state
   const renderEmptyState = () => {
-    if (searchQuery.trim() && filteredItems.length === 0) {
+    if (searchQuery || selectedCategories.length > 0) {
       return (
         <View style={themed($emptyContainer)}>
-          <Text style={themed($emptyText)}>No items found for "{searchQuery}"</Text>
-          <TouchableOpacity onPress={handleClearSearch} style={themed($retryButton)}>
-            <Text style={themed($retryButtonText)}>Clear Search</Text>
+          <Text style={themed($emptyText)}>No items found matching your filters</Text>
+          <TouchableOpacity style={themed($retryButton)} onPress={clearAllFilters}>
+            <Text style={themed($retryButtonText)}>Clear Filters</Text>
           </TouchableOpacity>
+        </View>
+      )
+    }
+
+    if (excludeItemIds.length > 0) {
+      return (
+        <View style={themed($emptyContainer)}>
+          <Text style={themed($emptyText)}>All available items are already in this list</Text>
+          <Text style={themed($emptySubtext)}>Try creating new items or adding text items instead</Text>
         </View>
       )
     }
 
     return (
       <View style={themed($emptyContainer)}>
-        <Text style={themed($emptyText)}>{error ? "Failed to load items" : "No items found"}</Text>
-        {error && (
-          <TouchableOpacity onPress={fetchAllItems} style={themed($retryButton)}>
-            <Text style={themed($retryButtonText)}>Retry</Text>
-          </TouchableOpacity>
-        )}
+        <Text style={themed($emptyText)}>No items found</Text>
+        <Text style={themed($emptySubtext)}>Create some items first to link them to lists</Text>
+        <TouchableOpacity style={themed($retryButton)} onPress={fetchAllItems}>
+          <Text style={themed($retryButtonText)}>Retry</Text>
+        </TouchableOpacity>
       </View>
     )
   }
@@ -231,16 +269,25 @@ export const AllItemsModal: FC<AllItemsModalProps> = ({
       >
         {/* Header */}
         <Header
-          title={onItemSelect ? "Link Item" : "All Items"}
+          title="Link Items"
           showBackButton
           onBackPress={onClose}
         />
+
+        {/* Show helpful message about filtered items */}
+        {showFilteredMessage && (
+          <View style={themed($filteredMessageContainer)}>
+            <Text style={themed($filteredMessageText)}>
+              Showing items not already in this list ({excludeItemIds.length} items filtered out)
+            </Text>
+          </View>
+        )}
 
         {/* Search and Filter Bar */}
         <View style={themed($searchContainer)}>
           <View style={themed($searchInputWrapper)}>
             <View style={themed($searchIconContainer)}>
-              <Icon icon="search" size={20} color={themed($searchIconColor).color} />
+              <Icon icon="view" size={20} color={themed($searchIconColor).color} />
             </View>
             <TextInput
               style={themed($searchInput)}
@@ -258,7 +305,7 @@ export const AllItemsModal: FC<AllItemsModalProps> = ({
             onPress={() => setFilterModalVisible(true)}
             activeOpacity={0.7}
           >
-            <Icon icon="settings" size={20} color={themed($filterIconColor).color} />
+            <Icon icon="view" size={20} color={themed($filterIconColor).color} />
           </TouchableOpacity>
         </View>
 
@@ -342,18 +389,21 @@ const $searchContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flexDirection: "row",
   alignItems: "center",
   paddingHorizontal: spacing.md,
-  paddingVertical: spacing.sm,
-  gap: spacing.sm,
+  paddingVertical: spacing.xs, // Reduced from spacing.sm
+  gap: spacing.xs, // Reduced from spacing.sm
 })
 
 const $searchInputWrapper: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
   flex: 1,
   flexDirection: "row",
   alignItems: "center",
-  backgroundColor: colors.palette.neutral200,
-  borderRadius: 8,
-  paddingHorizontal: spacing.sm,
+  backgroundColor: colors.background,
+  borderRadius: 25,
+  paddingHorizontal: spacing.md,
+  paddingVertical: spacing.sm,
   height: 40,
+  borderWidth: 1,
+  borderColor: colors.border,
 })
 
 const $searchIconContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
@@ -380,8 +430,15 @@ const $placeholderText: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.textDim,
 })
 
-const $filterButton: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  padding: spacing.xs,
+const $filterButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  borderWidth: 1,
+  borderColor: colors.border,
+  backgroundColor: "transparent",
+  alignItems: "center",
+  justifyContent: "center",
 })
 
 const $filterIconColor: ThemedStyle<{ color: string }> = ({ colors }) => ({
@@ -393,10 +450,10 @@ const $flatListContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
 })
 
 const $itemContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  marginBottom: spacing.sm,
+  marginBottom: spacing.xs, // Reduced from spacing.sm
   flexDirection: "row",
   alignItems: "center",
-  gap: spacing.sm,
+  gap: spacing.xs, // Reduced from spacing.sm
 })
 
 const $itemCardContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
@@ -434,6 +491,14 @@ const $emptyText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontSize: 16,
   textAlign: "center",
   marginBottom: spacing.md,
+})
+
+const $emptySubtext: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.textDim,
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  textAlign: "center",
+  marginTop: spacing.xs,
 })
 
 const $retryButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
@@ -507,7 +572,22 @@ const $clearAllFiltersButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => 
 })
 
 const $clearAllFiltersText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  color: colors.text,
+  color: colors.cta,
   fontFamily: typography.primary.medium,
-  fontSize: 12,
+  fontSize: 14,
+})
+
+const $filteredMessageContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.palette.neutral100,
+  paddingHorizontal: spacing.md,
+  paddingVertical: spacing.sm,
+  borderBottomWidth: 1,
+  borderBottomColor: colors.border,
+})
+
+const $filteredMessageText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.textDim,
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  textAlign: "center",
 }) 

@@ -400,26 +400,49 @@ export class ItemService {
         return { data: null, error }
       }
 
-      // Transform the data to include group names
+      // Get profile data separately to avoid foreign key issues
+      const userIds = [...new Set((items || []).map(item => item.user_id))]
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, avatar_url")
+        .in("id", userIds)
+
+      if (profilesError) {
+        console.error("Error getting profiles:", profilesError)
+        // Continue without profile data rather than failing completely
+      }
+
+      // Create a map of user profiles for quick lookup
+      const profilesMap = new Map()
+      if (profiles) {
+        profiles.forEach(profile => {
+          profilesMap.set(profile.id, profile)
+        })
+      }
+
+      // Transform the data to include group names and profile information
       const itemsWithGroupNames: (ItemWithProfile & { group_name: string })[] = (items || []).map(
-        (item) => ({
-          id: item.id,
-          group_id: item.group_id,
-          user_id: item.user_id,
-          title: item.title,
-          category: item.category,
-          location: item.location,
-          details: item.details,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          image_urls: item.image_urls,
-          // Profile fields will be undefined since we're not joining with profiles
-          profile_id: undefined,
-          full_name: undefined,
-          email: undefined,
-          avatar_url: undefined,
-          group_name: item.groups?.name || "Unknown Group",
-        }),
+        (item) => {
+          const profile = profilesMap.get(item.user_id)
+          return {
+            id: item.id,
+            group_id: item.group_id,
+            user_id: item.user_id,
+            title: item.title,
+            category: item.category,
+            location: item.location,
+            details: item.details,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            image_urls: item.image_urls,
+            // Profile fields from the separate profiles query
+            profile_id: profile?.id,
+            full_name: profile?.full_name,
+            email: profile?.email,
+            avatar_url: profile?.avatar_url,
+            group_name: item.groups?.name || "Unknown Group",
+          }
+        },
       )
 
       return { data: itemsWithGroupNames, error: null }

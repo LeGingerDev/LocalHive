@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import { View, StyleSheet, StatusBar, Animated, Easing } from "react-native"
+import { View, StyleSheet, StatusBar, Animated, Easing, Image } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 
 import { CustomGradient } from "@/components/CustomGradient"
@@ -201,26 +201,28 @@ export const SplashScreen = () => {
         style={styles.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
-      >
-        {/* Logo and text - animated */}
-        <Animated.View
-          style={[
-            styles.logoContainer,
-            {
-              opacity: logoFadeAnim,
-              transform: [{ translateY: logoTranslateYAnim }],
-            },
-          ]}
-        >
-          <View style={styles.logoBox}>
-            <View style={styles.logo}>
-              <View style={styles.logoInner} />
+              >
+          {/* Logo and text - animated */}
+          <Animated.View
+            style={[
+              styles.logoContainer,
+              {
+                opacity: logoFadeAnim,
+                transform: [{ translateY: logoTranslateYAnim }],
+              },
+            ]}
+          >
+            <View style={styles.logoBox}>
+              <Image
+                source={require("@assets/Visu/VisuHead.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
             </View>
-          </View>
-          <Text style={styles.title}>Visu</Text>
-          <Text style={styles.subtitle}>See what you need, share what you know.</Text>
-          <Text style={styles.description}>Building communities together</Text>
-        </Animated.View>
+            <Text style={styles.title}>Visu</Text>
+            <Text style={styles.subtitle}>See what you need, share what you know.</Text>
+            <Text style={styles.description}>Building communities together</Text>
+          </Animated.View>
 
         {/* Animated dots indicator - not animated with fade/translate */}
         <View style={styles.dotsContainer}>
@@ -271,32 +273,19 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   logo: {
-    alignItems: "center",
-    backgroundColor: "#7727c3",
-    borderRadius: 8,
-    height: 40,
-    justifyContent: "center",
-    transform: [{ rotate: "45deg" }],
-    width: 40,
+    height: 120,
+    width: 120,
   },
   logoBox: {
     alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 16,
-    height: 80,
+    height: 120,
     justifyContent: "center",
     marginBottom: 20,
-    width: 80,
+    width: 120,
   },
   logoContainer: {
     alignItems: "center",
     justifyContent: "center",
-  },
-  logoInner: {
-    backgroundColor: "#003161",
-    borderRadius: 5,
-    height: 10,
-    width: 10,
   },
   subtitle: {
     color: "white",

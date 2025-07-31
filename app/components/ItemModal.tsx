@@ -10,6 +10,7 @@ import {
   Pressable,
 } from "react-native"
 import { useNavigation } from "@react-navigation/native"
+import { Ionicons } from "@expo/vector-icons"
 
 import { Icon } from "@/components/Icon"
 import { Text } from "@/components/Text"
@@ -102,8 +103,8 @@ export const ItemModal: FC<ItemModalProps> = memo((props) => {
       <View style={themed($headerActions)}>
         {canEdit && (
           <TouchableOpacity onPress={handleEdit} style={themed($editButton)}>
-            <Icon
-              icon="settings"
+            <Ionicons
+              name="pencil"
               size={20}
               color={themeContext === "dark" ? "#FFFFFF" : "#000000"}
             />

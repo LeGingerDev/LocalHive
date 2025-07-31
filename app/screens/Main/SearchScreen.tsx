@@ -12,6 +12,7 @@ import { useFocusEffect } from "@react-navigation/native"
 
 import { EmptyState } from "@/components/EmptyState"
 import { Header } from "@/components/Header"
+import { ListCard } from "@/components/ListCard"
 import { ListMenuModal } from "@/components/ListMenuModal"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
@@ -22,7 +23,7 @@ import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
 export const ListsScreen: FC<BottomTabScreenProps<"Search">> = ({ navigation }) => {
-  const { themed } = useAppTheme()
+  const { themed, theme } = useAppTheme()
   const { lists, loading, error, deleteList, refetch } = useItemLists()
   const [menuVisible, setMenuVisible] = useState(false)
   const [selectedList, setSelectedList] = useState<any>(null)
@@ -87,31 +88,17 @@ export const ListsScreen: FC<BottomTabScreenProps<"Search">> = ({ navigation }) 
   )
 
   const renderListItem = ({ item }: { item: any }) => (
-    <View style={themed($listCard)}>
-      <TouchableOpacity 
-        style={themed($listCardContent)}
-        onPress={() => navigation.navigate("ListDetail" as any, { 
-          listId: item.id,
-          listName: item.name 
-        })}
-        activeOpacity={0.7}
-      >
-        <Text style={themed($listTitle)} text={item.name} />
-        <View style={themed($listProgressContainer)}>
-          <View style={themed($listProgressBar)} />
-          <Text
-            style={themed($listProgressText)}
-            text={`${item.completed_count || 0}/${item.item_count || 0}`}
-          />
-        </View>
-      </TouchableOpacity>
-      <TouchableOpacity 
-        style={themed($listMenuButton)}
-        onPress={() => handleMenuPress(item)}
-      >
-        <Text style={themed($listMenuIcon)} text="⋮" />
-      </TouchableOpacity>
-    </View>
+    <ListCard
+      list={item}
+      onPress={(list) => navigation.navigate("ListDetail" as any, { 
+        listId: list.id,
+        listName: list.name 
+      })}
+      onMenuPress={handleMenuPress}
+      showLockIcon={true}
+      showMenuButton={true}
+      groupName={item.group_name}
+    />
   )
 
   return (
@@ -226,59 +213,7 @@ const $listContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   paddingBottom: spacing.lg,
 })
 
-const $listCard: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  backgroundColor: colors.palette.neutral100,
-  borderRadius: 12,
-  padding: spacing.md,
-  marginBottom: spacing.sm,
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  borderWidth: 1,
-  borderColor: colors.palette.neutral400,
-})
 
-const $listCardContent: ThemedStyle<ViewStyle> = ({ spacing: _spacing }) => ({
-  flex: 1,
-})
-
-const $listTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing: _spacing }) => ({
-  color: colors.text,
-  fontFamily: typography.primary.medium,
-  fontSize: 16,
-  fontWeight: "600",
-  marginBottom: _spacing.xs,
-})
-
-const $listProgressContainer: ThemedStyle<ViewStyle> = ({ spacing: _spacing }) => ({
-  flexDirection: "row",
-  alignItems: "center",
-  gap: _spacing.sm,
-})
-
-const $listProgressBar: ThemedStyle<ViewStyle> = ({ colors, spacing: _spacing }) => ({
-  flex: 1,
-  height: 2,
-  backgroundColor: colors.border,
-  borderRadius: 1,
-})
-
-const $listProgressText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  color: colors.textDim,
-  fontFamily: typography.primary.normal,
-  fontSize: 12,
-})
-
-const $listMenuButton: ThemedStyle<ViewStyle> = ({ spacing: _spacing }) => ({
-  padding: _spacing.xs,
-})
-
-const $listMenuIcon: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  color: colors.textDim,
-  fontFamily: typography.primary.normal,
-  fontSize: 24,
-  fontWeight: "bold",
-})
 
 const $emptyContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flex: 1,

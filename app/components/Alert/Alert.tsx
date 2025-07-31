@@ -142,7 +142,7 @@ export const Alert = (props: AlertProps) => {
     backgroundColor: colors.background,
     borderRadius: 16,
     padding: spacing.lg,
-    paddingBottom: spacing.xl, // Extra bottom padding to prevent button clipping
+    paddingBottom: 90, // Increased bottom padding to prevent button clipping
     width: maxWidth,
     minWidth: 280,
     alignItems: "center",

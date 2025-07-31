@@ -1,13 +1,15 @@
 import { FC, useState, useEffect, useCallback, useRef } from "react"
-import { ViewStyle, TextStyle, ActivityIndicator, ScrollView, View } from "react-native"
+import { ViewStyle, TextStyle, ActivityIndicator, ScrollView, View, TouchableOpacity } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 
 import { Header } from "@/components/Header"
+import { Icon } from "@/components/Icon"
 import {
   QuickActions,
   WelcomeMessage,
   RecentActivitySection,
   type RecentActivitySectionRef,
+  ShoppingListsSection,
 } from "@/components/Home"
 import { Screen } from "@/components/Screen"
 import { SearchModal } from "@/components/SearchModal"
@@ -247,6 +249,18 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
           onShowAllItems={handleShowAllItems}
         />
 
+        {/* Shopping Lists Section */}
+        <ShoppingListsSection
+          onListPress={(list) => {
+            navigation.navigate("ListDetail" as any, { 
+              listId: list.id,
+              listName: list.name 
+            })
+          }}
+          onCreateList={handleCreateList}
+          limit={3}
+        />
+
         {/* Recent Activity Section */}
         <RecentActivitySection limit={5} ref={recentActivityRef} />
 
@@ -378,5 +392,64 @@ const $retryButton: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
 
 const $activityIndicator: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.tint,
+})
+
+// Collapsible section styles
+const $sectionHeader: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.cardColor,
+  borderRadius: 12,
+  padding: spacing.md,
+  marginBottom: spacing.sm,
+  borderWidth: 1,
+  borderColor: colors.border,
+})
+
+const $sectionHeaderContent: ThemedStyle<ViewStyle> = () => ({
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+})
+
+const $sectionHeaderLeft: ThemedStyle<ViewStyle> = () => ({
+  flex: 1,
+})
+
+const $sectionHeaderTitle: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.text,
+  fontFamily: typography.primary.bold,
+  fontSize: 16,
+})
+
+const $sectionHeaderRight: ThemedStyle<ViewStyle> = () => ({
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 8,
+})
+
+const $collapsedSectionSummary: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.textDim,
+  fontFamily: typography.primary.normal,
+  fontSize: 12,
+})
+
+const $inviteButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.tint,
+  borderRadius: 8,
+  paddingHorizontal: spacing.sm,
+  paddingVertical: spacing.xs,
+})
+
+const $inviteButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.background,
+  fontFamily: typography.primary.medium,
+  fontSize: 12,
+})
+
+const $caretButton: ThemedStyle<ViewStyle> = () => ({
+  padding: 4,
+})
+
+const $caretButtonIcon: ThemedStyle<{ color: string }> = ({ colors }) => ({
+  color: colors.text,
 })
 // #endregion

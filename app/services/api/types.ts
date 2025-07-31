@@ -64,6 +64,7 @@ export interface Group {
   member_count?: number
   post_count?: number
   item_count?: number
+  lists?: string[]
 }
 
 export interface GroupMember {
