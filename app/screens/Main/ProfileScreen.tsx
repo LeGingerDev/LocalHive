@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Alert } from "react-native"
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Alert, Platform } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import Ionicons from "react-native-vector-icons/Ionicons"
 
@@ -18,6 +18,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useSubscription } from "@/hooks/useSubscription"
 import { HapticService } from "@/services/hapticService"
 import googleAuthService from "@/services/supabase/googleAuthService"
+import { revenueCatService } from "@/services/revenueCatService"
 import { useAppTheme } from "@/theme/context"
 import { setSystemUIBackgroundColor } from "@/theme/context.utils"
 import { spacing } from "@/theme/spacing"
@@ -29,6 +30,7 @@ const ProfileScreen = () => {
   const subscription = useSubscription(userProfile?.id || null)
   const [isManageModalVisible, setIsManageModalVisible] = useState(false)
   const [isPrivacySecurityModalVisible, setIsPrivacySecurityModalVisible] = useState(false)
+  const [isRestoringPurchases, setIsRestoringPurchases] = useState(false)
   // Set the status bar background color to match the header
   useEffect(() => {
     setSystemUIBackgroundColor(theme.colors.headerBackground)
@@ -71,6 +73,43 @@ const ProfileScreen = () => {
     setIsPrivacySecurityModalVisible(false)
   }
 
+  const handleRestorePurchases = async () => {
+    HapticService.selection()
+    setIsRestoringPurchases(true)
+    
+    try {
+      const customerInfo = await revenueCatService.restorePurchases()
+      
+      if (customerInfo) {
+        // Check if any purchases were restored
+        const hasActiveEntitlements = Object.keys(customerInfo.entitlements.active).length > 0
+        
+        if (hasActiveEntitlements) {
+          Alert.alert(
+            "Purchases Restored",
+            "Your purchases have been successfully restored!",
+            [{ text: "OK" }]
+          )
+        } else {
+          Alert.alert(
+            "No Purchases Found",
+            "No previous purchases were found to restore.",
+            [{ text: "OK" }]
+          )
+        }
+      }
+    } catch (error) {
+      console.error("Failed to restore purchases:", error)
+      Alert.alert(
+        "Restore Failed",
+        "Failed to restore purchases. Please try again later.",
+        [{ text: "OK" }]
+      )
+    } finally {
+      setIsRestoringPurchases(false)
+    }
+  }
+
   return (
     <Screen
       preset="fixed"
@@ -95,7 +134,45 @@ const ProfileScreen = () => {
             onPress={handlePrivacySecurityPress}
           />
           <SettingsItem icon="help-circle-outline" label="Help & Support" />
-          <SettingsItem icon="information-circle-outline" label="About Local Hive" />
+          <SettingsItem icon="information-circle-outline" label="About Visu App" />
+          {Platform.OS === "ios" && (
+            <TouchableOpacity
+              onPress={handleRestorePurchases}
+              activeOpacity={0.8}
+              disabled={isRestoringPurchases}
+              style={[
+                styles.restorePurchasesItem,
+                {
+                  backgroundColor: theme.colors.cardColor,
+                  shadowColor: theme.colors.text,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.restoreIconContainer,
+                  { backgroundColor: theme.colors.palette.neutral100 },
+                ]}
+              >
+                <Icon 
+                  icon={isRestoringPurchases ? "spinner" : "refresh"} 
+                  size={22} 
+                  color={theme.colors.gradientOrange[0]} 
+                />
+              </View>
+              <Text style={[styles.restoreLabel, { color: theme.colors.text }]}>
+                {isRestoringPurchases ? "Restoring..." : "Restore Purchases"}
+              </Text>
+              {!isRestoringPurchases && (
+                <Ionicons
+                  name="chevron-forward"
+                  size={22}
+                  color={theme.colors.textDim}
+                  style={{ marginLeft: "auto" }}
+                />
+              )}
+            </TouchableOpacity>
+          )}
           {subscription.isPro && (
             <TouchableOpacity
               onPress={handleManageSubscription}
@@ -168,6 +245,31 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   manageSubscriptionItem: {
+    alignItems: "center",
+    elevation: 2,
+    flexDirection: "row",
+    marginBottom: 0,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+  },
+  restoreIconContainer: {
+    alignItems: "center",
+    borderRadius: 18,
+    height: 36,
+    justifyContent: "center",
+    marginRight: 8,
+    width: 36,
+  },
+  restoreLabel: {
+    color: "#333333",
+    fontFamily: "System",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  restorePurchasesItem: {
     alignItems: "center",
     elevation: 2,
     flexDirection: "row",

@@ -444,24 +444,38 @@ export class InvitationService {
     const inviterIds = [...new Set(invitations.map((inv) => inv.inviter_id))]
     const inviteeIds = [...new Set(invitations.map((inv) => inv.invitee_id))]
 
-    // Fetch related data
-    const [groupsResult, inviterProfilesResult, inviteeProfilesResult] = await Promise.all([
+    // Fetch related data with member counts
+    const [groupsResult, inviterProfilesResult, inviteeProfilesResult, memberCountsResult] = await Promise.all([
       supabase.from("groups").select("*").in("id", groupIds),
       supabase.from("profiles").select("*").in("id", inviterIds),
       supabase.from("profiles").select("*").in("id", inviteeIds),
+      supabase.from("group_members").select("group_id").in("group_id", groupIds),
     ])
 
     const groups = groupsResult.data || []
     const inviterProfiles = inviterProfilesResult.data || []
     const inviteeProfiles = inviteeProfilesResult.data || []
+    const memberCounts = memberCountsResult.data || []
+
+    // Calculate member counts per group
+    const memberCountMap = new Map<string, number>()
+    memberCounts.forEach((member) => {
+      const currentCount = memberCountMap.get(member.group_id) || 0
+      memberCountMap.set(member.group_id, currentCount + 1)
+    })
 
     // Enrich invitations
-    return invitations.map((invitation) => ({
-      ...invitation,
-      group: groups.find((g) => g.id === invitation.group_id) || null,
-      inviter: inviterProfiles.find((p) => p.id === invitation.inviter_id) || null,
-      invitee: inviteeProfiles.find((p) => p.id === invitation.invitee_id) || null,
-    })) as GroupInvitation[]
+    return invitations.map((invitation) => {
+      const group = groups.find((g) => g.id === invitation.group_id) || null
+      const memberCount = memberCountMap.get(invitation.group_id) || 0
+      
+      return {
+        ...invitation,
+        group: group ? { ...group, member_count: memberCount } : null,
+        inviter: inviterProfiles.find((p) => p.id === invitation.inviter_id) || null,
+        invitee: inviteeProfiles.find((p) => p.id === invitation.invitee_id) || null,
+      }
+    }) as GroupInvitation[]
   }
 
   /**

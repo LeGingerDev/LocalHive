@@ -17,7 +17,6 @@ import { CustomGradient } from "@/components/Gradient/CustomGradient"
 import { GroupCard } from "@/components/Groups/GroupCard"
 import { InvitationCard } from "@/components/Groups/InvitationCard"
 import { Header } from "@/components/Header"
-import { Icon } from "@/components/Icon"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
@@ -74,8 +73,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
     "default",
   )
 
-  // Collapsible groups state
-  const [groupsCollapsed, setGroupsCollapsed] = useState(false)
+
 
   // Refresh on focus
   useFocusEffect(
@@ -162,10 +160,7 @@ export const GroupsScreen = ({ navigation, route }: any) => {
     navigation.navigate("GroupDetail", { groupId })
   }
 
-  const handleGroupsToggle = useCallback(() => {
-    HapticService.light()
-    setGroupsCollapsed(!groupsCollapsed)
-  }, [groupsCollapsed])
+
 
   const handleRefresh = useCallback(async () => {
     HapticService.light()
@@ -265,41 +260,47 @@ export const GroupsScreen = ({ navigation, route }: any) => {
                 </View>
               )}
 
-              {/* Collapsible Groups Section Header */}
-              <TouchableOpacity
-                style={themed($sectionHeader)}
-                onPress={handleGroupsToggle}
-                activeOpacity={0.7}
-              >
-                <View style={themed($sectionHeaderContent)}>
-                  <Text style={themed($sectionHeaderTitle)} text={`Groups (${groups.length})`} />
-                  <View style={themed($sectionHeaderRight)}>
-                    {groupsCollapsed && (
-                      <Text
-                        style={themed($collapsedGroupsSummary)}
-                        text={`${groups.length} group${groups.length !== 1 ? "s" : ""} hidden`}
-                      />
-                    )}
-                    <Icon
-                      icon={groupsCollapsed ? "caretRight" : "caretLeft"}
-                      size={20}
-                      color={theme.colors.text}
-                    />
-                  </View>
-                </View>
-              </TouchableOpacity>
+              {/* Split groups into My Groups and Other People's Groups */}
+              {(() => {
+                const myGroups = groups.filter(group => group.creator_id === user?.id)
+                const otherPeopleGroups = groups.filter(group => group.creator_id !== user?.id)
 
-              {/* Groups Content */}
-              {!groupsCollapsed &&
-                groups.map((group: Group, index: number) => (
-                  <GroupCard
-                    key={group.id}
-                    group={group}
-                    navigation={navigation}
-                    index={index}
-                    onNavigateToDetail={handleNavigateToGroupDetail}
-                  />
-                ))}
+                return (
+                  <>
+                    {/* My Groups Section */}
+                    {myGroups.length > 0 && (
+                      <View style={themed($sectionContainer)}>
+                        <Text style={themed($sectionTitle)} text={`My Groups (${myGroups.length})`} />
+                        {myGroups.map((group: Group, index: number) => (
+                          <GroupCard
+                            key={group.id}
+                            group={group}
+                            navigation={navigation}
+                            index={index}
+                            onNavigateToDetail={handleNavigateToGroupDetail}
+                          />
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Other People's Groups Section */}
+                    {otherPeopleGroups.length > 0 && (
+                      <View style={themed($sectionContainer)}>
+                        <Text style={themed($sectionTitle)} text={`Other People's Groups (${otherPeopleGroups.length})`} />
+                        {otherPeopleGroups.map((group: Group, index: number) => (
+                          <GroupCard
+                            key={group.id}
+                            group={group}
+                            navigation={navigation}
+                            index={index}
+                            onNavigateToDetail={handleNavigateToGroupDetail}
+                          />
+                        ))}
+                      </View>
+                    )}
+                  </>
+                )
+              })()}
             </>
           )
         )}
@@ -371,6 +372,10 @@ const $sectionTitle = ({ typography, colors, spacing }: any): TextStyle => ({
   marginTop: spacing.lg,
   marginBottom: spacing.sm,
 })
+
+const $sectionContainer = ({ spacing }: any): ViewStyle => ({
+  marginBottom: spacing.md,
+})
 const $emptyStateContainer = (): ViewStyle => ({
   flex: 1,
   justifyContent: "flex-start",
@@ -441,40 +446,7 @@ const $noInvitationsSubtext = ({ typography, colors }: any): TextStyle => ({
   color: colors.textDim,
   textAlign: "center",
 })
-const $sectionHeader = ({ colors, spacing }: any): ViewStyle => ({
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  paddingVertical: spacing.sm,
-  paddingHorizontal: spacing.md,
-  marginBottom: spacing.xs,
-})
-const $sectionHeaderContent = (): ViewStyle => ({
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  width: "100%",
-})
-const $sectionHeaderRight = (): ViewStyle => ({
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 8,
-})
-const $sectionHeaderTitle = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.medium,
-  fontSize: 16,
-  color: colors.text,
-})
-const $collapsedGroupsContainer = ({ spacing }: any): ViewStyle => ({
-  paddingHorizontal: spacing.md,
-  marginTop: spacing.sm,
-})
-const $collapsedGroupsSummary = ({ typography, colors }: any): TextStyle => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 14,
-  color: colors.textDim,
-  fontStyle: "italic",
-})
+
 
 const $limitWarningContainer = ({ colors, spacing }: any): ViewStyle => ({
   backgroundColor: colors.error + "20",

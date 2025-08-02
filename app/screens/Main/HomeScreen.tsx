@@ -270,18 +270,6 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
 
         {/* Recent Activity Section */}
         <RecentActivitySection limit={5} ref={recentActivityRef} />
-
-        {/* Tips Section */}
-        <View style={themed($tipsSection)}>
-          <Text style={themed($sectionTitle)}>💡 Tips</Text>
-          <View style={themed($tipsContent)}>
-            <Text style={themed($tipText)}>• Create groups to organize your items</Text>
-            <Text style={themed($tipText)}>• Use AI search to quickly find what you need</Text>
-            {!subscription.isPro && (
-              <Text style={themed($tipText)}>• Upgrade to Pro for unlimited access</Text>
-            )}
-          </View>
-        </View>
       </ScrollView>
 
       {/* Subscription Management Modal */}
@@ -329,29 +317,6 @@ const $sectionTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) 
   fontSize: 18,
   color: colors.text,
   marginBottom: spacing.md,
-})
-
-const $tipsSection: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  backgroundColor: colors.cardColor,
-  borderRadius: 12,
-  padding: spacing.md,
-  marginHorizontal: spacing.md,
-  marginVertical: spacing.sm,
-  shadowColor: colors.text,
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-  elevation: 3,
-})
-
-const $tipsContent: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  gap: spacing.sm,
-})
-
-const $tipText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
-  fontFamily: typography.primary.normal,
-  fontSize: 14,
-  color: colors.textDim,
 })
 
 const $loadingContainer: ThemedStyle<ViewStyle> = () => ({

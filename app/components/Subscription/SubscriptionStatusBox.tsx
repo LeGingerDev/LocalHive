@@ -42,10 +42,7 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
     setIsUpgradeModalVisible(false)
   }
 
-  const handleManualRefresh = () => {
-    console.log("🔄 [SubscriptionStatusBox] Manual refresh triggered")
-    subscription.refresh()
-  }
+
 
   // Debug handlers removed
 
@@ -125,14 +122,10 @@ export const SubscriptionStatusBox: FC<SubscriptionStatusBoxProps> = ({
               <View style={themed($headerActions)}>
                 <TouchableOpacity
                   style={themed($refreshButton)}
-                  onPress={handleManualRefresh}
-                  activeOpacity={0.7}
+                  onPress={subscription.refresh}
+                  activeOpacity={0.8}
                 >
-                  <Icon
-                    icon="view"
-                    size={16}
-                    color="#FFFFFF"
-                  />
+                  <Text style={themed($refreshButtonText)}>Refresh</Text>
                 </TouchableOpacity>
                 <Icon
                   icon={isCollapsed ? "caretRight" : "caretLeft"}
@@ -328,11 +321,18 @@ const $headerActions: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   gap: spacing.xs,
 })
 
-const $refreshButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
-  backgroundColor: colors.background + "20",
-  padding: spacing.xs,
-  borderRadius: 8,
+const $refreshButton: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  paddingHorizontal: spacing.sm,
+  paddingVertical: spacing.xs,
 })
+
+const $refreshButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 12,
+  color: "#FFFFFF",
+})
+
+
 
 const $statusBadge: ThemedStyle<ViewStyle> = () => ({
   flexDirection: "row",

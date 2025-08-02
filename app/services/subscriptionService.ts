@@ -49,6 +49,7 @@ export interface SubscriptionPlan {
   name: string
   max_groups: number
   max_items: number
+  max_lists: number
   ai_search_enabled: boolean
   trial_days: number
   price_monthly: number
@@ -112,35 +113,67 @@ export class SubscriptionService {
       return
     }
 
-    console.log("🔄 [SubscriptionService] Initializing real-time subscription for profile changes")
+    console.log("🔄 [SubscriptionService] Initializing real-time subscription for subscription changes")
 
     this.realtimeSubscription = supabase
-      .channel('subscription-changes')
+      .channel('subscriptions')
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*', // Listen to INSERT, UPDATE, DELETE
           schema: 'public',
-          table: 'profiles',
-          filter: 'subscription_status=neq.subscription_status',
+          table: 'profiles', // Changed from 'subscriptions' to 'profiles'
         },
         (payload) => {
-          console.log("🔄 [SubscriptionService] Profile subscription status changed:", payload)
+          // console.log("🔄 [SubscriptionService] Profile changed:", payload)
           
-          // Emit event for subscription change
+          // Type guard to ensure payload has the expected structure
+          const newRecord = payload.new as any
+          const oldRecord = payload.old as any
+          
+          // Only emit if subscription-related fields changed
+          if (newRecord?.subscription_status !== oldRecord?.subscription_status ||
+              newRecord?.subscription_expires_at !== oldRecord?.subscription_expires_at) {
+            
+            // Emit event for subscription change
+            subscriptionEventEmitter.emit('subscriptionChanged', {
+              userId: newRecord?.id || oldRecord?.id,
+              oldStatus: oldRecord?.subscription_status,
+              newStatus: newRecord?.subscription_status,
+              expiresAt: newRecord?.subscription_expires_at,
+              event: payload.eventType,
+              timestamp: new Date().toISOString(),
+            })
+
+            // Clear cache for this user
+            if (newRecord?.id) {
+              this.clearUserCache(newRecord.id)
+            }
+          }
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'new_subscription' },
+        (payload) => {
+          // console.log("🔄 [SubscriptionService] New subscription broadcast:", payload)
+          
+          // Emit event for new subscription
           subscriptionEventEmitter.emit('subscriptionChanged', {
-            userId: payload.new.id,
-            oldStatus: payload.old.subscription_status,
-            newStatus: payload.new.subscription_status,
+            userId: payload.user_id,
+            newStatus: payload.status,
+            planName: payload.plan_name,
+            expiresAt: payload.expires_at,
+            event: 'INSERT',
             timestamp: new Date().toISOString(),
           })
 
           // Clear cache for this user
-          this.clearUserCache(payload.new.id)
+          this.clearUserCache(payload.user_id)
         }
       )
       .subscribe((status) => {
-        console.log("📡 [SubscriptionService] Real-time subscription status:", status)
+        // console.log("📡 [SubscriptionService] Real-time subscription status:", status)
       })
   }
 
@@ -282,7 +315,7 @@ export class SubscriptionService {
         return { info: null, error }
       }
 
-      if (__DEV__ && true) {
+      if (__DEV__ && false) {
         // Enable debug logging
         console.log(`📊 [SubscriptionService] Raw data from get_user_subscription_info:`, data)
       }
@@ -305,7 +338,7 @@ export class SubscriptionService {
         subscription_expires_at: data?.[0]?.subscription_expires_at || null,
       }
 
-      if (__DEV__ && true) {
+      if (__DEV__ && false) {
         // Enable debug logging
         console.log(`✅ [SubscriptionService] Processed subscription info:`, {
           subscription_status: info.subscription_status,
@@ -315,6 +348,9 @@ export class SubscriptionService {
           items_count: info.items_count,
           max_items: info.max_items,
           can_create_item: info.can_create_item,
+          lists_count: info.lists_count,
+          max_lists: info.max_lists,
+          can_create_list: info.can_create_list,
           ai_search_enabled: info.ai_search_enabled,
           can_use_ai: info.can_use_ai,
         })
@@ -634,6 +670,7 @@ export class SubscriptionService {
     details: {
       groups: { current: number; max: number; percentage: number }
       items: { current: number; max: number; percentage: number }
+      lists: { current: number; max: number; percentage: number }
     } | null
     error: PostgrestError | null
   }> {
@@ -650,8 +687,9 @@ export class SubscriptionService {
 
       const groupsPercentage = info.max_groups > 0 ? (info.groups_count / info.max_groups) * 100 : 0
       const itemsPercentage = info.max_items > 0 ? (info.items_count / info.max_items) * 100 : 0
+      const listsPercentage = info.max_lists > 0 ? (info.lists_count / info.max_lists) * 100 : 0
 
-      const approaching = groupsPercentage >= 80 || itemsPercentage >= 80
+      const approaching = groupsPercentage >= 80 || itemsPercentage >= 80 || listsPercentage >= 80
 
       const details = approaching
         ? {
@@ -664,6 +702,11 @@ export class SubscriptionService {
               current: info.items_count,
               max: info.max_items,
               percentage: itemsPercentage,
+            },
+            lists: {
+              current: info.lists_count,
+              max: info.max_lists,
+              percentage: listsPercentage,
             },
           }
         : null

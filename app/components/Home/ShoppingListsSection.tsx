@@ -33,11 +33,11 @@ export const ShoppingListsSection: React.FC<ShoppingListsSectionProps> = ({
   refetchRef.current = refetch
 
   useEffect(() => {
-    // Filter lists to only show user's own lists (where user_id matches user.id)
-    const userLists = lists.filter(list => list.user_id === user?.id)
+    // Filter lists to show ALL lists created by the user (personal + group lists they created)
+    const userCreatedLists = lists.filter(list => list.user_id === user?.id)
     
-    // Sort personal lists first
-    const sortedLists = userLists
+    // Sort personal lists first, then group lists by creation date
+    const sortedLists = userCreatedLists
       .sort((a, b) => {
         // Personal lists (no group_id) come first
         if (!a.group_id && b.group_id) return -1
@@ -51,7 +51,6 @@ export const ShoppingListsSection: React.FC<ShoppingListsSectionProps> = ({
   // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      console.log("[ShoppingListsSection] Screen focused - refreshing lists")
       refetchRef.current()
     }, []),
   )

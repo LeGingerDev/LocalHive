@@ -2,6 +2,8 @@
  * Utility functions for restarting the app
  */
 
+import { Platform, Alert } from "react-native"
+
 /**
  * Restart the app with a delay to ensure any UI elements are properly dismissed
  * @param delayMs - Delay in milliseconds before restart (default: 500ms)
@@ -13,27 +15,85 @@ export const restartApp = async (delayMs: number = 500): Promise<void> => {
     try {
       console.log(`🔄 [AppRestart] Restarting app...`)
 
-      // Use React Native's built-in reload mechanism
-      const { DevSettings } = await import("react-native")
-
       if (__DEV__) {
-        // In development, reload the app
+        // In development, use DevSettings.reload()
+        const { DevSettings } = await import("react-native")
         DevSettings.reload()
       } else {
-        // In production, also reload (this will restart the app)
-        DevSettings.reload()
+        // In production, use platform-specific restart methods
+        if (Platform.OS === "ios") {
+          // For iOS, we need to use a different approach
+          // Since we can't truly restart the app, we'll show a message asking the user to restart manually
+          Alert.alert(
+            "Restart Required",
+            "Your subscription has been activated! Please restart the app to see all changes.",
+            [
+              {
+                text: "Restart Now",
+                onPress: () => {
+                  // Try to reload anyway as a fallback
+                  try {
+                    const { DevSettings } = require("react-native")
+                    DevSettings.reload()
+                  } catch (error) {
+                    console.log("DevSettings.reload() not available in production")
+                  }
+                },
+              },
+              {
+                text: "Later",
+                style: "cancel",
+              },
+            ]
+          )
+        } else if (Platform.OS === "android") {
+          // For Android, try to restart using the Android-specific method
+          try {
+            const { NativeModules } = await import("react-native")
+            if (NativeModules.DevSettings) {
+              NativeModules.DevSettings.reload()
+            } else {
+              // Fallback for Android
+              Alert.alert(
+                "Restart Required",
+                "Your subscription has been activated! Please restart the app to see all changes.",
+                [
+                  {
+                    text: "OK",
+                    style: "default",
+                  },
+                ]
+              )
+            }
+          } catch (error) {
+            console.error("❌ [AppRestart] Android restart failed:", error)
+            Alert.alert(
+              "Restart Required",
+              "Your subscription has been activated! Please restart the app to see all changes.",
+              [
+                {
+                  text: "OK",
+                  style: "default",
+                },
+              ]
+            )
+          }
+        }
       }
     } catch (error) {
       console.error("❌ [AppRestart] Failed to restart app:", error)
 
-      // Fallback: try to reload using a different method
-      try {
-        const { DevSettings } = await import("react-native")
-        DevSettings.reload()
-      } catch (fallbackError) {
-        console.error("❌ [AppRestart] Fallback restart also failed:", fallbackError)
-        // As a last resort, we could show a message asking the user to manually restart
-      }
+      // Fallback: show a message asking the user to restart manually
+      Alert.alert(
+        "Restart Required",
+        "Your subscription has been activated! Please restart the app to see all changes.",
+        [
+          {
+            text: "OK",
+            style: "default",
+          },
+        ]
+      )
     }
   }, delayMs)
 }
@@ -52,8 +112,6 @@ export const restartAppImmediately = async (): Promise<void> => {
  * @param delayMs - Delay in milliseconds before restart (default: 1000ms)
  */
 export const restartAppWithMessage = (message: string, delayMs: number = 1000): void => {
-  const { Alert } = require("react-native")
-
   Alert.alert("Success", message, [
     {
       text: "OK",

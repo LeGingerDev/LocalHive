@@ -39,6 +39,7 @@ export interface ListItem {
   item_title?: string
   item_category?: string
   item_image_urls?: string[]
+  item_group_id?: string // Group ID for filtering
 }
 
 /**
@@ -80,11 +81,16 @@ export class ItemListService {
 
   /**
    * Get all lists for a user with item counts
+   * This includes personal lists and lists from groups the user is a member of
    */
   static async getUserLists(
     userId: string,
   ): Promise<{ data: ItemList[] | null; error: PostgrestError | null }> {
     try {
+      // Remove the user_id filter to let RLS handle access control
+      // RLS policies will ensure users only see:
+      // 1. Their own personal lists (group_id IS NULL)
+      // 2. Lists in groups they are members of
       const { data: lists, error } = await supabase
         .from("item_lists")
         .select(
@@ -99,7 +105,6 @@ export class ItemListService {
           )
         `,
         )
-        .eq("user_id", userId)
         .eq("is_active", true)
         .order("created_at", { ascending: false })
 
@@ -175,7 +180,8 @@ export class ItemListService {
           items(
             title,
             category,
-            image_urls
+            image_urls,
+            group_id
           )
         `,
         )
@@ -193,6 +199,7 @@ export class ItemListService {
         item_title: item.is_text_item ? item.text_content : item.items?.title,
         item_category: item.items?.category,
         item_image_urls: item.items?.image_urls,
+        item_group_id: item.items?.group_id, // Add group_id for filtering
         items: undefined, // Remove the nested data
       }))
 
@@ -237,7 +244,8 @@ export class ItemListService {
           items(
             title,
             category,
-            image_urls
+            image_urls,
+            group_id
           )
         `
         )
@@ -254,6 +262,7 @@ export class ItemListService {
         item_title: listItem.items?.title,
         item_category: listItem.items?.category,
         item_image_urls: listItem.items?.image_urls,
+        item_group_id: listItem.items?.group_id, // Add group_id for filtering
         items: undefined, // Remove the nested data
       }
 

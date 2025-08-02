@@ -383,7 +383,7 @@ export const useSubscription = (userId: string | null) => {
 
   // Only log computed values in development and when they actually change
   // Reduced logging to prevent spam
-  if (__DEV__ && true) {
+  if (__DEV__ && false) {
     // Set to true to enable debug logging
     console.log(`📊 [useSubscription] Computed values:`, {
       subscriptionStatus: subscriptionInfo?.subscription_status,

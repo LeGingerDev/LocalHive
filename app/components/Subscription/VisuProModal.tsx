@@ -16,9 +16,9 @@ import { LinearGradient } from "expo-linear-gradient"
 import { Icon } from "@/components/Icon"
 import { useAuth } from "@/context/AuthContext"
 import { useRevenueCat } from "@/hooks/useRevenueCat"
+import { useSubscription } from "@/hooks/useSubscription"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
-import { restartApp } from "@/utils/appRestart"
 
 export interface VisuProModalProps {
   visible: boolean
@@ -46,6 +46,10 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
   } = useRevenueCat()
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [hasUsedTrial, setHasUsedTrial] = useState(false)
+  
+  // Get subscription info to check if user was previously pro
+  // If user is "free" but has subscription_expires_at, they were previously pro
+  const { subscriptionInfo } = useSubscription(userProfile?.id || null)
 
   // Set user ID when modal opens and check trial status
   useEffect(() => {
@@ -53,29 +57,18 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
       setUserID(userProfile.id)
       checkTrialStatus(userProfile.id)
     }
-  }, [visible, userProfile?.id, isInitialized, setUserID])
+  }, [visible, userProfile?.id, isInitialized])
 
-  // Check if user has already used their trial
+  // Check if user has already used their trial or had a pro subscription
   const checkTrialStatus = async (userId: string) => {
     try {
-      const { revenueCatService } = await import("@/services/revenueCatService")
-      const customerInfo = await revenueCatService.getCustomerInfo()
-
-      if (customerInfo) {
-        // Check if user has any trial-related entitlements in their history
-        const allEntitlements = Object.values(customerInfo.entitlements.all)
-        const hasTrialHistory = allEntitlements.some(
-          (entitlement) =>
-            entitlement.identifier.includes("trial") ||
-            entitlement.identifier.includes("intro") ||
-            entitlement.periodType === "intro",
-        )
-
-        setHasUsedTrial(hasTrialHistory)
-        console.log(
-          `🔍 [VisuProModal] Trial status for user ${userId}: ${hasTrialHistory ? "Used" : "Available"}`,
-        )
-      }
+      // Simply check if user has had a subscription before by looking at subscription_expires_at
+      const hasHadSubscription = !!subscriptionInfo?.subscription_expires_at
+      setHasUsedTrial(hasHadSubscription)
+      
+      console.log(
+        `🔍 [VisuProModal] Subscription history for user ${userId}: ${hasHadSubscription ? "Has had subscription before" : "No subscription history"}`,
+      )
     } catch (error) {
       console.error("❌ [VisuProModal] Error checking trial status:", error)
       // Default to assuming trial is available if we can't check
@@ -173,15 +166,14 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
       // Show success message
       Alert.alert(
         "Success!",
-        "Your subscription has been activated. Welcome to Visu Pro! The app will restart to apply your new subscription.",
+        "Your subscription has been activated. Welcome to Visu Pro!",
         [
           {
             text: "OK",
             onPress: () => {
-              console.log(`🎉 [VisuProModal] Purchase completed, restarting app...`)
+              console.log(`🎉 [VisuProModal] Purchase completed successfully`)
               onClose()
-              // Restart the app after a short delay to ensure the alert is dismissed
-              restartApp(500)
+              // Real-time updates will handle subscription status changes automatically
             },
           },
         ],
@@ -282,7 +274,7 @@ export const VisuProModal: React.FC<VisuProModalProps> = ({
                 <Text style={themed($buttonText)}>
                   {isPurchasing || isLoading
                     ? "Processing..."
-                    : hasUsedTrial
+                    : hasUsedTrial || subscriptionInfo?.subscription_expires_at
                       ? "Subscribe Now"
                       : "Start 3-Day Free Trial"}
                 </Text>

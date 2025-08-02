@@ -44,9 +44,6 @@ export interface SubscriptionTier {
 class RevenueCatService {
   private _isInitialized = false
   private _customerInfoUpdateListener: (() => void) | null = null
-  private _lastSyncTime = 0
-  private _syncDebounceTimeout: NodeJS.Timeout | null = null
-  private _isSyncing = false
 
   /**
    * Initialize RevenueCat with your API keys
@@ -208,10 +205,10 @@ class RevenueCatService {
     console.log(`🔄 [RevenueCat] Triggering real-time update for user ${userId} with status: ${status}`)
     
     // Only trigger real-time update if we're not currently syncing
-    if (this._isSyncing) {
-      console.log(`⏳ [RevenueCat] Skipping real-time update - sync in progress`)
-      return
-    }
+    // if (this._isSyncing) { // This line is removed as per the edit hint
+    //   console.log(`⏳ [RevenueCat] Skipping real-time update - sync in progress`)
+    //   return
+    // }
     
     // Emit subscription changed event
     subscriptionEventEmitter.emit('subscriptionChanged', {
@@ -299,11 +296,6 @@ class RevenueCatService {
 
       if (result.success) {
         console.log(`✅ [RevenueCat] Successfully updated Supabase subscription to: ${status}`)
-        // Only restart for significant status changes (not free status updates)
-        if (status !== "free") {
-          console.log(`🔄 [RevenueCat] Scheduling app restart for status change to: ${status}`)
-          restartApp(1000)
-        }
         return true
       } else {
         console.error(`❌ [RevenueCat] Failed to update Supabase subscription:`, result.error)
@@ -368,29 +360,8 @@ class RevenueCatService {
    * Call this when app comes back from background to detect changes
    */
   async refreshSubscriptionStatus(): Promise<void> {
-    try {
-      await this.ensureInitialized()
-
-      console.log("🔄 [RevenueCat] Refreshing subscription status...")
-      const customerInfo = await this.getCustomerInfo()
-
-      if (customerInfo) {
-        // Force sync with Supabase
-        if (
-          customerInfo.originalAppUserId &&
-          !customerInfo.originalAppUserId.startsWith("$RCAnonymousID:")
-        ) {
-          console.log("🔄 [RevenueCat] Forcing sync with Supabase...")
-          // Use the debounced sync method instead of direct sync
-          await this.syncSubscriptionWithSupabase(customerInfo.originalAppUserId)
-        }
-        console.log("✅ [RevenueCat] Subscription status refreshed")
-      } else {
-        console.log("❌ [RevenueCat] No customer info found during refresh")
-      }
-    } catch (error) {
-      console.error("❌ [RevenueCat] Failed to refresh subscription status:", error)
-    }
+    // This method is deprecated - webhooks now handle subscription updates
+    console.log("🔄 [RevenueCat] Manual refresh deprecated - webhooks handle subscription updates")
   }
 
   /**
@@ -559,221 +530,15 @@ class RevenueCatService {
   }
 
   /**
-   * Sync RevenueCat subscription status with Supabase
+   * Sync subscription with Supabase
    */
   async syncSubscriptionWithSupabase(userID: string): Promise<void> {
-    try {
-      // Prevent recursive calls and add debouncing
-      const now = Date.now()
-      if (this._isSyncing) {
-        console.log(`⏳ [RevenueCat] Sync already in progress for user: ${userID}, skipping...`)
-        return
-      }
-
-      // Debounce sync calls - only allow one sync every 2 seconds
-      if (now - this._lastSyncTime < 2000) {
-        console.log(`⏳ [RevenueCat] Sync debounced for user: ${userID}, last sync was ${now - this._lastSyncTime}ms ago`)
-        
-        // Clear existing timeout and set new one
-        if (this._syncDebounceTimeout) {
-          clearTimeout(this._syncDebounceTimeout)
-        }
-        
-        this._syncDebounceTimeout = setTimeout(() => {
-          this.syncSubscriptionWithSupabase(userID)
-        }, 2000 - (now - this._lastSyncTime))
-        
-        return
-      }
-
-      this._isSyncing = true
-      this._lastSyncTime = now
-
-      console.log(`🔄 [RevenueCat] Starting sync for user: ${userID}`)
-
-      const customerInfo = await this.getCustomerInfo()
-      if (!customerInfo) {
-        console.log(`❌ [RevenueCat] No customer info found for user: ${userID}`)
-        this._isSyncing = false
-        return
-      }
-
-      console.log(`📊 [RevenueCat] Customer info:`, {
-        userId: userID,
-        activeEntitlements: Object.keys(customerInfo.entitlements.active),
-        allEntitlements: Object.keys(customerInfo.entitlements.all),
-        originalAppUserId: customerInfo.originalAppUserId,
-        firstSeen: customerInfo.firstSeen,
-        latestExpirationDate: customerInfo.latestExpirationDate,
-      })
-
-      // Check if user has active subscription
-      const hasActiveSubscription = Object.keys(customerInfo.entitlements.active).length > 0
-      console.log(`🔍 [RevenueCat] Has active subscription: ${hasActiveSubscription}`)
-
-      if (hasActiveSubscription) {
-        // Get all active entitlements
-        const activeEntitlements = customerInfo.entitlements.active
-        console.log(`✅ [RevenueCat] Active entitlements:`, activeEntitlements)
-
-        // Check if this is a trial (look for trial-related entitlements or intro offers)
-        const isTrial = Object.values(activeEntitlements).some((entitlement) => {
-          const isTrialIdentifier =
-            entitlement.identifier.includes("trial") ||
-            entitlement.identifier.includes("intro") ||
-            entitlement.periodType === "intro"
-
-          const isShortPeriod =
-            entitlement.expirationDate && this.isTrialPeriod(entitlement.expirationDate)
-
-          console.log(`🔍 [RevenueCat] Checking entitlement for trial:`, {
-            identifier: entitlement.identifier,
-            periodType: entitlement.periodType,
-            expirationDate: entitlement.expirationDate,
-            isTrialIdentifier,
-            isShortPeriod,
-          })
-
-          return isTrialIdentifier || isShortPeriod
-        })
-
-        if (isTrial) {
-          console.log(`🎯 [RevenueCat] Detected trial subscription`)
-
-          // Update Supabase with trial status
-          const success = await this.updateSubscriptionInSupabase("trial")
-          if (success) {
-            console.log(`✅ [RevenueCat] Successfully updated Supabase with trial status`)
-
-            // Track trial sync
-            await AnalyticsService.trackEvent({
-              name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
-              properties: {
-                userId: userID,
-                newStatus: "trial",
-                source: "revenuecat_sync",
-              },
-            })
-          } else {
-            console.error(`❌ [RevenueCat] Failed to update Supabase with trial status`)
-          }
-        } else {
-          // Look for any pro-related entitlement (pro, premium, etc.)
-          const proEntitlement =
-            activeEntitlements.pro ||
-            activeEntitlements.premium ||
-            activeEntitlements.visu_pro ||
-            Object.values(activeEntitlements).find(
-              (ent) => ent.identifier.includes("pro") || ent.identifier.includes("premium"),
-            )
-
-          if (proEntitlement && proEntitlement.expirationDate) {
-            const expiresAt = proEntitlement.expirationDate
-            console.log(`🎯 [RevenueCat] Found pro entitlement:`, {
-              identifier: proEntitlement.identifier,
-              expirationDate: expiresAt,
-              periodType: proEntitlement.periodType,
-            })
-
-            // Update Supabase with pro subscription
-            console.log(`🔄 [RevenueCat] Updating Supabase with pro subscription...`)
-            const result = await SubscriptionService.upgradeToPro(userID, expiresAt)
-
-            if (result.success) {
-              console.log(`✅ [RevenueCat] Successfully updated Supabase subscription`)
-              // Schedule app restart to reflect the new subscription status
-              console.log(`🔄 [RevenueCat] Scheduling app restart for pro subscription change...`)
-              restartApp(1000)
-            } else {
-              console.error(`❌ [RevenueCat] Failed to update Supabase:`, result.error)
-            }
-          }
-        }
-      } else {
-        // No active subscription - check for expired subscriptions
-        console.log(`📉 [RevenueCat] No active subscriptions found`)
-        const allEntitlements = Object.values(customerInfo.entitlements.all)
-        console.log(`🔍 [RevenueCat] All entitlements:`, allEntitlements)
-
-        if (allEntitlements.length > 0) {
-          // Check for recently expired subscriptions
-          const recentlyExpired = this.findRecentlyExpiredEntitlement(allEntitlements)
-
-          if (recentlyExpired) {
-            console.log(`📅 [RevenueCat] Found recently expired subscription:`, recentlyExpired)
-
-            // Update Supabase with expired status
-            const success = await this.updateSubscriptionInSupabase(
-              "expired",
-              recentlyExpired.expirationDate,
-            )
-            if (success) {
-              console.log(`✅ [RevenueCat] Successfully updated Supabase with expired status`)
-
-              // Track expired sync
-              await AnalyticsService.trackEvent({
-                name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
-                properties: {
-                  userId: userID,
-                  newStatus: "expired",
-                  source: "revenuecat_sync",
-                },
-              })
-            } else {
-              console.error(`❌ [RevenueCat] Failed to update Supabase with expired status`)
-            }
-          } else {
-            console.log(`ℹ️ [RevenueCat] No expired entitlements found - user has no subscription history`)
-            // User has no subscription history - mark as free
-            const success = await this.updateSubscriptionInSupabase("free")
-            if (success) {
-              console.log(`✅ [RevenueCat] Successfully marked user as free (no subscription history)`)
-
-              // Track free sync
-              await AnalyticsService.trackEvent({
-                name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
-                properties: {
-                  userId: userID,
-                  newStatus: "free",
-                  source: "revenuecat_sync",
-                },
-              })
-            } else {
-              console.error(`❌ [RevenueCat] Failed to mark user as free`)
-            }
-          }
-        } else {
-          console.log(`ℹ️ [RevenueCat] No expired entitlements found - user has no subscription history`)
-          // User has no subscription history - mark as free
-          const success = await this.updateSubscriptionInSupabase("free")
-          if (success) {
-            console.log(`✅ [RevenueCat] Successfully marked user as free (no subscription history)`)
-
-            // Track free sync
-            await AnalyticsService.trackEvent({
-              name: AnalyticsEvents.SUBSCRIPTION_STATUS_CHANGED,
-              properties: {
-                userId: userID,
-                newStatus: "free",
-                source: "revenuecat_sync",
-              },
-            })
-          } else {
-            console.error(`❌ [RevenueCat] Failed to mark user as free`)
-          }
-        }
-      }
-
-      console.log(`✅ [RevenueCat] Sync completed for user: ${userID}`)
-    } catch (error) {
-      console.error(`❌ [RevenueCat] Error during sync:`, error)
-    } finally {
-      this._isSyncing = false
-    }
+    // This method is deprecated - webhooks now handle subscription syncing
+    // console.log(`🔄 [RevenueCat] Manual sync deprecated - webhooks handle subscription updates`)
   }
 
   /**
-   * Purchase a subscription and sync with Supabase
+   * Purchase a subscription (webhook will handle sync)
    */
   async purchaseAndSync(
     userID: string,
@@ -783,9 +548,9 @@ class RevenueCatService {
       const customerInfo = await this.purchasePackage(packageToPurchase)
 
       if (customerInfo) {
-        // Sync the new subscription with Supabase
-        await this.syncSubscriptionWithSupabase(userID)
-
+        // Webhook will handle syncing with Supabase
+        // No need for manual sync calls anymore
+        
         // Track successful purchase
         await AnalyticsService.trackEvent({
           name: AnalyticsEvents.PRO_UPGRADE,
@@ -801,7 +566,7 @@ class RevenueCatService {
 
       return customerInfo
     } catch (error) {
-      console.error("Failed to purchase and sync:", error)
+      console.error("Failed to purchase:", error)
       throw error
     }
   }

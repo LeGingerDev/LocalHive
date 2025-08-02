@@ -27,6 +27,7 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
   const subscription = useSubscription(user?.id || null)
   const { listName, listId } = route.params || {}
   const [listItems, setListItems] = useState<ListItem[]>([])
+  const [listData, setListData] = useState<any>(null) // Store the full list data
   const [loading, setLoading] = useState(true)
   const [selectedItem, setSelectedItem] = useState<ItemWithProfile | null>(null)
   const [isItemModalVisible, setIsItemModalVisible] = useState(false)
@@ -41,12 +42,53 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
   const totalCount = listItems.length
   const progressText = `${completedCount}/${totalCount}`
 
+  // Calculate hidden items count for group lists
+  const hiddenItemsCount = useMemo(() => {
+    if (!listData?.group_id || listItems.length === 0) return 0
+    
+    return listItems.filter(item => {
+      if (item.is_text_item) return false
+      return item.item_group_id !== listData.group_id
+    }).length
+  }, [listItems, listData])
+
   // Extract already linked item IDs to filter them out from AllItemsModal
   const alreadyLinkedItemIds = useMemo(() => {
     return listItems
       .filter(item => item.item_id) // Only linked items have item_id
       .map(item => item.item_id!)
   }, [listItems])
+
+  // Filter items based on list context (personal vs group)
+  const filteredListItems = useMemo(() => {
+    if (listItems.length === 0) return listItems
+
+    // If list has a group_id, filter items to only show those from that group
+    // If personal list (no group_id), show all items
+    if (listData?.group_id) {
+      // For group lists, filter items to only show those from the same group
+      const groupListItems = listItems.filter(item => {
+        // Text items are always shown (they don't belong to any group)
+        if (item.is_text_item) return true
+        
+        // For linked items, only show if they belong to the same group
+        return item.item_group_id === listData.group_id
+      })
+      
+      console.log("Group list filtering:", {
+        listGroupId: listData.group_id,
+        totalItems: listItems.length,
+        filteredItems: groupListItems.length,
+        hiddenItems: listItems.length - groupListItems.length
+      })
+      
+      return groupListItems
+    } else {
+      // Personal list - show all items
+      console.log("Personal list - showing all items:", listItems.length)
+      return listItems
+    }
+  }, [listItems, listData])
 
   const handleBackPress = () => {
     navigation.goBack()
@@ -61,7 +103,8 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
       if (error) {
         console.error("Error loading list items:", error)
       } else if (data) {
-        console.log("Loaded list items:", data.items)
+        console.log("Loaded list data:", data)
+        setListData(data) // The entire data object contains the list info
         setListItems(data.items || [])
       }
     } catch (error) {
@@ -206,6 +249,69 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
       }
     } catch (error) {
       console.error("Error deleting item:", error)
+    }
+  }
+
+  // Handle group change with auto-conversion of cross-group items
+  const handleGroupChange = async (newGroupId: string | null) => {
+    if (!listId) return
+
+    try {
+      console.log("Group change requested:", { listId, newGroupId })
+      
+      // 1. Identify items from other groups that need conversion
+      const itemsToConvert = listItems.filter(item => {
+        // Skip text items (they don't need conversion)
+        if (item.is_text_item) return false
+        
+        // Convert items that don't belong to the new group
+        return item.item_group_id !== newGroupId
+      })
+      
+      console.log("Items to convert:", itemsToConvert.length)
+      
+      // 2. Convert cross-group items to text items
+      for (const item of itemsToConvert) {
+        try {
+          // Get the item title to preserve it
+          const itemTitle = item.item_title || "Unknown Item"
+          
+          // Remove the linked item
+          await ItemListService.removeItemFromList(item.id)
+          
+          // Add as text item with preserved name and notes
+          await ItemListService.addTextItemToList(
+            listId,
+            itemTitle,
+            item.quantity,
+            item.notes
+          )
+          
+          console.log("Converted item:", itemTitle)
+        } catch (error) {
+          console.error("Error converting item:", error)
+        }
+      }
+      
+      // 3. Update the list's group assignment
+      const { error } = await ItemListService.updateList(listId, {
+        group_id: newGroupId,
+      })
+      
+      if (error) {
+        console.error("Error updating list group:", error)
+      } else {
+        // 4. Reload the list data
+        await loadListItems()
+        
+        // 5. Show confirmation (you might want to add a toast or alert here)
+        if (itemsToConvert.length > 0) {
+          console.log(`Successfully converted ${itemsToConvert.length} items to text`)
+          // TODO: Add user notification about conversion
+        }
+      }
+    } catch (error) {
+      console.error("Error changing list group:", error)
     }
   }
 
@@ -471,6 +577,15 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
           </View>
         )}
 
+        {/* Hidden Items Warning for Group Lists */}
+        {hiddenItemsCount > 0 && (
+          <View style={themed($hiddenItemsWarningContainer)}>
+            <Text style={themed($hiddenItemsWarningText)}>
+              ⚠️ {hiddenItemsCount} item{hiddenItemsCount !== 1 ? 's' : ''} hidden because they're from other groups
+            </Text>
+          </View>
+        )}
+
         {/* Add New Item Button */}
         <ItemInputDisplay
           onAddItem={handleAddItem}
@@ -482,7 +597,7 @@ export const ListDetailScreen: FC<ListDetailScreenProps> = ({ navigation, route 
 
         {/* List Items */}
         <FlatList
-          data={listItems}
+          data={filteredListItems}
           renderItem={renderListItem}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
@@ -788,6 +903,23 @@ const $upgradeMessageContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) =
 
 const $upgradeMessageText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   color: colors.textDim,
+  fontFamily: typography.primary.normal,
+  fontSize: 14,
+  textAlign: "center",
+})
+
+const $hiddenItemsWarningContainer: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.palette.orange100 + "20",
+  borderWidth: 1,
+  borderColor: colors.palette.orange100,
+  borderRadius: 8,
+  padding: spacing.sm,
+  marginBottom: spacing.sm,
+  alignItems: "center",
+})
+
+const $hiddenItemsWarningText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.palette.orange100,
   fontFamily: typography.primary.normal,
   fontSize: 14,
   textAlign: "center",

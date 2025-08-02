@@ -7,6 +7,7 @@ import {
   FlatList,
   Image,
   ImageStyle,
+  ScrollView,
 } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 
@@ -31,6 +32,10 @@ export const ListsScreen: FC<BottomTabScreenProps<"Search">> = ({ navigation }) 
   const { lists, loading, error, deleteList, refetch } = useItemLists()
   const [menuVisible, setMenuVisible] = useState(false)
   const [selectedList, setSelectedList] = useState<any>(null)
+
+  // Separate lists by ownership vs membership
+  const myCreatedLists = lists.filter(list => list.user_id === user?.id) // Lists I created (personal + group)
+  const otherPeopleLists = lists.filter(list => list.user_id !== user?.id) // Lists created by others in groups I'm in
 
   const handleNewList = () => {
     // Check subscription limits
@@ -88,7 +93,7 @@ export const ListsScreen: FC<BottomTabScreenProps<"Search">> = ({ navigation }) 
     useCallback(() => {
       // Add a small delay to prevent rapid successive calls
       const timeoutId = setTimeout(() => {
-        console.log("[ListsScreen] Screen focused - refreshing lists data")
+        // console.log("[ListsScreen] Screen focused - refreshing lists data")
         refetch()
       }, 100)
 
@@ -134,7 +139,7 @@ export const ListsScreen: FC<BottomTabScreenProps<"Search">> = ({ navigation }) 
           <LoadingSpinner />
         ) : error ? (
           <EmptyState heading="Error Loading Lists" content={error} />
-        ) : lists.length === 0 ? (
+        ) : (myCreatedLists.length === 0 && otherPeopleLists.length === 0) ? (
           <View style={themed($emptyContainer)}>
             <Image
               source={require("@assets/Visu/Visu_Searching.png")}
@@ -145,21 +150,50 @@ export const ListsScreen: FC<BottomTabScreenProps<"Search">> = ({ navigation }) 
           </View>
         ) : (
           <>
-            {/* List Limit Warning */}
-            {!subscription.canCreateListNow && (
-              <View style={themed($limitWarningContainer)}>
-                <Text style={themed($limitWarningText)}>
-                  ⚠️ You've reached your list limit. Upgrade to Pro for unlimited lists!
-                </Text>
-              </View>
-            )}
-            <FlatList
-              data={lists}
-              renderItem={renderListItem}
-              keyExtractor={(item) => item.id}
+            <ScrollView 
+              style={themed($scrollContainer)} 
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={themed($listContainer)}
-            />
+              contentContainerStyle={themed($scrollContentContainer)}
+            >
+              {/* List Limit Warning */}
+              {!subscription.canCreateListNow && (
+                <View style={themed($limitWarningContainer)}>
+                  <Text style={themed($limitWarningText)}>
+                    ⚠️ You've reached your list limit. Upgrade to Pro for unlimited lists!
+                  </Text>
+                </View>
+              )}
+              
+              {/* My Created Lists Section */}
+              {myCreatedLists.length > 0 && (
+                <View style={themed($sectionContainer)}>
+                  <Text style={themed($sectionTitle)} text={`Private Lists (${myCreatedLists.length})`} />
+                  <FlatList
+                    data={myCreatedLists}
+                    renderItem={renderListItem}
+                    keyExtractor={(item) => item.id}
+                    showsVerticalScrollIndicator={false}
+                    scrollEnabled={false}
+                    contentContainerStyle={themed($listContainer)}
+                  />
+                </View>
+              )}
+
+              {/* Other People's Lists Section */}
+              {otherPeopleLists.length > 0 && (
+                <View style={themed($sectionContainer)}>
+                  <Text style={themed($sectionTitle)} text={`Group Lists (${otherPeopleLists.length})`} />
+                  <FlatList
+                    data={otherPeopleLists}
+                    renderItem={renderListItem}
+                    keyExtractor={(item) => item.id}
+                    showsVerticalScrollIndicator={false}
+                    scrollEnabled={false}
+                    contentContainerStyle={themed($listContainer)}
+                  />
+                </View>
+              )}
+            </ScrollView>
           </>
         )}
       </View>
@@ -280,4 +314,23 @@ const $limitWarningText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   fontSize: 14,
   color: colors.error,
   textAlign: "center",
+})
+
+const $sectionContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+})
+
+const $sectionTitle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
+  fontFamily: typography.primary.bold,
+  fontSize: 18,
+  color: colors.text,
+  marginBottom: spacing.sm,
+  paddingHorizontal: spacing.md,
+})
+
+const $scrollContainer: ThemedStyle<ViewStyle> = () => ({
+  flex: 1,
+})
+
+const $scrollContentContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  paddingBottom: spacing.xxl,
 })

@@ -413,8 +413,15 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             ),
           },
           {
-            text: "...",
-            onPress: () => setShowMenuModal(true),
+            customComponent: (
+              <TouchableOpacity 
+                style={themed($menuButton)} 
+                onPress={() => setShowMenuModal(true)} 
+                activeOpacity={0.8}
+              >
+                <Text style={themed($menuButtonText)} text="..." />
+              </TouchableOpacity>
+            ),
           },
         ]}
       />
@@ -429,64 +436,6 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
             text={`${group.member_count || 0} members • ${group.item_count || 0} items`}
           />
         </View>
-
-        {/* Collapsible Lists Section */}
-        <View style={themed($sectionHeader)}>
-          <View style={themed($sectionHeaderContent)}>
-            <TouchableOpacity
-              style={themed($sectionHeaderLeft)}
-              onPress={handleListsToggle}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={themed($sectionHeaderTitle)}
-                text={`Lists (${lists.filter((list: any) => list.group_id === groupId).length})`}
-              />
-            </TouchableOpacity>
-            <View style={themed($sectionHeaderRight)}>
-              {listsCollapsed && (
-                <Text
-                  style={themed($collapsedSectionSummary)}
-                  text={`${lists.filter((list: any) => list.group_id === groupId).length} list${lists.filter((list: any) => list.group_id === groupId).length !== 1 ? "s" : ""} hidden`}
-                />
-              )}
-              {!listsCollapsed && (
-                <TouchableOpacity
-                  style={themed($inviteButton)}
-                  onPress={() => navigation.navigate("CreateList", { groupId })}
-                  activeOpacity={0.8}
-                >
-                  <Text style={themed($inviteButtonText)} text="New List" />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={themed($caretButton)}
-                onPress={handleListsToggle}
-                activeOpacity={0.7}
-              >
-                <Icon
-                  icon={listsCollapsed ? "caretRight" : "caretLeft"}
-                  size={20}
-                  color={theme.colors.text}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {!listsCollapsed && (
-          <ListsSection
-            groupId={groupId}
-            groupName={group?.name}
-            onListPress={(list) => {
-              // Navigate to list detail screen
-              navigation.navigate("ListDetail", { 
-                listId: list.id,
-                listName: list.name 
-              })
-            }}
-          />
-        )}
 
         {/* Collapsible Members Section */}
         <View style={themed($sectionHeader)}>
@@ -550,6 +499,64 @@ export const GroupDetailScreen = ({ route, navigation }: GroupDetailScreenProps)
               memberLimit={group?.member_limit}
             />
           </View>
+        )}
+
+        {/* Collapsible Lists Section */}
+        <View style={themed($sectionHeader)}>
+          <View style={themed($sectionHeaderContent)}>
+            <TouchableOpacity
+              style={themed($sectionHeaderLeft)}
+              onPress={handleListsToggle}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={themed($sectionHeaderTitle)}
+                text={`Lists (${lists.filter((list: any) => list.group_id === groupId).length})`}
+              />
+            </TouchableOpacity>
+            <View style={themed($sectionHeaderRight)}>
+              {listsCollapsed && (
+                <Text
+                  style={themed($collapsedSectionSummary)}
+                  text={`${lists.filter((list: any) => list.group_id === groupId).length} list${lists.filter((list: any) => list.group_id === groupId).length !== 1 ? "s" : ""} hidden`}
+                />
+              )}
+              {!listsCollapsed && (
+                <TouchableOpacity
+                  style={themed($inviteButton)}
+                  onPress={() => navigation.navigate("CreateList", { groupId })}
+                  activeOpacity={0.8}
+                >
+                  <Text style={themed($inviteButtonText)} text="New List" />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={themed($caretButton)}
+                onPress={handleListsToggle}
+                activeOpacity={0.7}
+              >
+                <Icon
+                  icon={listsCollapsed ? "caretRight" : "caretLeft"}
+                  size={20}
+                  color={theme.colors.text}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {!listsCollapsed && (
+          <ListsSection
+            groupId={groupId}
+            groupName={group?.name}
+            onListPress={(list) => {
+              // Navigate to list detail screen
+              navigation.navigate("ListDetail", { 
+                listId: list.id,
+                listName: list.name 
+              })
+            }}
+          />
         )}
 
         {/* Collapsible Recent Activity Section */}
@@ -1113,4 +1120,19 @@ const $collapsedSectionSummary = ({ typography, colors }: any): TextStyle => ({
 
 const $penIconColor = ({ colors }: any): { color: string } => ({
   color: colors.textDim,
+})
+
+const $menuButton = ({ spacing }: any): ViewStyle => ({
+  paddingHorizontal: spacing.md,
+  paddingVertical: spacing.sm,
+  minWidth: 44,
+  minHeight: 44,
+  alignItems: "center",
+  justifyContent: "center",
+})
+
+const $menuButtonText = ({ typography, colors }: any): TextStyle => ({
+  fontFamily: typography.primary.medium,
+  fontSize: 18,
+  color: colors.text,
 })
