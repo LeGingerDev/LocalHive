@@ -19,6 +19,7 @@ import { Text } from "@/components/Text"
 import { TextField } from "@/components/TextField"
 import { useGroups } from "@/hooks/useGroups"
 import type { GroupCategory } from "@/services/api/types"
+import { reviewTrackingService } from "@/services/reviewTrackingService"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
 
@@ -57,6 +58,10 @@ export const CreateGroupScreen = ({ navigation }: any) => {
         console.log(
           "🔍 [CreateGroupScreen] Group created successfully, navigating back to Groups with refresh",
         )
+        
+        // Track group creation for review prompts
+        await reviewTrackingService.trackGroupCreated()
+        
         // Navigate back to main and then to groups tab
         navigation.navigate("Main", { screen: "Groups", params: { refresh: true } })
       }

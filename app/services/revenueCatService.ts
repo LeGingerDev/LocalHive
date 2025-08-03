@@ -11,6 +11,7 @@ import { SubscriptionService, subscriptionEventEmitter } from "./subscriptionSer
 import { restartApp } from "../utils/appRestart"
 import { supabase } from "./supabase/supabase"
 import Config from "../config/config.dev"
+import { reviewTrackingService } from "./reviewTrackingService"
 
 // RevenueCat API Keys - Loaded from EAS environment variables
 // These should be set in your EAS project environment variables
@@ -46,10 +47,47 @@ class RevenueCatService {
   private _customerInfoUpdateListener: (() => void) | null = null
 
   /**
+   * Check minimum OS requirements for RevenueCat v8
+   */
+  private checkMinimumOSRequirements(): boolean {
+    if (Platform.OS === 'ios') {
+      // iOS 13.0+ required for v8
+      const systemVersion = Platform.Version as string
+      const majorVersion = parseInt(systemVersion.split('.')[0])
+      if (majorVersion < 13) {
+        console.warn("⚠️ [RevenueCat] iOS 13.0+ required for v8. Current version:", systemVersion)
+        return false
+      }
+    }
+    // Android API 21+ is handled by React Native build requirements
+    return true
+  }
+
+  /**
+   * Get StoreKit version information (iOS only)
+   */
+  async getStoreKitInfo(): Promise<void> {
+    try {
+      if (Platform.OS === 'ios') {
+        // This will help you understand which StoreKit version is active
+        const customerInfo = await this.getCustomerInfo()
+        console.log("📱 [RevenueCat] StoreKit version info available in dashboard/logs")
+      }
+    } catch (error) {
+      console.error("Failed to get StoreKit info:", error)
+    }
+  }
+
+  /**
    * Initialize RevenueCat with your API keys
    */
   async initialize(): Promise<void> {
     if (this._isInitialized) return
+
+    if (!this.checkMinimumOSRequirements()) {
+      console.error("❌ [RevenueCat] Minimum OS requirements not met")
+      return
+    }
 
     try {
       const apiKey = Platform.select({
@@ -66,18 +104,24 @@ class RevenueCatService {
         return
       }
 
-      // Configure RevenueCat with proper options
+      // Add warning for iOS In-App Purchase Key requirement
+      if (Platform.OS === 'ios') {
+        console.log("⚠️ [RevenueCat] Ensure In-App Purchase Key is configured in RevenueCat dashboard for StoreKit 2 support")
+      }
+
+      // Configure RevenueCat with proper options for v8
       await Purchases.configure({
         apiKey,
-        observerMode: false, // Set to true if you want to test without making actual purchases
         useAmazon: false,
+        // Optional: Explicitly set StoreKit version or let it auto-detect
+        // storeKitVersion: STOREKIT_VERSION.DEFAULT // Let RevenueCat choose the best version
       })
 
       // Set up customer info update listener
       this.setupCustomerInfoUpdateListener()
 
       this._isInitialized = true
-      console.log("✅ RevenueCat initialized successfully")
+      console.log("✅ RevenueCat v8 initialized successfully")
 
       // ADDED: Automatically sync subscription status on app start
       await this.syncSubscriptionOnAppStart()
@@ -388,6 +432,16 @@ class RevenueCatService {
       return customerInfo
     } catch (error) {
       console.error("Failed to purchase package:", error)
+      
+      // Enhanced error handling for StoreKit 2
+      if (error instanceof Error) {
+        console.error("Purchase error details:", {
+          message: error.message,
+          name: error.name,
+          // Add any RevenueCat-specific error properties
+        })
+      }
+      
       throw error
     }
   }
@@ -399,6 +453,12 @@ class RevenueCatService {
     try {
       await this.ensureInitialized()
       const customerInfo = await Purchases.restorePurchases()
+      
+      // Track subscription event for review prompts if restoration was successful
+      if (customerInfo && Object.keys(customerInfo.entitlements.active).length > 0) {
+        await reviewTrackingService.trackSubscriptionEvent()
+      }
+      
       return customerInfo
     } catch (error) {
       console.error("Failed to restore purchases:", error)
@@ -562,6 +622,9 @@ class RevenueCatService {
             source: "revenuecat_purchase",
           },
         })
+        
+        // Track subscription event for review prompts
+        await reviewTrackingService.trackSubscriptionEvent()
       }
 
       return customerInfo

@@ -32,6 +32,7 @@ import { navigate } from "@/navigators/navigationUtilities"
 import { cameraService } from "@/services/cameraService"
 import { HapticService } from "@/services/hapticService"
 import { ItemService } from "@/services/supabase/itemService"
+import { reviewTrackingService } from "@/services/reviewTrackingService"
 import { supabase } from "@/services/supabase/supabase"
 import { useAppTheme } from "@/theme/context"
 import { spacing } from "@/theme/spacing"
@@ -331,6 +332,9 @@ export const AddScreen: FC<BottomTabScreenProps<"Add">> = ({ route, navigation }
       setNotes("")
       setSelectedCategory(null)
       setPhotoUri(null)
+
+      // Track item creation for review prompts
+      await reviewTrackingService.trackItemCreated()
 
       // Show success modal
       setAlertTitle("Success!")

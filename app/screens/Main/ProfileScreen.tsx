@@ -26,7 +26,7 @@ import { spacing } from "@/theme/spacing"
 const ProfileScreen = () => {
   const { themeContext, theme } = useAppTheme()
   const navigation = useNavigation<any>()
-  const { refreshUser, userProfile } = useAuth()
+  const { checkOutlineUser, userProfile } = useAuth()
   const subscription = useSubscription(userProfile?.id || null)
   const [isManageModalVisible, setIsManageModalVisible] = useState(false)
   const [isPrivacySecurityModalVisible, setIsPrivacySecurityModalVisible] = useState(false)
@@ -36,8 +36,8 @@ const ProfileScreen = () => {
     setSystemUIBackgroundColor(theme.colors.headerBackground)
   }, [theme.colors.headerBackground])
 
-  // Remove the unnecessary refreshUser call that was causing loading state interference
-  // The user data is already loaded by the AuthContext and doesn't need to be refreshed
+  // Remove the unnecessary checkOutlineUser call that was causing loading state interference
+  // The user data is already loaded by the AuthContext and doesn't need to be checkOutlineed
   // every time the ProfileScreen mounts
 
   const handleSignOut = async () => {
@@ -155,7 +155,7 @@ const ProfileScreen = () => {
                 ]}
               >
                 <Icon 
-                  icon={isRestoringPurchases ? "spinner" : "refresh"} 
+                  icon={isRestoringPurchases ? "check" : "checkOutline"} 
                   size={22} 
                   color={theme.colors.gradientOrange[0]} 
                 />

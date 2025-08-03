@@ -20,6 +20,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useAnalytics } from "@/hooks/useAnalytics"
 import { useGroups } from "@/hooks/useGroups"
 import { useSubscription } from "@/hooks/useSubscription"
+import { useReviewModal } from "@/hooks/useReviewModal"
 import type { BottomTabScreenProps } from "@/navigators/BottomTabNavigator"
 import { navigate } from "@/navigators/navigationUtilities"
 import { HapticService } from "@/services/hapticService"
@@ -53,6 +54,7 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
   const { user, userProfile } = useAuth()
   const subscription = useSubscription(user?.id || null)
   const { refresh: refreshGroups } = useGroups()
+  const { showReviewModal } = useReviewModal()
 
   // Ref for RecentActivitySection to refresh data
   const recentActivityRef = useRef<RecentActivitySectionRef | null>(null)
@@ -270,7 +272,18 @@ export const HomeScreen: FC<HomeScreenProps> = ({ navigation }) => {
 
         {/* Recent Activity Section */}
         <RecentActivitySection limit={5} ref={recentActivityRef} />
-      </ScrollView>
+
+                  {/* Test Review Button */}
+          <TouchableOpacity
+            style={themed($testReviewButton)}
+            onPress={() => {
+              HapticService.light()
+              showReviewModal()
+            }}
+          >
+            <Text style={themed($testReviewButtonText)} text="🧪 Test Review Modal" />
+          </TouchableOpacity>
+        </ScrollView>
 
       {/* Subscription Management Modal */}
       <SubscriptionManagementModal
@@ -424,4 +437,24 @@ const $caretButton: ThemedStyle<ViewStyle> = () => ({
 const $caretButtonIcon: ThemedStyle<{ color: string }> = ({ colors }) => ({
   color: colors.text,
 })
+
+const $testReviewButton: ThemedStyle<ViewStyle> = ({ colors, spacing }) => ({
+  backgroundColor: colors.palette.neutral200,
+  borderRadius: 12,
+  paddingVertical: spacing.md,
+  paddingHorizontal: spacing.lg,
+  marginTop: spacing.xl,
+  marginHorizontal: spacing.md,
+  alignItems: "center",
+  borderWidth: 2,
+  borderColor: colors.palette.neutral300,
+})
+
+const $testReviewButtonText: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  color: colors.text,
+  fontSize: 16,
+  fontWeight: "600",
+  fontFamily: typography.primary.medium,
+})
+
 // #endregion

@@ -38,7 +38,9 @@ import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-c
 
 import { AlertProvider } from "./components/Alert"
 import { AppStateHandler } from "./components/AppStateHandler"
+import { ReviewModal } from "./components/ReviewModal"
 import { StatusBarManager } from "./components/StatusBarManager"
+import { Text } from "./components/Text"
 import { AuthProvider } from "./context/AuthContext"
 import { initI18n } from "./i18n"
 import { AppNavigator } from "./navigators/AppNavigator"
@@ -46,6 +48,7 @@ import { useNavigationPersistence } from "./navigators/navigationUtilities"
 import { AnalyticsService, AnalyticsEvents } from "./services/analyticsService"
 import { revenueCatService } from "./services/revenueCatService"
 import { SubscriptionService } from "./services/subscriptionService"
+import { useReviewModal } from "./hooks/useReviewModal"
 import { setupAppStateListener } from "./services/supabase/supabase"
 import { ThemeProvider } from "./theme/context"
 import { customFontsToLoad } from "./theme/typography"
@@ -95,6 +98,9 @@ export function App() {
 
   const [areFontsLoaded, fontLoadError] = useFonts(customFontsToLoad)
   const [isI18nInitialized, setIsI18nInitialized] = useState(false)
+  
+  // Initialize review modal
+  const { isVisible: isReviewModalVisible, hideReviewModal } = useReviewModal()
 
   useEffect(() => {
     initI18n()
@@ -234,6 +240,10 @@ export function App() {
                   linking={linking}
                   initialState={initialNavigationState}
                   onStateChange={onNavigationStateChange}
+                />
+                <ReviewModal
+                  visible={isReviewModalVisible}
+                  onClose={hideReviewModal}
                 />
               </AlertProvider>
             </AuthProvider>

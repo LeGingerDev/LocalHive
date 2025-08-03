@@ -11,6 +11,7 @@ import { useGroups } from "@/hooks/useGroups"
 import { useSubscription } from "@/hooks/useSubscription"
 import { useAuth } from "@/context/AuthContext"
 import { ItemListService } from "@/services/supabase/itemListService"
+import { reviewTrackingService } from "@/services/reviewTrackingService"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
@@ -77,6 +78,10 @@ export const CreateListScreen: FC<CreateListScreenProps> = ({ navigation, route 
           name: listName.trim(),
           group_id: selectedGroupId || undefined,
         })
+        
+        // Track list creation for review prompts
+        await reviewTrackingService.trackListCreated()
+        
         showAlert({
           title: "Success!",
           message: `List "${listName.trim()}" has been created successfully.`,

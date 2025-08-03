@@ -16,6 +16,7 @@ import ReactNativeHapticFeedback from "react-native-haptic-feedback"
 import { Icon } from "@/components/Icon"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
+import { useRevenueCat } from "@/hooks/useRevenueCat"
 import { AnalyticsService } from "@/services/analyticsService"
 import { revenueCatService } from "@/services/revenueCatService"
 import { colors } from "@/theme/colors"
@@ -28,6 +29,10 @@ export const PaywallOnboardingScreen = () => {
   const navigation = useNavigation<any>()
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [hasUsedTrial, setHasUsedTrial] = useState(false)
+  const [monthlyPrice, setMonthlyPrice] = useState("$5.99") // Default fallback
+  const [yearlyPrice, setYearlyPrice] = useState("$59.99") // Default fallback
+
+  const { subscriptionTiers, loading: revenueCatLoading } = useRevenueCat()
 
   // Check if user has already used their trial
   const checkTrialStatus = async () => {
@@ -54,6 +59,31 @@ export const PaywallOnboardingScreen = () => {
       console.error("❌ [PaywallOnboarding] Error checking trial status:", error)
       // Default to assuming trial is available if we can't check
       setHasUsedTrial(false)
+    }
+  }
+
+  // Get pricing from RevenueCat subscription tiers
+  const updatePricingFromRevenueCat = () => {
+    if (subscriptionTiers.length > 0) {
+      // Find monthly subscription
+      const monthlyTier = subscriptionTiers.find(
+        (tier) => tier.id.includes("monthly") || tier.id.includes("$rc_monthly"),
+      )
+      
+      // Find yearly subscription
+      const yearlyTier = subscriptionTiers.find(
+        (tier) => tier.id.includes("yearly") || tier.id.includes("$rc_yearly"),
+      )
+
+      if (monthlyTier) {
+        setMonthlyPrice(monthlyTier.price)
+        console.log(`💰 [PaywallOnboarding] Monthly price from RevenueCat: ${monthlyTier.price}`)
+      }
+
+      if (yearlyTier) {
+        setYearlyPrice(yearlyTier.price)
+        console.log(`💰 [PaywallOnboarding] Yearly price from RevenueCat: ${yearlyTier.price}`)
+      }
     }
   }
 
@@ -130,6 +160,13 @@ export const PaywallOnboardingScreen = () => {
       startContentAnimations()
     }, 300)
   }, [contentFadeAnim, titleSlideAnim, featuresAnim, priceAnim, buttonScaleAnim, buttonOpacityAnim])
+
+  // Update pricing when RevenueCat data is available
+  useEffect(() => {
+    if (!revenueCatLoading && subscriptionTiers.length > 0) {
+      updatePricingFromRevenueCat()
+    }
+  }, [revenueCatLoading, subscriptionTiers])
 
   const handleStartTrial = async () => {
     // Enhanced haptic feedback for primary action
@@ -385,7 +422,7 @@ export const PaywallOnboardingScreen = () => {
           >
             {hasUsedTrial ? (
               <>
-                <Text style={styles.price}>$5.99</Text>
+                <Text style={styles.price}>{monthlyPrice}</Text>
                 <Text style={styles.pricePeriod}>per month</Text>
                 <Text style={styles.priceAfter}>Cancel anytime</Text>
               </>
@@ -393,7 +430,7 @@ export const PaywallOnboardingScreen = () => {
               <>
                 <Text style={styles.price}>$0</Text>
                 <Text style={styles.pricePeriod}>for 3 days</Text>
-                <Text style={styles.priceAfter}>Then $5.99/month</Text>
+                <Text style={styles.priceAfter}>Then {monthlyPrice}/month</Text>
               </>
             )}
           </Animated.View>
