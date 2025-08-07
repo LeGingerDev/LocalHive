@@ -106,7 +106,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ visible, onClose }) =>
           }]}>
                      {/* Title */}
            <Text style={[styles.title, { color: theme.colors.text }]}>
-             Enjoying Local Hive?
+             Enjoying Visu App?
            </Text>
            
            {/* Subtitle */}

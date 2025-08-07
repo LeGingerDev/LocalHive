@@ -24,12 +24,12 @@ const REVENUECAT_API_KEYS = {
 const PRODUCT_IDS = {
   PRO_MONTHLY: Platform.select({
     android: "$rc_monthly", // Your Android product ID
-    ios: "com.legingerdev.visu.pro.monthly", // Your iOS product ID
+    ios: "$rc_monthly", // Your iOS product ID - using package identifier
     default: "$rc_monthly",
   }),
   PRO_YEARLY: Platform.select({
     android: "$rc_yearly", // Your Android product ID
-    ios: "com.legingerdev.visu.pro.yearly", // Your iOS product ID
+    ios: "$rc_yearly", // Your iOS product ID - using package identifier
     default: "$rc_yearly",
   }),
 }
@@ -182,6 +182,8 @@ class RevenueCatService {
         activeEntitlements: Object.keys(customerInfo.entitlements.active),
         allEntitlements: Object.keys(customerInfo.entitlements.all),
         originalAppUserId: customerInfo.originalAppUserId,
+        activeEntitlementsCount: Object.keys(customerInfo.entitlements.active).length,
+        allEntitlementsCount: Object.keys(customerInfo.entitlements.all).length,
       })
 
       const hasActiveSubscription = Object.keys(customerInfo.entitlements.active).length > 0
@@ -269,20 +271,64 @@ class RevenueCatService {
 
   /**
    * Find pro-related entitlement in active entitlements
+   * Updated for RevenueCat v8 compatibility
    */
   private findProEntitlement(activeEntitlements: any): any {
-    return (
-      activeEntitlements.pro ||
-      activeEntitlements.premium ||
-      activeEntitlements.visu_pro ||
-      Object.values(activeEntitlements).find(
-        (ent: any) => ent.identifier.includes("pro") || ent.identifier.includes("premium"),
-      )
-    )
+    // Log the actual entitlement structure for debugging
+    console.log("🔍 [RevenueCat] Active entitlements structure:", {
+      keys: Object.keys(activeEntitlements),
+      values: Object.values(activeEntitlements).map((ent: any) => ({
+        identifier: ent.identifier,
+        isActive: ent.isActive,
+        expirationDate: ent.expirationDate,
+        periodType: ent.periodType,
+      })),
+    })
+
+    // Try multiple approaches to find pro entitlement
+    let proEntitlement = null
+
+    // Method 1: Direct property access (old way)
+    proEntitlement = activeEntitlements.pro || activeEntitlements.premium || activeEntitlements.visu_pro
+
+    // Method 2: Search by identifier (more robust)
+    if (!proEntitlement) {
+      proEntitlement = Object.values(activeEntitlements).find((ent: any) => {
+        const identifier = ent.identifier?.toLowerCase() || ""
+        return (
+          identifier.includes("pro") ||
+          identifier.includes("premium") ||
+          identifier.includes("visu") ||
+          identifier.includes("unlimited") ||
+          identifier.includes("premium_access")
+        )
+      })
+    }
+
+    // Method 3: Check if any entitlement is active and has expiration date (fallback)
+    if (!proEntitlement) {
+      proEntitlement = Object.values(activeEntitlements).find((ent: any) => {
+        return ent.isActive && ent.expirationDate && ent.expirationDate > new Date().toISOString()
+      })
+    }
+
+    if (proEntitlement) {
+      console.log("✅ [RevenueCat] Found pro entitlement:", {
+        identifier: proEntitlement.identifier,
+        isActive: proEntitlement.isActive,
+        expirationDate: proEntitlement.expirationDate,
+        periodType: proEntitlement.periodType,
+      })
+    } else {
+      console.log("❌ [RevenueCat] No pro entitlement found in active entitlements")
+    }
+
+    return proEntitlement
   }
 
   /**
    * Find recently expired entitlement
+   * Updated for RevenueCat v8 compatibility
    */
   private findRecentlyExpiredEntitlement(allEntitlements: any[]): any {
     const now = new Date()
@@ -292,10 +338,15 @@ class RevenueCatService {
       if (!entitlement.expirationDate) return false
 
       const expirationDate = new Date(entitlement.expirationDate)
+      const identifier = entitlement.identifier?.toLowerCase() || ""
+      
       return (
         expirationDate >= thirtyDaysAgo &&
         expirationDate <= now &&
-        (entitlement.identifier.includes("pro") || entitlement.identifier.includes("premium"))
+        (identifier.includes("pro") || 
+         identifier.includes("premium") || 
+         identifier.includes("visu") ||
+         identifier.includes("unlimited"))
       )
     })
   }
